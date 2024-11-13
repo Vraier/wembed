@@ -1,0 +1,1 @@
+Provides a manylinux container to build binary wheels.

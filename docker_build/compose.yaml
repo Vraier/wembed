@@ -1,0 +1,8 @@
+services:
+  embedding-dev:
+    container_name: wembed-build
+    build: . # use Dockerfile as container
+    working_dir: /wembed # set working directory
+    volumes:
+      - ../:/wembed # mount the whole repository into the working directory
+    tty: true # don't close container immediatly after creation
