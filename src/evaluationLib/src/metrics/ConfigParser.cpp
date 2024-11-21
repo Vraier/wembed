@@ -6,19 +6,17 @@
 #include "StringManipulation.hpp"
 #include "FileOperations.hpp"
 
-ConfigParser::ConfigParser(Options opts) : options(opts) {}
-
 std::vector<std::string> ConfigParser::getMetricValues() {
     std::vector<std::string> result;
     std::vector<std::string> tmp;
 
-    if (options.logPath != "") {
-        switch (options.logType) {
+    if (logPath != "") {
+        switch (logType) {
             case LogType::WEmbed:
-                tmp = extractMetricsByRegex(options.logPath, embedderRegex, 3);
+                tmp = extractMetricsByRegex(logPath, embedderRegex, 3);
                 break;
             case LogType::CSV:
-                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logPath)[1]);
+                tmp = util::splitIntoTokens(util::readLinesFromFile(logPath)[1]);
                 break;
             default:
                 LOG_ERROR("Unknown config type");
@@ -33,13 +31,13 @@ std::vector<std::string> ConfigParser::getMetricNames() {
     std::vector<std::string> result;
     std::vector<std::string> tmp;
 
-    if (options.logPath != "") {
-        switch (options.logType) {
+    if (logPath != "") {
+        switch (logType) {
             case LogType::WEmbed:
-                tmp = extractMetricsByRegex(options.logPath, embedderRegex, 1);
+                tmp = extractMetricsByRegex(logPath, embedderRegex, 1);
                 break;
             case LogType::CSV:
-                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logPath)[0]);
+                tmp = util::splitIntoTokens(util::readLinesFromFile(logPath)[0]);
                 break;
             default:
                 LOG_ERROR("Unknown config type");

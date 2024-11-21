@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Options.hpp"
 #include "Graph.hpp"
 #include "Metric.hpp"
 #include "VecList.hpp"
+
+enum class LogType { None = 0, WEmbed = 1, CSV = 2 };
 
 /**
  * Parses a log file of an embedder and extracts useful information.
@@ -11,7 +12,7 @@
  */
 class ConfigParser : public Metric {
    public:
-    ConfigParser(Options options);
+    ConfigParser(std::string logPath, LogType logType) : logPath(logPath), logType(logType) {}
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
 
@@ -21,5 +22,6 @@ class ConfigParser : public Metric {
     inline static const std::string embedderRegex = "> ([^\\(\\)=]+)(\\(default\\))?=(.*)";
     inline static const std::string node2VecRegex = ".*\\(-(.*)\\)=(.*)";
 
-    Options options;
+    std::string logPath;
+    LogType logType;
 };

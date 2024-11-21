@@ -4,7 +4,6 @@
 
 #include "Embedding.hpp"
 #include "Graph.hpp"
-#include "Options.hpp"
 #include "WeightedGeometric.hpp"
 
 struct histEntry {

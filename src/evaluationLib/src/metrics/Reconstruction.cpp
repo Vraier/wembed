@@ -2,16 +2,11 @@
 
 #include <fstream>
 
-Reconstruction::Reconstruction(const Options& opts, const Graph& g, std::shared_ptr<Embedding> embedding) : options(opts),
-                                                                                           graph(g),
-                                                                                           embedding(embedding),
-                                                                                           buffer(embedding->getDimension()) {}
-
 std::vector<std::string> Reconstruction::getMetricValues() {
     std::vector<double> constructAtDegVals;
     std::vector<double> averagePrecisions;
 
-    std::vector<nodeEntry> hist = NodeSampler::sampleHistEntries(options, graph, embedding);
+    std::vector<nodeEntry> hist = NodeSampler::sampleHistEntries(graph, embedding, nodeSampleFraction);
     for (auto e : hist) {
         constructAtDegVals.push_back(e.deg_precision);
         averagePrecisions.push_back(e.average_precision);
@@ -31,7 +26,7 @@ std::vector<std::string> Reconstruction::getMetricNames() {
     return result;
 }
 
-void Reconstruction::writeHistogram(const Options& options, const std::vector<nodeEntry>& entries) {
+void Reconstruction::writeHistogram(const std::vector<nodeEntry>& entries) {
     std::ofstream output;
     output.open("dummy_file.csv");
 

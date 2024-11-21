@@ -3,9 +3,6 @@
 #include "EdgeSampler.hpp"
 #include "Rand.hpp"
 
-EdgeDetection::EdgeDetection(const Options& opts, const Graph& g, std::shared_ptr<Embedding> embedding)
-    : options(opts), graph(g), embedding(embedding) {}
-
 std::vector<std::string> EdgeDetection::getMetricValues() {
     const ll N = graph.getNumVertices();
     const ll M = graph.getNumEdges();
@@ -16,7 +13,7 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
     int numSampledEdges;
 
     // sample edges and non edges from the graph
-    histInfo tmp = EdgeSampler::sampleHistEntries(graph, embedding, options.edgeSampleScale);
+    histInfo tmp = EdgeSampler::sampleHistEntries(graph, embedding, edgeSampleScale);
     histogram = tmp.histogramm;
     numSampledEdges = tmp.numEdges;
     numSampledNonEdges = tmp.numNonEdges;

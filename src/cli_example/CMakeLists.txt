@@ -1,4 +1,4 @@
-set(target cli_test)
+set(target cli_example)
 
 add_executable(${target})
 

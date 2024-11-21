@@ -2,7 +2,7 @@
 
 #include "Macros.hpp"
 
-GeneralGraphInfo::GeneralGraphInfo(const Options& opts, const Graph& g) : options(opts), graph(g) {}
+GeneralGraphInfo::GeneralGraphInfo(const Graph& g) : graph(g) {}
 
 std::vector<std::string> GeneralGraphInfo::getMetricValues() {
     std::vector<std::string> result = {std::to_string(graph.getNumVertices()), std::to_string(graph.getNumEdges())};

@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "Embedding.hpp"
-#include "Options.hpp"
 #include "Graph.hpp"
 #include "WeightedGeometric.hpp"
 
@@ -26,7 +25,7 @@ using EdgeLengthToNode = std::vector<std::pair<double, NodeId>>;
  */
 class NodeSampler {
    public:
-    static std::vector<nodeEntry> sampleHistEntries(const Options &opts, const Graph &graph, std::shared_ptr<Embedding> embedding);
+    static std::vector<nodeEntry> sampleHistEntries(const Graph &graph, std::shared_ptr<Embedding> embedding, double nodeSampleFraction);
     static double averageFromVector(const std::vector<double> &values);
 
    private:

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Metric.hpp"
-#include "Options.hpp"
 
 /**
  * This class reads the time file and returns the time it took to embed the graph.
@@ -9,10 +8,10 @@
  */
 class TimeParser : public Metric {
    public:
-    TimeParser(Options options);
+    TimeParser(std::string timePath) : timePath(timePath) {};
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
 
    private:
-    Options options;
+    std::string timePath;
 };

@@ -47,11 +47,11 @@ int main(int argc, char* argv[]) {
 
     // construct metrics
     std::vector<std::unique_ptr<Metric>> metrics;
-    metrics.push_back(std::make_unique<GeneralGraphInfo>(options, inputGraph));
-    metrics.push_back(std::make_unique<TimeParser>(options));
-    metrics.push_back(std::make_unique<ConfigParser>(options));
-    metrics.push_back(std::make_unique<Reconstruction>(options, inputGraph, embedding));
-    metrics.push_back(std::make_unique<EdgeDetection>(options, inputGraph, embedding));
+    metrics.push_back(std::make_unique<GeneralGraphInfo>(inputGraph));
+    metrics.push_back(std::make_unique<TimeParser>(options.timePath));
+    metrics.push_back(std::make_unique<ConfigParser>(options.logPath, options.logType));
+    metrics.push_back(std::make_unique<Reconstruction>(inputGraph, embedding, options.nodeSamplePercent));
+    metrics.push_back(std::make_unique<EdgeDetection>(inputGraph, embedding, options.edgeSampleScale));
 
     // print the header for an svg file
     std::vector<std::string> valueNames;

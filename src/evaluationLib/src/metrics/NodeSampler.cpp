@@ -2,12 +2,12 @@
 
 #include "Macros.hpp"
 
-std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Options& opts, const Graph& graph,
-                                                      std::shared_ptr<Embedding> embedding) {
+std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding,
+                                                      double nodeSampleFraction) {
     int N = graph.getNumVertices();
     std::vector<bool> isNeighbor(N, false);                                              // reused for every node
     std::vector<int> nodePermutation = Rand::randomPermutation(N);                       // used to sample random nodes
-    const int numSampledNodes = std::min({(int)(N * opts.nodeSamplePercent), N, 1000});  // sample at most 1000 nodes
+    const int numSampledNodes = std::min({(int)(N * nodeSampleFraction), N, 1000});  // sample at most 1000 nodes
     std::vector<nodeEntry> result;
 
     LOG_INFO("Sampling " << numSampledNodes << " nodes");

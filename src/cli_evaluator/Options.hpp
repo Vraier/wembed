@@ -4,9 +4,7 @@
 #include "EmbedderOptions.hpp"
 #include "GraphIO.hpp"
 #include "EmbeddingIO.hpp"
-
-
-enum class LogType { None = 0, WEmbed = 1, CSV = 2 };
+#include "ConfigParser.hpp"
 
 struct Options {
 

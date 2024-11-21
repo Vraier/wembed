@@ -1,6 +1,7 @@
 add_subdirectory(graphLib)
 add_subdirectory(utilLib)
 add_subdirectory(embeddingLib)
+add_subdirectory(evaluationLib)
 
 add_subdirectory(bindings)
 add_subdirectory(cli_example)
