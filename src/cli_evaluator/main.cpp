@@ -65,7 +65,6 @@ int main(int argc, char* argv[]) {
     }
     Metric::printCSVToConsole(valueNames);
 
-
     // calculate and print the metrics for an svg file
     std::vector<std::string> valueMetrics;
     std::vector<std::string> tmpMetrics;
@@ -79,7 +78,7 @@ int main(int argc, char* argv[]) {
 
     Metric::printCSVToConsole(valueNames);
     Metric::printCSVToConsole(valueMetrics);
-    
+
     return 0;
 }
 
