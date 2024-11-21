@@ -1,36 +1,35 @@
 #pragma once
 
+#include <memory>
+
 #include "Embedding.hpp"
-#include "EvalOptions.hpp"
 #include "Graph.hpp"
+#include "Options.hpp"
 #include "WeightedGeometric.hpp"
 
 struct histEntry {
     double similarity;
-    double distance;
 
     NodeId v;
     NodeId w;
-    double weightV;
-    double weightW;
     bool isEdge;
 };
 
-using Histogram = std::vector<histEntry>;
-
 struct histInfo {
-    Histogram hist;
+    std::vector<histEntry> histogramm;
     int numEdges;
     int numNonEdges;
 };
 
 bool histComparator(const histEntry& a, const histEntry& b);
 
+/**
+ * Used to sample random edges and non edges from the graph.
+ * Will construct a list of all sampled pairs containing usefull information for thurther processing.
+ * 
+ * Mainly used by the F1-Score metric.
+ */
 class EdgeSampler {
    public:
-    static histInfo sampleHistEntries(const OptionValues& opts, const Graph& graph, Embedding& embedding);
-
-   private:
-    static histEntry getHistEntry(Embedding& embedding, NodeId v, NodeId w, bool isEdge);
-    static histEntry getHistEntry(WeightedGeometric& embedding, NodeId v, NodeId w, bool isEdge);
+    static histInfo sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding, double sampleingScale);
 };

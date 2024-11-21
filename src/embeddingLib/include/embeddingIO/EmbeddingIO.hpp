@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "Embedding.hpp"
 #include "GraphIO.hpp"
@@ -20,7 +21,8 @@ enum EmbeddingType {
 
 class EmbeddingIO {
    public:
-    static Embedding* parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates);
+    static std::unique_ptr<Embedding> parseEmbedding(EmbeddingType type,
+                                                     const std::vector<std::vector<double>>& coordinates);
 
     /**
      * Reads coordinates for a graph from a file.

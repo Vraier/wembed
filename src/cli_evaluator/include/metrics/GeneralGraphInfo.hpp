@@ -2,17 +2,22 @@
 
 #include "Graph.hpp"
 #include "Metric.hpp"
-#include "EvalOptions.hpp"
+#include "Options.hpp"
 
+/**
+ * Calculates general information about the graph.
+ * 
+ * This includes the number of nodes and edges.
+ */
 class GeneralGraphInfo : public Metric {
    public:
-    GeneralGraphInfo(const OptionValues &options, const Graph &g);
+    GeneralGraphInfo(const Options &options, const Graph &g);
 
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
 
 
    private:
-    OptionValues options;
+    Options options;
     const Graph &graph;
 };

@@ -24,14 +24,7 @@ int main(int argc, char* argv[]) {
 
     // Embed the graph
     SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
-
-    if (opts.draw) {
-        while (!embedder.isFinished()) {
-            embedder.calculateStep();
-        }
-    } else {
-        embedder.calculateEmbedding();
-    }
+    embedder.calculateEmbedding();
 
     // Output timings
     if (opts.showTimings) {
@@ -53,7 +46,6 @@ int main(int argc, char* argv[]) {
 void addOptions(CLI::App& app, Options& opts) {
     app.add_option("-i,--graph", opts.graphPath, "Path to the graph file")->required()->check(CLI::ExistingFile);
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
-    app.add_flag("-d,--draw", opts.draw, "Animates the graph embedding. Slow but helpful for debugging.");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
 
     // Embedder Options

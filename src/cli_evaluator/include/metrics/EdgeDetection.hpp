@@ -1,21 +1,26 @@
 #pragma once
 
+#include <memory>
+
 #include "Embedding.hpp"
 #include "Graph.hpp"
 #include "Metric.hpp"
-#include "EvalOptions.hpp"
+#include "Options.hpp"
 
+/**
+ * Calculates the F1 score for predicting edges.
+ *
+ * Currently only counts the number of nodes and edges.
+ */
 class EdgeDetection : public Metric {
    public:
-    EdgeDetection(const OptionValues &options, const Graph &g, Embedding &emb);
+    EdgeDetection(const Options &options, const Graph &g, std::shared_ptr<Embedding> embedding);
 
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
 
-    const static inline std::vector<int> kVals{2, 4, 8, 16, 32, 64, 128, 256, 512};
-
    private:
-    OptionValues options;
+    Options options;
     const Graph &graph;
-    Embedding &embedding;
+    std::shared_ptr<Embedding> embedding;
 };

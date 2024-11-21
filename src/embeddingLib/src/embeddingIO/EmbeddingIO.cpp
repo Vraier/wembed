@@ -14,38 +14,33 @@
 #include "WeightedGeometricInf.hpp"
 #include "WeightedNoDim.hpp"
 
-Embedding* EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates) {
-    Embedding* emb;
+std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates) {
     switch (type) {
         case WeightedEmb:
             // weighted
             {
                 LOG_INFO("Constructing weighted geometric embedding");
                 auto pair = splitLastColumn(coordinates);
-                emb = new WeightedGeometric(pair.first, pair.second);
-                break;
+                return std::make_unique<WeightedGeometric>(pair.first, pair.second);
             }
 
         case EuclideanEmb:
             // euclidean
             {
                 LOG_INFO("Constructing euclidean embedding");
-                emb = new Euclidean(coordinates);
-                break;
+                return std::make_unique<Euclidean>(coordinates);
             }
         case DotProductEmb:
             // dot product
             {
                 LOG_INFO("Constructing dot product embedding");
-                emb = new DotProduct(coordinates);
-                break;
+                return std::make_unique<DotProduct>(coordinates);
             }
         case CosineEmb:
             // cosine
             {
                 LOG_INFO("Constructing cosine embedding");
-                emb = new Cosine(coordinates);
-                break;
+                return std::make_unique<Cosine>(coordinates);
             }
         case MercatorEmb:
             // mercator
@@ -65,7 +60,7 @@ Embedding* EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std
                     std::tie(theta, rest) = splitFirstColumn(rest);
                     std::tie(radius, rest) = splitFirstColumn(rest);
                     ASSERT(rest[0].size() == 0);
-                    emb = new MercatorEmbedding(radius, theta);
+                    return std::make_unique<MercatorEmbedding>(radius, theta);
                 }
                 // 2 or more dimensional embedding
                 else {
@@ -74,37 +69,31 @@ Embedding* EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std
                     std::vector<double> radius;
                     std::vector<std::vector<double>> coordinates;
                     std::tie(radius, coordinates) = splitFirstColumn(rest);
-                    emb = new MercatorEmbedding(radius, coordinates);
+                    return std::make_unique<MercatorEmbedding>(radius, coordinates);
                 }
-                break;
             }
         case WeightedNoDimEmb:
             // weighted no dim
             {
                 LOG_INFO("Constructing weighted no dim embedding");
                 auto pair = splitLastColumn(coordinates);
-                emb = new WeightedNoDim(pair.first, pair.second);
-                break;
+                return std::make_unique<WeightedNoDim>(pair.first, pair.second);
             }
         case WeightedInfEmb:
             // weighted inf
             {
                 LOG_INFO("Constructing weighted inf embedding");
                 auto pair = splitLastColumn(coordinates);
-                emb = new WeightedGeometricInf(pair.first, pair.second);
-                break;
+                return std::make_unique<WeightedGeometricInf>(pair.first, pair.second);
             }
         case PoincareEmb: {
             LOG_INFO("Constructing poincare embedding");
-            emb = new Poincare(coordinates);
-            break;
+            return std::make_unique<Poincare>(coordinates);
         }
         default:
             LOG_ERROR("Unknown embedding type");
-            return nullptr;
+            return std::unique_ptr<Embedding>(nullptr);
     }
-    LOG_DEBUG("Parsed embedding of dimension " << emb->getDimension());
-    return emb;
 }
 
 std::vector<std::vector<double>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,

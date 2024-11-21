@@ -25,7 +25,7 @@ logging.level = "INFO"
 minimum-version = "build-system.requires"
 wheel.license-files = ["LICENSE"]
 cmake.build-type = "Release"
-sdist.exclude = ["docker_build", "docker_dev", "graphs", "images", "release", "debug", "wheelhouse"]
+sdist.exclude = ["docker_build", "docker_dev", "assets", "release", "debug", "wheelhouse", ".github"]
 
 [tool.cibuildwheel]
 linux.before-all = """yum update -y && yum install -y git wget cmake python3-devel && 

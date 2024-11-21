@@ -1,27 +1,32 @@
 #pragma once
 
+#include <memory>
+
 #include "Embedding.hpp"
-#include "EvalOptions.hpp"
+#include "Options.hpp"
 #include "Graph.hpp"
 #include "Metric.hpp"
 #include "NodeSampler.hpp"
 #include "VecList.hpp"
 
+/**
+ * Calculate reconstruction.
+ * For every node, calculate the 
+ */
 class Reconstruction : public Metric {
    public:
-    Reconstruction(const OptionValues &options, const Graph &g, Embedding &emb);
+    Reconstruction(const Options &options, const Graph &g, std::shared_ptr<Embedding> embedding);
 
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
 
-    const static inline std::vector<int> kVals{1, 2, 5, 10, 100, 200, 500, 1000};
-
    private:
-    static void writeHistogram(const OptionValues &options, const NodeHistogram &entries);
+    // currently unused
+    static void writeHistogram(const Options &options, const std::vector<nodeEntry> &entries);
 
-    OptionValues options;
+    Options options;
     const Graph &graph;
-    Embedding &embedding;
+    std::shared_ptr<Embedding> embedding;
 
     VecBuffer<1> buffer;
 };

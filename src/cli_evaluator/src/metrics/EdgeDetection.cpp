@@ -3,9 +3,8 @@
 #include "EdgeSampler.hpp"
 #include "Rand.hpp"
 
-EdgeDetection::EdgeDetection(const OptionValues& opts, const Graph& g, Embedding& emb) : options(opts),
-                                                                                         graph(g),
-                                                                                         embedding(emb) {}
+EdgeDetection::EdgeDetection(const Options& opts, const Graph& g, std::shared_ptr<Embedding> embedding)
+    : options(opts), graph(g), embedding(embedding) {}
 
 std::vector<std::string> EdgeDetection::getMetricValues() {
     const ll N = graph.getNumVertices();
@@ -17,8 +16,8 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
     int numSampledEdges;
 
     // sample edges and non edges from the graph
-    histInfo tmp = EdgeSampler::sampleHistEntries(options, graph, embedding);
-    histogram = tmp.hist;
+    histInfo tmp = EdgeSampler::sampleHistEntries(graph, embedding, options.edgeSampleScale);
+    histogram = tmp.histogramm;
     numSampledEdges = tmp.numEdges;
     numSampledNonEdges = tmp.numNonEdges;
 
@@ -48,10 +47,10 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
         double recall = truePositives / relevantElemets;
         double F1 = 2.0 / (1.0 / precision + 1.0 / recall);
 
-        //std::vector<int> interestingKs{1, 2, 4, 8, 16, 32, 128, 265, 512};
-        //if (std::find(interestingKs.begin(), interestingKs.end(), i) != interestingKs.end()) {
-        //    std::cout << "Precision@" << i << " is " << precision << std::endl;
-        //}
+        // std::vector<int> interestingKs{1, 2, 4, 8, 16, 32, 128, 265, 512};
+        // if (std::find(interestingKs.begin(), interestingKs.end(), i) != interestingKs.end()) {
+        //     std::cout << "Precision@" << i << " is " << precision << std::endl;
+        // }
 
         if (F1 > bestF1) {
             bestF1Idx = i;
@@ -61,8 +60,7 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
         }
     }
 
-    LOG_INFO( "Best best F1 at: " << bestF1Idx);
-
+    LOG_DEBUG("Best best F1 at: " << bestF1Idx);
     std::vector<std::string> result = {std::to_string(bestPrecision),  // precision
                                        std::to_string(bestRecall),     // recall
                                        std::to_string(bestF1)};        // F1-score

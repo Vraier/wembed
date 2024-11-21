@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "Embedding.hpp"
-#include "EvalOptions.hpp"
 #include "Graph.hpp"
 #include "WeightedGeometric.hpp"
 

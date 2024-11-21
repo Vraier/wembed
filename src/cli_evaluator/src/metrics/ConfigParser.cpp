@@ -6,25 +6,22 @@
 #include "StringManipulation.hpp"
 #include "FileOperations.hpp"
 
-ConfigParser::ConfigParser(OptionValues opts) : options(opts) {}
+ConfigParser::ConfigParser(Options opts) : options(opts) {}
 
 std::vector<std::string> ConfigParser::getMetricValues() {
     std::vector<std::string> result;
     std::vector<std::string> tmp;
 
-    if (options.logFile != "") {
+    if (options.logPath != "") {
         switch (options.logType) {
-            case 0:
-                tmp = extractMetricsByRegex(options.logFile, embedderRegex, 3);
+            case LogType::WEmbed:
+                tmp = extractMetricsByRegex(options.logPath, embedderRegex, 3);
                 break;
-            case 1:
-                tmp = extractMetricsByRegex(options.logFile, node2VecRegex, 2);
-                break;
-            case 2:
-                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logFile)[1]);
+            case LogType::CSV:
+                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logPath)[1]);
                 break;
             default:
-                LOG_ERROR( "Unknown config type");
+                LOG_ERROR("Unknown config type");
                 break;
         }
     }
@@ -36,19 +33,16 @@ std::vector<std::string> ConfigParser::getMetricNames() {
     std::vector<std::string> result;
     std::vector<std::string> tmp;
 
-    if (options.logFile != "") {
+    if (options.logPath != "") {
         switch (options.logType) {
-            case 0:
-                tmp = extractMetricsByRegex(options.logFile, embedderRegex, 1);
+            case LogType::WEmbed:
+                tmp = extractMetricsByRegex(options.logPath, embedderRegex, 1);
                 break;
-            case 1:
-                tmp = extractMetricsByRegex(options.logFile, node2VecRegex, 1);
-                break;
-            case 2:
-                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logFile)[0]);
+            case LogType::CSV:
+                tmp = util::splitIntoTokens(util::readLinesFromFile(options.logPath)[0]);
                 break;
             default:
-                LOG_ERROR( "Unknown config type");
+                LOG_ERROR("Unknown config type");
                 break;
         }
     }

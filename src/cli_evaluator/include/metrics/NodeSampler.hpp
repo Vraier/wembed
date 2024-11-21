@@ -1,26 +1,32 @@
 #pragma once
 
+#include <memory>
+
 #include "Embedding.hpp"
-#include "EvalOptions.hpp"
+#include "Options.hpp"
 #include "Graph.hpp"
 #include "WeightedGeometric.hpp"
 
 struct nodeEntry {
     NodeId v;
     int degV;
-    // double weightV;
 
     double deg_precision;
     double average_precision;
-    std::map<int, double> k_to_precision;
 };
 
+/**
+ * Vector of sorted pairs of edge lengths and node ids.
+ * Can be used to find out how many neighbors have distance smaller than l
+ */
 using EdgeLengthToNode = std::vector<std::pair<double, NodeId>>;
-using NodeHistogram = std::vector<nodeEntry>;
 
+/**
+ * Samples random nodes from the graph. Mainly used by the reonstruction metric.
+ */
 class NodeSampler {
    public:
-    static NodeHistogram sampleHistEntries(const OptionValues &opts, const Graph &graph, Embedding &embedding, const std::vector<int> &kVals);
+    static std::vector<nodeEntry> sampleHistEntries(const Options &opts, const Graph &graph, std::shared_ptr<Embedding> embedding);
     static double averageFromVector(const std::vector<double> &values);
 
    private:

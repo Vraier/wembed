@@ -3,79 +3,55 @@
 
 #include "ConfigParser.hpp"
 #include "EdgeDetection.hpp"
-#include "GeneralGraphInfo.hpp"
-#include "EdgeHistogram.hpp"
 #include "EmbeddingIO.hpp"
-#include "EvalOptions.hpp"
+#include "GeneralGraphInfo.hpp"
 #include "Graph.hpp"
 #include "GraphAlgorithms.hpp"
 #include "GraphIO.hpp"
+#include "Options.hpp"
 #include "Reconstruction.hpp"
 #include "TimeParser.hpp"
 
+void addOptions(CLI::App& app, Options& opts);
+
 int main(int argc, char* argv[]) {
-    EvalOptions options;
-    OptionValues optionValues;
-    options.parser.parseCommandLine(argc, argv);
-    optionValues = options.values;
+    // Parse command line arguments
+    CLI::App app("CLI Evaluator");
+    Options options;
+    addOptions(app, options);
+    CLI11_PARSE(app, argc, argv);
 
-    if (!optionValues.printMetricNames) {
-        options.parser.printVariableMap();
+    if (options.seed != -1) {
+        Rand::setSeed(options.seed);
     }
 
-    if (optionValues.help) {
-        options.parser.printHelp();
+    // read in graph
+    Graph inputGraph = GraphIO::readEdgeList(options.edgeListPath, options.edgeListComment, options.edgeListDelimiter);
+    if (!GraphAlgo::isConnected(inputGraph)) {
+        LOG_ERROR("Graph is not connected");
         return 0;
     }
 
-    if (optionValues.seed != -1) {
-        Rand::setSeed(optionValues.seed);
-    }
-
-    // read in graph (if there is any)
-    Graph tmpG;
-    idMapping mapping;
-    if (optionValues.edgeListFile != "") {
-        std::tie(tmpG, mapping) = GraphIO::readEdgeList(optionValues.edgeListFile);
-    } else if (!optionValues.printMetricNames) {
-        LOG_ERROR( "No graph file provided. Terminating...");
+    // read in embedding
+    std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(
+        options.embeddingPath, options.embeddingComment, options.embeddingDelimiter);
+    std::shared_ptr<Embedding> embedding = EmbeddingIO::parseEmbedding(options.embType, coords);
+    if (embedding == nullptr) {
+        LOG_ERROR("Embedding could not be parsed");
         return 0;
     }
-
-    // check if graph is connected
-    Graph g;
-    if (!optionValues.printMetricNames) {
-        g = GraphAlgo::getLargestComponent(tmpG);
-        if (tmpG.getNumVertices() != g.getNumVertices()) {
-            LOG_ERROR( "Graph contains more than one component. Terminating...");
-            return 0;
-        }
-    }
-
-    // read in embedding (if there is any)
-    Embedding* emb = nullptr;
-    if (optionValues.coordFile != "") {
-        auto coords = EmbeddingIO::readCoordinatesFromFile(optionValues.coordFile, mapping, optionValues.coordComment,
-                                                           optionValues.coordDelimiter);
-        emb = EmbeddingIO::parseEmbedding(static_cast<EmbeddingType>(optionValues.embType), coords);
-        optionValues.embDimension = emb->getDimension();
-    } else if (!optionValues.printMetricNames) {
-        LOG_ERROR( "No embedding file provided. Terminating...");
-        return 0;
-    }
-    if (emb != nullptr && emb->getDimension() == 0) {
-        LOG_ERROR( "Embedding dimension is 0");
+    if (embedding->getDimension() == 0) {
+        LOG_ERROR("Embedding dimension is 0");
         return 0;
     }
 
     // construct metrics
-    std::vector<Metric*> metrics;
-    metrics.push_back(new GeneralGraphInfo(optionValues, g));
-    metrics.push_back(new TimeParser(optionValues));
-    metrics.push_back(new ConfigParser(optionValues));
-    metrics.push_back(new EdgeHistogram(optionValues, g, *emb));
-    metrics.push_back(new Reconstruction(optionValues, g, *emb));
-    metrics.push_back(new EdgeDetection(optionValues, g, *emb));
+    std::vector<std::unique_ptr<Metric>> metrics;
+    metrics.push_back(std::make_unique<GeneralGraphInfo>(options, inputGraph));
+    metrics.push_back(std::make_unique<TimeParser>(options));
+    metrics.push_back(std::make_unique<ConfigParser>(options));
+    metrics.push_back(std::make_unique<Reconstruction>(options, inputGraph, embedding));
+    metrics.push_back(std::make_unique<EdgeDetection>(options, inputGraph, embedding));
 
     // print the header for an svg file
     std::vector<std::string> valueNames;
@@ -83,40 +59,46 @@ int main(int argc, char* argv[]) {
 
     valueNames.push_back("metric-type");
 
-    for (auto m : metrics) {
+    for (auto& m : metrics) {
         tmpNames = m->getMetricNames();
         valueNames.insert(valueNames.end(), tmpNames.begin(), tmpNames.end());
     }
     Metric::printCSVToConsole(valueNames);
 
-    // if we should only print the header we can stop here
-    if (optionValues.printMetricNames) {
-        for (auto m : metrics) {
-            delete m;
-        }
-        delete emb;
-        return 0;
-    }
 
     // calculate and print the metrics for an svg file
-    if (optionValues.edgeListFile != "" && optionValues.coordFile != "") {
-        std::vector<std::string> valueMetrics;
-        std::vector<std::string> tmpMetrics;
+    std::vector<std::string> valueMetrics;
+    std::vector<std::string> tmpMetrics;
 
-        valueMetrics.push_back(std::to_string(optionValues.embType));
+    valueMetrics.push_back(std::to_string(options.embType));
 
-        for (auto m : metrics) {
-            tmpMetrics = m->getMetricValues();
-            valueMetrics.insert(valueMetrics.end(), tmpMetrics.begin(), tmpMetrics.end());
-        }
-
-        Metric::printCSVToConsole(valueNames);
-        Metric::printCSVToConsole(valueMetrics);
+    for (auto& m : metrics) {
+        tmpMetrics = m->getMetricValues();
+        valueMetrics.insert(valueMetrics.end(), tmpMetrics.begin(), tmpMetrics.end());
     }
 
-    for (auto m : metrics) {
-        delete m;
-    }
-    delete emb;
+    Metric::printCSVToConsole(valueNames);
+    Metric::printCSVToConsole(valueMetrics);
+    
     return 0;
+}
+
+void addOptions(CLI::App& app, Options& options) {
+    app.add_option("-g,--edge-list", options.edgeListPath, "Path to the edge list file")
+        ->required()
+        ->check(CLI::ExistingFile);
+    app.add_option("--edge-list-comment", options.edgeListComment, "Comment symbol for the edge list file");
+    app.add_option("--edge-list-delimiter", options.edgeListDelimiter, "Delimiter for the edge list file");
+    app.add_option("-e,--embedding", options.embeddingPath, "Path to the embedding file")
+        ->required()
+        ->check(CLI::ExistingFile);
+    app.add_option("--embedding-comment", options.embeddingComment, "Comment symbol for the embedding file");
+    app.add_option("--embedding-delimiter", options.embeddingDelimiter, "Delimiter for the embedding file");
+    app.add_option("-l,--log", options.logPath, "Path to the log file");
+    app.add_option("-t,--time", options.timePath, "Path to the time file");
+
+    app.add_option("--seed", options.seed, "Seed for the random number generator");
+    app.add_option("--log-type", options.logType, "Type of log file");
+    app.add_option("--edge-sample-factor", options.edgeSampleScale,
+                   "Factor for how many more non edges get sampled than edges");
 }
