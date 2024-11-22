@@ -9,6 +9,9 @@ struct Options {
     std::string embeddingPath = "";
 
     bool showTimings = false;
+    #ifdef EMBEDDING_USE_SFML
+    bool animate = false;
+    #endif
 
     EmbedderOptions embedderOptions;
 };

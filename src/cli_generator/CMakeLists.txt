@@ -10,4 +10,4 @@ target_sources(${target} PRIVATE
         "GenOptions.cpp"
         "GirgGenerator.cpp")
 
-target_link_libraries(${target} PRIVATE embeddingLib girgs::girgs)
+target_link_libraries(${target} PRIVATE wembed_flags embeddingLib girgs::girgs)

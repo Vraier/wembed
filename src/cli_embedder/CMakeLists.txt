@@ -11,4 +11,4 @@ target_sources(${target} PRIVATE
         "src/util/EmbOptions.cpp"
 )
 
-target_link_libraries(${target} PRIVATE embeddingLib drawLib girgs::girgs)
+target_link_libraries(${target} PRIVATE wembed_flags embeddingLib drawLib girgs::girgs)

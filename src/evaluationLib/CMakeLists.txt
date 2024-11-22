@@ -28,5 +28,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/metrics
 )
 
-target_link_libraries(${target} PUBLIC utilLib graphLib embeddingLib)
+target_link_libraries(${target} PUBLIC wembed_flags utilLib graphLib embeddingLib)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

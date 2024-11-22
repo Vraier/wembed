@@ -10,4 +10,4 @@ target_sources(${target} PRIVATE
         "main.cpp"
         "DrawOptions.cpp")
 
-target_link_libraries(${target} drawLib embeddingLib)
+target_link_libraries(${target} wembed_flags drawLib embeddingLib)

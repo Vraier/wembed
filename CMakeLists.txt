@@ -2,16 +2,18 @@ cmake_minimum_required(VERSION 3.15...3.27)
 
 project(WEmbed VERSION 0.0.1 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# define compiler flags for project
+# use interface library to not force the flags on the user
+add_library(wembed_flags INTERFACE)
+target_compile_features(wembed_flags INTERFACE cxx_std_20)
+target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -DBOOST_ALLOW_DEPRECATED_HEADERS -fno-omit-frame-pointer)
 
-# export compile_commands.json, which can be used by editors for auto
-# completion (e.g., using lsp)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -g -DBOOST_ALLOW_DEPRECATED_HEADERS -fno-omit-frame-pointer")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -mtune=native -march=native") #-U_FORTIFY_SOURCE
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}") # -fsanitize=address,undefined")
+# try with BUILD_INTERCAE as well
+
+
+#target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:RELEASE>:-mtune=native -march=native>") # for some reason compiling with pip does not work with this
+#target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>") # for some reason google test does not work with address sanitizer
 
 # Dependencies
 # openmp 
@@ -46,7 +48,19 @@ FetchContent_Declare(
     GIT_TAG        v2.13.6
 )
 FetchContent_MakeAvailable(googletest cli11 girgs pybind11)
-enable_testing()
+
+# try to find sfml, if it is not avaliable we will not build the drawLib
+find_package(SFML 2.5 COMPONENTS window graphics system audio QUIET)
+if(SFML_FOUND)
+        message(STATUS "SFML found, embedding animation will be available")
+else()
+        message(STATUS "SFML not found, no embedding animation will be available")
+endif()
+
+# determine the directories for the binary files
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # additional compile options
 option(EMBEDDING_USE_ASSERTIONS "Explicitely activates assertions (even in release mode)." OFF)
@@ -54,14 +68,10 @@ if(EMBEDDING_USE_ASSERTIONS)
         add_compile_definitions(EMBEDDING_USE_ASSERTIONS)
 endif(EMBEDDING_USE_ASSERTIONS)
 
-# determine the directories for the binary files
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+enable_testing()
 
-message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
-message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
+# export compile_commands.json, which can be used by editors for auto
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
 add_subdirectory(tests)

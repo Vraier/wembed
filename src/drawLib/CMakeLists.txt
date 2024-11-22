@@ -1,25 +1,29 @@
-set(target drawLib)
-
 set(HEADERS
         include/DrawCommon.hpp
         include/SVGDrawer.hpp
-        include/SFMLDrawer.hpp
         include/IPEDrawer.hpp
-        include/ThickLine.hpp
 )
 
 set(SOURCES
         src/DrawCommon.cpp
-        src/SFMLDrawer.cpp
         src/IPEDrawer.cpp
-        src/ThickLine.cpp
         src/SVGDrawer.cpp
 )
 
-add_library(${target} SHARED ${HEADERS} ${SOURCES})
+if(SFML_FOUND)
+        list(APPEND HEADERS include/SFMLDrawer.hpp include/ThickLine.hpp)
+        list(APPEND SOURCES src/SFMLDrawer.cpp src/ThickLine.cpp)
+endif() 
 
-target_include_directories(${target} PUBLIC 
-        ${CMAKE_CURRENT_LIST_DIR}/include
+add_library(drawLib STATIC ${SOURCES})
+
+target_include_directories(drawLib PUBLIC 
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(${target} PUBLIC graphLib sfml-graphics)
+target_link_libraries(drawLib PUBLIC wembed_flags graphLib)
+set_target_properties(drawLib PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(SFML_FOUND)
+        target_link_libraries(drawLib PUBLIC sfml-graphics)
+endif()

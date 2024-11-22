@@ -105,5 +105,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/embeddingIO
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
-target_link_libraries(${target} PUBLIC graphLib)
+target_link_libraries(${target} PUBLIC wembed_flags graphLib)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

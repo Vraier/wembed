@@ -25,5 +25,5 @@ target_include_directories(${target} PUBLIC
 )
 
 target_link_libraries(${target}
-        PUBLIC utilLib)
+        PUBLIC utilLib wembed_flags)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

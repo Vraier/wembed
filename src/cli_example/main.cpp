@@ -6,6 +6,10 @@
 #include "Options.hpp"
 #include "SimpleSamplingEmbedder.hpp"
 
+#ifdef EMBEDDING_USE_SFML
+#include "SFMLDrawer.hpp"
+#endif
+
 void addOptions(CLI::App& app, Options& opts);
 
 int main(int argc, char* argv[]) {
@@ -24,7 +28,20 @@ int main(int argc, char* argv[]) {
 
     // Embed the graph
     SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
+
+    #ifdef EMBEDDING_USE_SFML
+    if (opts.animate) {
+        SFMLDrawer drawer;
+        while(!embedder.isFinished()) {
+            embedder.calculateStep();
+            drawer.processFrame(inputGraph, embedder.getCoordinates());
+        }
+    } else {
+        embedder.calculateEmbedding();
+    }
+    #else
     embedder.calculateEmbedding();
+    #endif
 
     // Output timings
     if (opts.showTimings) {
@@ -47,6 +64,9 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("-i,--graph", opts.graphPath, "Path to the graph file")->required()->check(CLI::ExistingFile);
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
+    #ifdef EMBEDDING_USE_SFML
+    app.add_flag("--animate", opts.animate, "Animate the embedding, only avaliable if compiled with SFML");
+    #endif
 
     // Embedder Options
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint, "Dimension hint")->capture_default_str();
