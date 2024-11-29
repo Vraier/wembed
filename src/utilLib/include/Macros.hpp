@@ -20,16 +20,14 @@ void unused(T&&) {}
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #ifdef NDEBUG
 #define LOG_DEBUG(msg)
+#define FILE_INFO ""
 #else
-#define LOG_DEBUG(msg) \
-    std::cout << "[DEBUG] " << __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): " << msg << std::endl;
+#define FILE_INFO __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): "
+#define LOG_DEBUG(msg) std::cout << "[DEBUG] " << FILE_INFO << msg << std::endl;
 #endif
-#define LOG_INFO(msg) \
-    std::cout << "[INFO] " << __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): " << msg << std::endl;
-#define LOG_WARNING(msg) \
-    std::cout << "[WARNING] " << __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): " << msg << std::endl;
-#define LOG_ERROR(msg) \
-    std::cout << "[ERROR] " << __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): " << msg << std::endl; std::abort();
+#define LOG_INFO(msg) std::cout << "[INFO] " << FILE_INFO << msg << std::endl;
+#define LOG_WARNING(msg) std::cout << "[WARNING] " << FILE_INFO << msg << std::endl;
+#define LOG_ERROR(msg) std::cout << "[ERROR] " << FILE_INFO << msg << std::endl; std::abort();
 
 // assertion with variable number of arguments
 #ifdef EMBEDDING_USE_ASSERTIONS

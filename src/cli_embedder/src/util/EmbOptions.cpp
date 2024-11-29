@@ -84,8 +84,6 @@ EmbOptions::EmbOptions() : parser("Embedder") {
          "If set, the infinity norm is used for the force calculation")  //
         ("emb-approx-selection", po::value<int>(&values.embedderOptions.approxSelectionType)->default_value(embDefault.approxSelectionType),
          ApproxSelectionDesc.c_str())  //
-        ("emb-output-sampling", po::bool_switch(&values.embedderOptions.outputSamplingMetrics)->default_value(embDefault.outputSamplingMetrics),
-         "If set, metrics about sampling will be calculated (results in quadratic runtime).")  //
         ("emb-sampling-heuristic", po::value<int>(&values.embedderOptions.samplingHeuristic)->default_value(embDefault.samplingHeuristic),
          SamplingHeuristicDesc.c_str())  //
         ("emb-neg-samples", po::value<int>(&values.embedderOptions.numNegativeSamples)->default_value(embDefault.numNegativeSamples),

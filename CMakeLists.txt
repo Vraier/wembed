@@ -12,8 +12,9 @@ target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g
 # try with BUILD_INTERCAE as well
 
 
-#target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:RELEASE>:-mtune=native -march=native>") # for some reason compiling with pip does not work with this
-#target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>") # for some reason google test does not work with address sanitizer
+#target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:RELEASE>:-mtune=native -march=native>>") # for some reason compiling with pip does not work with this
+target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") # for some reason google test does not work with address sanitizer
+target_link_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>")
 
 # Dependencies
 # openmp 

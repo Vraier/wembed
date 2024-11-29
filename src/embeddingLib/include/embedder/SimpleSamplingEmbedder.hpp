@@ -28,7 +28,8 @@ class SamplingHeuristic {
  */
 class SimpleSamplingEmbedder : public AbstractSimpleEmbedder {
    public:
-    SimpleSamplingEmbedder(Graph& g, EmbedderOptions opts) : AbstractSimpleEmbedder(g, opts), samplingHeuristic(createSamplingHeuristic(options.samplingType)) {};
+    SimpleSamplingEmbedder(Graph& g, EmbedderOptions opts)
+        : AbstractSimpleEmbedder(g, opts), samplingHeuristic(createSamplingHeuristic(options.samplingType)) {};
 
    protected:
     virtual TmpCVec<REP_BUFFER> repulsionForce(int v, int u) override;
@@ -123,17 +124,26 @@ class DistanceSampling : public SamplingHeuristic {
 
 class RTreeSampling : public SamplingHeuristic {
    public:
-    RTreeSampling(const std::vector<double>& weights, double edgeLength, double doublingFactor, bool useInfNorm)
+    RTreeSampling(const EmbeddedGraph& g, const std::vector<double>& weights, double edgeLength, double doublingFactor, bool useInfNorm)
         : weightBuckets(WeightedRTree::getDoublingWeightBuckets(weights, doublingFactor)),
           edgeLength(edgeLength),
-          useInfNorm(useInfNorm) {
-        LOG_INFO("Using " << weightBuckets.size() + 1 << " weight class[es]");
+          useInfNorm(useInfNorm),
+          rtree(g.getDimension()) {
+        //LOG_INFO("Using " << weightBuckets.size() + 1 << " weight class[es]");
+        std::vector<std::pair<CVecRef, NodeId>> values;
+        for (NodeId v = 0; v < g.getNumVertices(); v++) {
+            values.push_back(std::make_pair(g.getPosition(v), v));
+        }
+        rtree.updateRTree(g.coordinates, g.getAllNodeWeights(), weightBuckets);
     };
 
     virtual RepellingCandidates calculateRepellingCandidates(const EmbeddedGraph& g, Timer& timer) override;
+
+    virtual std::vector<NodeId> calculateRepellingCandidatesForNode(const EmbeddedGraph& g, NodeId v, Timer& timer) const;
 
    private:
     std::vector<double> weightBuckets;
     double edgeLength;
     bool useInfNorm = false;
+    WeightedRTree rtree;
 };

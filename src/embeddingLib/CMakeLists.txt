@@ -42,6 +42,7 @@ set(HEADERS
         #include/embedder/FruchtermannWeightEmbedder.hpp
         include/embedder/SimpleEmbedders.hpp
         include/embedder/SimpleSamplingEmbedder.hpp
+        include/embedder/WEmbedEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
         include/gradientOptimizer/SimpleOptimizer.hpp
@@ -88,6 +89,7 @@ set(SOURCES
 
         src/embedder/SimpleEmbedders.cpp
         src/embedder/SimpleSamplingEmbedder.cpp
+        src/embedder/WEmbedEmbedder.cpp
 
         src/gradientOptimizer/AdamOptimizer.cpp
         src/gradientOptimizer/SimpleOptimizer.cpp
@@ -106,4 +108,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
 target_link_libraries(${target} PUBLIC wembed_flags graphLib)
+target_link_libraries(${target} PRIVATE OpenMP::OpenMP_CXX)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

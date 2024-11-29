@@ -46,21 +46,21 @@ std::vector<double> WeightedRTree::getDoublingWeightBuckets(const std::vector<do
 }
 
 void WeightedRTree::getNodesWithinWeightedDistance(CVecRef p, double weight, double radius,
-                                                   std::vector<NodeId>& output) {
+                                                   std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(output.empty());
     for (int i = 0; i < maxWeightOfClass.size(); i++) {
-        getNodesWithinWeightedDistanceForClass(p, weight, radius, i, output);
+        getNodesWithinWeightedDistanceForClass(p, weight, radius, i, output, buffer);
     }
 }
 
 void WeightedRTree::getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
-                                                           std::vector<NodeId>& output) {
+                                                           std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(rTrees.size() == maxWeightOfClass.size(), "RTrees and weight classes must have the same size");
     ASSERT(weight_class < maxWeightOfClass.size());
 
     double maxWeight = maxWeightOfClass[weight_class];
     double queryRadius = radius * std::pow(weight * maxWeight, 1.0 / (double)DIMENSION);
-    getWithinRadius(rTrees[weight_class], p, queryRadius, output);
+    getWithinRadius(rTrees[weight_class], p, queryRadius, output, buffer);
 }
 
 void WeightedRTree::getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius,
@@ -88,7 +88,7 @@ void WeightedRTree::getKNNNeighbors(const RTree& rtree, CVecRef p, int k, std::v
     rtree.query_nearest(p, k, output);
 }
 
-void WeightedRTree::getWithinRadius(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output) {
+void WeightedRTree::getWithinRadius(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);
 

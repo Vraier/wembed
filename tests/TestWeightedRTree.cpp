@@ -31,22 +31,23 @@ TEST(WeightedRTree, uniformWeightsGrid) {
     // https://en.wikipedia.org/wiki/Gauss_circle_problem
     double radius = 1 + epsilon;
     std::vector<NodeId> result;
-    rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+    VecBuffer<2> rTreeBuffer(dimension);
+    rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
     EXPECT_EQ(result.size(), 5);
 
     radius = std::sqrt(2) + epsilon;
     result.clear();
-    rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+    rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
     EXPECT_EQ(result.size(), 9);
 
     radius = 2 + epsilon;
     result.clear();
-    rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+    rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
     EXPECT_EQ(result.size(), 13);
 
     radius = 3 + epsilon;
     result.clear();
-    rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+    rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
     EXPECT_EQ(result.size(), 29);
 }
 
@@ -74,11 +75,13 @@ TEST(WeightedRTree, uniformWeightsRandom) {
     rtree.updateRTree(positions, weights, weightBuckets);
 
     const double radius = 0.3;
+    VecBuffer<2> rTreeBuffer(dimension);
+
     for (int i = 0; i < numQueries; i++) {
         CVecRef p = positions[Rand::randomInt(0, numPoints - 1)];
         double weight = 1;
         std::vector<NodeId> result;
-        rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+        rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
 
         for (int i = 0; i < numPoints; i++) {
             tmpVec = p - positions[i];
@@ -125,12 +128,14 @@ TEST(WeightedRTree, Random) {
     rtree.updateRTree(positions, weights, weightBuckets);
 
     const double radius = 0.3;
+    VecBuffer<2> rTreeBuffer(dimension);
+
     for (int i = 0; i < numQueries; i++) {
         int nodeId = Rand::randomInt(0, numPoints - 1);
         CVecRef p = positions[nodeId];
         double weight = weights[nodeId];
         std::vector<NodeId> result;
-        rtree.getNodesWithinWeightedDistance(p, weight, radius, result);
+        rtree.getNodesWithinWeightedDistance(p, weight, radius, result, rTreeBuffer);
 
         for (int i = 0; i < numPoints; i++) {
             tmpVec = p - positions[i];

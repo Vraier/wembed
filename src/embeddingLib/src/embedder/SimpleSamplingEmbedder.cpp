@@ -6,6 +6,7 @@
 #include <fstream>
 #include <queue>
 #include <unordered_set>
+#include <omp.h>
 
 #include "Macros.hpp"
 #include "WeightedRTree.hpp"
@@ -111,24 +112,42 @@ double SimpleSamplingEmbedder::getSimilarity(double norm, double wu, double wv) 
 }
 
 void SimpleSamplingEmbedder::calculateAllRepellingForces() {
-    // possibly output debug information
-    if (options.outputSamplingMetrics && ((currIteration % 10) == 0)) {
-        // only add profiling info every 10th step.
-        numEffectiveRepForceCalculations = 0;
-        RepellingCandidates allCandidates = QuadraticSampling().calculateRepellingCandidates(graph, timer);
-        for (auto [v, u] : allCandidates) {
+
+    std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
+    timer.startTiming("rTree", "Construct RTree");
+    RTreeSampling rTree(graph, graph.getAllNodeWeights(), options.sigmoidLength, options.doublingFactor, options.useInfNorm);
+    timer.stopTiming("rTree");
+
+    timer.startTiming("candidates", "Find Candidates");
+    // i think nodes with a large degree are a big problem here
+    // 'dynamic' lets each thread grab a new node as it finished 
+    // this helps to balance the load
+    #pragma omp parallel for schedule(dynamic) 
+    for(NodeId v = 0; v < graph.getNumVertices(); v++) {
+        repellingCandidates[v]= rTree.calculateRepellingCandidatesForNode(graph, v, timer);
+    }
+    timer.stopTiming("candidates");
+
+    timer.startTiming("sum_of_forces", "Compute Sum of Forces for Each Candidate");
+    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
+        for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
-                repulsionForce(v, u);  // do not actually update the total force vector
+                currentForce[v] += repulsionForce(v, u);
             }
         }
-        possibleRepForces[currIteration] = numEffectiveRepForceCalculations;
     }
+    timer.stopTiming("sum_of_forces");
 
+
+
+    /* HAAAAAACKKKKK!! 
     // always use the sampling heuristic to calculate the forces
     timer.startTiming("candidates", "Find Candidates");
     numEffectiveRepForceCalculations = 0;
     RepellingCandidates candidates = samplingHeuristic->calculateRepellingCandidates(graph, timer);
     timer.stopTiming("candidates");
+
+
 
     timer.startTiming("sum_of_forces", "Compute Sum of Forces for Each Candidate");
     foundRepForces[currIteration] = candidates.size();
@@ -139,6 +158,7 @@ void SimpleSamplingEmbedder::calculateAllRepellingForces() {
     }
     correctRepForces[currIteration] = numEffectiveRepForceCalculations;
     timer.stopTiming("sum_of_forces");
+    */
 }
 
 void SimpleSamplingEmbedder::dumpDebugAtTermination() {
@@ -185,7 +205,7 @@ std::unique_ptr<SamplingHeuristic> SimpleSamplingEmbedder::createSamplingHeurist
         case SamplingHeuristicType::Distance:
             return std::make_unique<DistanceSampling>(graph, numNegSample, options.dimensionHint, uniformSampling);
         case SamplingHeuristicType::RTree:
-            return std::make_unique<RTreeSampling>(graph.getAllNodeWeights(), options.sigmoidLength,
+            return std::make_unique<RTreeSampling>(graph, graph.getAllNodeWeights(), options.sigmoidLength,
                                                    options.doublingFactor, options.useInfNorm);
         default:
             LOG_ERROR("Unknown sampling heuristic type ");
@@ -289,19 +309,19 @@ RepellingCandidates GirgGenSampling::calculateRepellingCandidates(const Embedded
     const double alpha = std::numeric_limits<double>::infinity();
     unused(alpha);
 
-    //girgs::scaleWeights(weights, averageDegree, dimension, alpha);
+    // girgs::scaleWeights(weights, averageDegree, dimension, alpha);
     double factor = std::pow(0.5, dimension);
     for (auto& weight : weights) {
         weight *= factor;
     }
 
-    //auto edges = girgs::generateEdges(weights, coords, alpha, 1337);
-    // NOTE(JP): i just assume that the generator only outputs one pair for each edge (and not two)
+    // auto edges = girgs::generateEdges(weights, coords, alpha, 1337);
+    //  NOTE(JP): i just assume that the generator only outputs one pair for each edge (and not two)
     RepellingCandidates result;
-    //for (auto [u, v] : edges) {
-    //    result.push_back(std::make_pair(u, v));
-    //    result.push_back(std::make_pair(v, u));
-    //}
+    // for (auto [u, v] : edges) {
+    //     result.push_back(std::make_pair(u, v));
+    //     result.push_back(std::make_pair(v, u));
+    // }
 
     return result;
 }
@@ -406,6 +426,9 @@ RepellingCandidates RTreeSampling::calculateRepellingCandidates(const EmbeddedGr
     timer.stopTiming("construct_rtree");
 
     timer.startTiming("query_rtee", "RTree Queries");
+    VecBuffer<2> buffer(g.getDimension());
+
+
     RepellingCandidates result;
     std::vector<NodeId> vCandidates;
     for (size_t w_class = 0; w_class < rtree.getNumWeightClasses(); w_class++) {
@@ -424,7 +447,7 @@ RepellingCandidates RTreeSampling::calculateRepellingCandidates(const EmbeddedGr
                                                                     w_class, vCandidates);
             } else {
                 rtree.getNodesWithinWeightedDistanceForClass(g.getPosition(v), g.getNodeWeight(v), edgeLength, w_class,
-                                                             vCandidates);
+                                                             vCandidates, buffer);
             }
             for (NodeId u : vCandidates) {
                 if (v != u) {
@@ -440,4 +463,22 @@ RepellingCandidates RTreeSampling::calculateRepellingCandidates(const EmbeddedGr
     }
     timer.stopTiming("query_rtee");
     return result;
+}
+
+std::vector<NodeId> RTreeSampling::calculateRepellingCandidatesForNode(const EmbeddedGraph& graph, NodeId v,
+                                                                       Timer& timer) const {
+    std::vector<NodeId> vCandidates;
+    for (size_t w_class = 0; w_class < rtree.getNumWeightClasses(); w_class++) {
+        std::vector<NodeId> tmp;
+        VecBuffer<2> buffer(graph.getDimension());
+        rtree.getNodesWithinWeightedDistanceForClass(graph.getPosition(v), graph.getNodeWeight(v), edgeLength, w_class,
+                                                     tmp, buffer);
+
+        for (NodeId u : tmp) {
+            if (v != u) {
+                vCandidates.push_back(u);
+            }
+        }
+    }
+    return vCandidates;
 }

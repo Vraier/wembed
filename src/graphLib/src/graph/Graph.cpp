@@ -109,6 +109,7 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
     LOG_DEBUG("Constructing graph from map with n=" << n << " m=" << m / 2);
 
     int currentNode = 0;
+    bool firstWarning = true;
     for (auto iter = symmetric_map.begin(); iter != symmetric_map.end(); ++iter) {
         while (iter->first != currentNode) {
             //  the node does not exist in the map
@@ -117,8 +118,9 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
             currentNode++;
         }
         for (NodeId u : iter->second) {
-            if(u == iter->first) {
+            if(u == iter->first && firstWarning) {
                 LOG_WARNING("Node " + std::to_string(u) + " is connected to itself. Self loops are ignored.");
+                firstWarning = false;
                 continue;
             }
             addEdge(u);

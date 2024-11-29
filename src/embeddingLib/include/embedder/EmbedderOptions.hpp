@@ -50,7 +50,6 @@ struct EmbedderOptions {
     // approximation
     int maxApproxComparisons = 50;
     int approxSelectionType = 0;         // what method is used to traverse the tree
-    bool outputSamplingMetrics = false;  // determines if the sampling metrics should be printed
     SamplingHeuristicType samplingType =
         SamplingHeuristicType::RTree;  // how does a subset of negative samples for repelling forces get selected
     int numNegativeSamples = -1;       // determins the number of negative samples.

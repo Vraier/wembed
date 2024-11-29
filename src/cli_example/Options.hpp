@@ -5,13 +5,15 @@
 #include "GraphIO.hpp"
 
 struct Options {
+    // Input / Output
     std::string graphPath = "";
     std::string embeddingPath = "";
-
     bool showTimings = false;
-    #ifdef EMBEDDING_USE_SFML
-    bool animate = false;
-    #endif
 
+    // Visualization
+    std::string svgPath = "";
+    bool animate = false;
+
+    // Embedder Options
     EmbedderOptions embedderOptions;
 };
