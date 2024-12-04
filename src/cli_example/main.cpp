@@ -6,6 +6,7 @@
 #include "GraphIO.hpp"
 #include "Options.hpp"
 #include "SimpleSamplingEmbedder.hpp"
+#include "WEmbedEmbedder.hpp"
 
 #ifdef EMBEDDING_USE_ANIMATION
 #include "SFMLDrawer.hpp"
@@ -15,8 +16,6 @@
 void addOptions(CLI::App& app, Options& opts);
 
 int main(int argc, char* argv[]) {
-    std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
-
     // Parse the command line arguments
     CLI::App app("Embedder CLI");
     Options opts;
@@ -31,14 +30,17 @@ int main(int argc, char* argv[]) {
     }
 
     // Embed the graph
-    SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
+    WEmbedEmbedder embedder(inputGraph, opts.embedderOptions);
+    //SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
 
     #ifdef EMBEDDING_USE_ANIMATION
     if (opts.animate) {
         SFMLDrawer drawer;
         while(!embedder.isFinished()) {
             embedder.calculateStep();
-            drawer.processFrame(inputGraph, embedder.getCoordinates());
+            std::vector<std::vector<double>> coordinates = embedder.getCoordinates();
+            std::vector<std::vector<double>> projection = Common::projectOntoPlane(coordinates); 
+            drawer.processFrame(inputGraph, projection);
         }
     } else {
         embedder.calculateEmbedding();

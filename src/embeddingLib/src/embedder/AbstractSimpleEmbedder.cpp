@@ -188,7 +188,6 @@ void AbstractSimpleEmbedder::calculateAllAttractingForces() {
 }
 
 void AbstractSimpleEmbedder::calculateAllRepellingForces() {
-    #pragma omp parallel for
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         for (NodeId u = 0; u < graph.getNumVertices(); u++) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
