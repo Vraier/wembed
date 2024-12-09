@@ -144,7 +144,7 @@ GraphHierarchy* HierarchyEmbedder::buildHierarchy() {
             LOG_ERROR( "Unknown partition type");
             return nullptr;
     }
-    NodeParentPointer parents = partitioner->coarsenAllLayers();
+    ParentPointerTree parents = partitioner->coarsenAllLayers();
     delete partitioner;
     return new GraphHierarchy({opts.dimension, opts.embedderOptions.forceExponent}, originalGraph, parents,
                               initialWeights);

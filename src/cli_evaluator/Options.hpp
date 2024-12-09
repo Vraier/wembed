@@ -23,15 +23,26 @@ struct Options {
 
     std::string timePath = "";
 
-
-
-    // output files
-    std::string histPath = "";
-    std::string nodeHistPath = "";
-
     // evaluation parameters
     int seed = -1;
     bool printMetricNames = false;
     double edgeSampleScale = 10.0; // how many more non edges get sampled than edges
-    double nodeSamplePercent = 0.01; // amount of nodes that get sampled during reconstruction metric (each node has linear runtime!!)
+    double nodeSamplePercent = 0.01; // amount of nodes that get sampled during reconstruction metric (each node has linear runtime!!). Capped at max 1000 nodes
+};
+
+std::map<EmbeddingType, std::string> embeddingTypeMap = {
+    {EmbeddingType::WeightedEmb, "Weighted"},
+    {EmbeddingType::EuclideanEmb, "Euclidean"},
+    {EmbeddingType::DotProductEmb, "DotProduct"},
+    {EmbeddingType::CosineEmb, "Cosine"},
+    {EmbeddingType::MercatorEmb, "Mercator"},
+    {EmbeddingType::WeightedNoDimEmb, "WeightedNoDim"},
+    {EmbeddingType::WeightedInfEmb, "WeightedInf"},
+    {EmbeddingType::PoincareEmb, "Poincare"}
+};
+
+std::map<LogType, std::string> logTypeMap = {
+    {LogType::None, "none"},
+    {LogType::WEmbed, "WEmbed"},
+    {LogType::CSV, "general csv config"}
 };

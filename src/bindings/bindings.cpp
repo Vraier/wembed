@@ -27,6 +27,8 @@ class PyEmbedderInterface : public EmbedderInterface {
 
     void calculateEmbedding() override { PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, calculateEmbedding, ); }
 
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE_PURE(Graph, EmbedderInterface, getCurrentGraph, ); }
+
     std::vector<std::vector<double>> getCoordinates() override {
         PYBIND11_OVERRIDE_PURE(std::vector<std::vector<double>>, EmbedderInterface, getCoordinates, );
     }
@@ -53,6 +55,8 @@ class PyAbstractSimpleEmbedder : public AbstractSimpleEmbedder {
     bool isFinished() override { PYBIND11_OVERRIDE(bool, AbstractSimpleEmbedder, isFinished, ); }
 
     void calculateEmbedding() override { PYBIND11_OVERRIDE(void, AbstractSimpleEmbedder, calculateEmbedding, ); }
+
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, AbstractSimpleEmbedder, getCurrentGraph, ); }
 
     std::vector<std::vector<double>> getCoordinates() override {
         PYBIND11_OVERRIDE(std::vector<std::vector<double>>, AbstractSimpleEmbedder, getCoordinates, );
@@ -88,6 +92,8 @@ class PySimpleSamplingEmbedder : public SimpleSamplingEmbedder {
     bool isFinished() override { PYBIND11_OVERRIDE(bool, SimpleSamplingEmbedder, isFinished, ); }
 
     void calculateEmbedding() override { PYBIND11_OVERRIDE(void, SimpleSamplingEmbedder, calculateEmbedding, ); }
+
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, SimpleSamplingEmbedder, getCurrentGraph, ); }
 
     std::vector<std::vector<double>> getCoordinates() override {
         PYBIND11_OVERRIDE(std::vector<std::vector<double>>, SimpleSamplingEmbedder, getCoordinates, );

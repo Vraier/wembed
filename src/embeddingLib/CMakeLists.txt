@@ -18,7 +18,6 @@ set(HEADERS
         include/embeddingIO/EmbeddingIO.hpp
 
         include/partition/LabelPropagation.hpp
-        #"include/partition/LouvainNx.hpp"
         include/partition/GraphHierarchy.hpp
 
         include/spacialQuery/RTree.hpp
@@ -43,6 +42,7 @@ set(HEADERS
         include/embedder/SimpleEmbedders.hpp
         include/embedder/SimpleSamplingEmbedder.hpp
         include/embedder/WEmbedEmbedder.hpp
+        include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
         include/gradientOptimizer/SimpleOptimizer.hpp
@@ -90,6 +90,7 @@ set(SOURCES
         src/embedder/SimpleEmbedders.cpp
         src/embedder/SimpleSamplingEmbedder.cpp
         src/embedder/WEmbedEmbedder.cpp
+        src/embedder/LayeredEmbedder.cpp
 
         src/gradientOptimizer/AdamOptimizer.cpp
         src/gradientOptimizer/SimpleOptimizer.cpp

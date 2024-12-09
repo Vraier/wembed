@@ -1,22 +1,93 @@
-#include "WEmbedEmbedder.hpp"
+#include "LayeredEmbedder.hpp"
 
-void WEmbedEmbedder::calculateStep() {
+#include "Macros.hpp"
+
+void LayeredEmbedder::calculateStep() {
     currentIteration++;
-    const int N = graph.getNumVertices();
+    if (currentEmbedder.isFinished()) {
+        expandPositions();
+    }
+    currentEmbedder.calculateStep();
+}
+
+bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder.isFinished(); }
+
+void LayeredEmbedder::calculateEmbedding() {
+    LOG_INFO("Calculating embedding...");
+    currentIteration = 0;
+    while (!isFinished()) {
+        calculateStep();
+    }
+    LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
+}
+
+void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
+    LOG_WARNING("Setting coordinates for layered embedder has no effect");
+    return;
+}
+
+void LayeredEmbedder::setWeights(const std::vector<double>& weights) {
+    LOG_WARNING("Setting weights for layered embedder has no effect");
+    return;
+}
+
+std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder.getCoordinates(); }
+
+std::vector<double> LayeredEmbedder::getWeights() { return currentEmbedder.getWeights(); }
+
+Graph LayeredEmbedder::getCurrentGraph() { return hierarchy->graphs[currentLayer]; }
+
+void LayeredEmbedder::expandPositions() {
+    LOG_INFO("Expanding positions to layer " << currentLayer - 1);
+    VecBuffer<1> buffer(options.embeddingDimension);
+    TmpVec<0> tmpVec(buffer);
+
+    int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
+    std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
+    std::vector<std::vector<double>> newPositions(newN);
+    std::vector<double> newWeights =
+        WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
+                                       WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
+
+    double stretch = std::pow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
+                              1.0 / (double)options.embeddingDimension);
+
+    for (int v = 0; v < newN; v++) {
+        int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
+        ASSERT(parent < oldPostions.size(), "Parent node " << parent << " is out of bounds " << oldPostions.size());
+
+        tmpVec.setToRandomUnitVector();
+        tmpVec *= (stretch * 0.1);
+        newPositions[v] = oldPostions[parent];
+        for (int d = 0; d < options.embeddingDimension; d++) {
+            newPositions[v][d] *= stretch;
+            newPositions[v][d] += tmpVec[d];
+        }
+    }
+
+    currentLayer--;
+    SingleLayerEmbedder newEmbedder(hierarchy, currentLayer, options);
+    currentEmbedder = std::move(newEmbedder);
+    currentEmbedder.setCoordinates(newPositions);
+    currentEmbedder.setWeights(newWeights);
+}
+
+void SingleLayerEmbedder::calculateStep() {
+    currentIteration++;
+    const int N = hierarchy->getLayerSize(LAYER);
+
+    if (N <= 1) {
+        // this happens in the first hierarchy layer
+        insignificantPosChange = true;
+        return;
+    }
 
     currentForce.setAll(0);
     oldPositions.setAll(0);
 
     // calculate forces
-    timer.startTiming("attracting_forces", "Calculate Attracting Forces");
     calculateAllAttractingForces();
-    timer.stopTiming("attracting_forces");
-
-    timer.startTiming("repelling_forces", "Calculate Repelling Forces");
     calculateAllRepellingForces();
-    timer.stopTiming("repelling_forces");
-
-    timer.startTiming("apply_forces", "Apply Forces");
 
     // save old positions to calculate change later
     for (int v = 0; v < N; v++) {
@@ -25,10 +96,8 @@ void WEmbedEmbedder::calculateStep() {
 
     // update positions based on force vector
     optimizer.update(currentPositions, currentForce);
-    timer.stopTiming("apply_forces");
 
     // calculate change in position
-    timer.startTiming("position_change", "Change of Positions");
     VecBuffer<1> buffer(options.embeddingDimension);
     TmpVec<0> tmpVec(buffer);
     double sumNormSquared = 0;
@@ -42,62 +111,51 @@ void WEmbedEmbedder::calculateStep() {
     if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
         insignificantPosChange = true;
     }
-    timer.stopTiming("position_change");
 }
 
-bool WEmbedEmbedder::isFinished() {
+bool SingleLayerEmbedder::isFinished() {
     bool isFinished = (currentIteration >= options.maxIterations) || insignificantPosChange;
+
     return isFinished;
 }
 
-void WEmbedEmbedder::calculateEmbedding() {
-    LOG_INFO("Calculating embedding...");
-    timer.startTiming("embedding_all", "Embedding");
+void SingleLayerEmbedder::calculateEmbedding() {
     currentIteration = 0;
     optimizer.reset();
     while (!isFinished()) {
         calculateStep();
     }
-    timer.stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
 }
 
-Graph WEmbedEmbedder::getCurrentGraph() { return graph; }
+std::vector<std::vector<double>> SingleLayerEmbedder::getCoordinates() { return currentPositions.convertToVector(); }
 
-std::vector<std::vector<double>> WEmbedEmbedder::getCoordinates() { return currentPositions.convertToVector(); }
+std::vector<double> SingleLayerEmbedder::getWeights() { return currentWeights; }
 
-std::vector<double> WEmbedEmbedder::getWeights() { return currentWeights; }
-
-void WEmbedEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
-    ASSERT(graph.getNumVertices() == coordinates.size());
+void SingleLayerEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
+    ASSERT(N == coordinates.size());
     currentPositions = VecList(coordinates);
 }
 
-void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
-    ASSERT(graph.getNumVertices() == weights.size());
+void SingleLayerEmbedder::setWeights(const std::vector<double>& weights) {
+    ASSERT(N == weights.size());
     currentWeights = weights;
 }
 
-std::vector<util::TimingResult> WEmbedEmbedder::getTimings() const { return timer.getHierarchicalTimingResults(); }
-
-void WEmbedEmbedder::calculateAllAttractingForces() {
+void SingleLayerEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
 #pragma omp parallel for schedule(dynamic) firstprivate(buffer)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
+    for (NodeId v = 0; v < N; v++) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
         }
     }
 }
 
-void WEmbedEmbedder::calculateAllRepellingForces() {
+void SingleLayerEmbedder::calculateAllRepellingForces() {
     // rebuid the rTree with new positions
-    timer.startTiming("rTree", "Construct RTree");
     updateRTree();
-    timer.stopTiming("rTree");
 
     // find nodes that are too close to each other
-    timer.startTiming("candidates", "Find Candidates");
     // i think nodes with a large degree are a big problem here
     // 'dynamic' lets each thread grab a new node as it finished
     // this helps to balance the load
@@ -107,9 +165,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
     }
-    timer.stopTiming("candidates");
 
-    timer.startTiming("sum_of_forces", "Compute Sum of Forces for Each Candidate");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
 #pragma omp parallel for schedule(dynamic) firstprivate(forceBuffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
@@ -119,10 +175,9 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
             }
         }
     }
-    timer.stopTiming("sum_of_forces");
 }
 
-void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
+void SingleLayerEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     if (v == u) return;
 
     CVecRef posV = currentPositions[v];
@@ -163,7 +218,7 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     currentForce[v] += result;
 }
 
-void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
+void SingleLayerEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     if (v == u) return;
 
     CVecRef posV = currentPositions[v];
@@ -205,64 +260,13 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     currentForce[v] += result;
 }
 
-std::vector<double> WEmbedEmbedder::constructDegreeWeights(const Graph& g) {
-    std::vector<double> weights(g.getNumVertices());
-    for (NodeId v = 0; v < g.getNumVertices(); v++) {
-        weights[v] = g.getNumNeighbors(v);
-    }
-    return weights;
-}
-
-std::vector<double> WEmbedEmbedder::constructUnitWeights(int N) {
-    std::vector<double> weights(N);
-    for (NodeId v = 0; v < N; v++) {
-        weights[v] = 1.0;
-    }
-    return weights;
-}
-
-std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embeddingDimension,
-                                                   const std::vector<double>& weights) {
-    const int N = weights.size();
-    std::vector<double> rescaledWeights(N);
-
-    for (NodeId v = 0; v < N; v++) {
-        if (dimensionHint > 0) {
-            rescaledWeights[v] = std::pow(weights[v], (double)dimensionHint / (double)embeddingDimension);
-        } else {
-            rescaledWeights[v] = weights[v];
-        }
-    }
-
-    double weightSum = 0.0;
-    for (int v = 0; v < N; v++) {
-        weightSum += rescaledWeights[v];
-    }
-    for (int v = 0; v < N; v++) {
-        rescaledWeights[v] = rescaledWeights[v] * ((double)N / weightSum);
-    }
-    return rescaledWeights;
-}
-
-std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int dimension, int N) {
-    const double CUBE_SIDE_LENGTH = std::pow(N, 1.0 / dimension);
-    std::vector<std::vector<double>> coords(N, std::vector<double>(dimension));
-
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < dimension; j++) {
-            coords[i][j] = Rand::randomDouble(0, CUBE_SIDE_LENGTH);
-        }
-    }
-    return coords;
-}
-
-void WEmbedEmbedder::updateRTree() {
+void SingleLayerEmbedder::updateRTree() {
     currentRTree = WeightedRTree(options.embeddingDimension);
     std::vector<double> weightBuckets = WeightedRTree::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
     currentRTree.updateRTree(currentPositions, currentWeights, weightBuckets);
 }
 
-std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
+std::vector<NodeId> SingleLayerEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
     std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
         std::vector<NodeId> tmp;

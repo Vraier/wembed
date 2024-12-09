@@ -25,7 +25,7 @@ class WEmbedEmbedder : public EmbedderInterface {
         setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, g.getNumVertices()));
         setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
                                                   WEmbedEmbedder::constructDegreeWeights(g)));
-        optimizer.reset(); 
+        optimizer.reset();
     };
 
     virtual ~WEmbedEmbedder() {};
@@ -34,6 +34,7 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual bool isFinished();
     virtual void calculateEmbedding();
 
+    virtual Graph getCurrentGraph();
     virtual std::vector<std::vector<double>> getCoordinates();
     virtual std::vector<double> getWeights();
 
@@ -41,6 +42,13 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void setWeights(const std::vector<double> &weights);
 
     std::vector<util::TimingResult> getTimings() const;
+
+    // Functions for calculating initial layouts
+    static std::vector<std::vector<double>> constructRandomCoordinates(int dimension, int numVertices);
+    static std::vector<double> constructDegreeWeights(const Graph &g);
+    static std::vector<double> constructUnitWeights(int N);  // TODO: use the unit weights
+    static std::vector<double> rescaleWeights(int dimensionHint, int embeddingDimension,
+                                              const std::vector<double> &weights);
 
    private:
     /**
@@ -57,20 +65,13 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void updateRTree();
     virtual std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
 
-    // Functions for calculating initial layouts
-    static std::vector<std::vector<double>> constructRandomCoordinates(int dimension, int numVertices);
-    static std::vector<double> constructDegreeWeights(const Graph &g);
-    static std::vector<double> constructUnitWeights(int N);  // TODO: use the unit weights
-    static std::vector<double> rescaleWeights(int dimensionHint, int embeddingDimension,
-                                              const std::vector<double> &weights);
-
     Timer timer;
     EmbedderOptions options;
     Graph graph;
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedRTree currentRTree; // changes every iteration
+    WeightedRTree currentRTree;  // changes every iteration
 
     int currentIteration = 0;
     bool insignificantPosChange = false;
@@ -81,5 +82,5 @@ class WEmbedEmbedder : public EmbedderInterface {
     VecList oldPositions;
     std::vector<double> currentWeights;  // currently not changed during gradient descent
 
-    // 
+    //
 };

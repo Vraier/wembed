@@ -133,14 +133,16 @@ std::pair<Graph, std::map<NodeId, NodeId>> GraphAlgo::getLargestComponentWithMap
 std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(Graph &g, const std::vector<NodeId> &clusterId) {
     ASSERT(Toolkit::noGapsInVector(clusterId));
 
-    std::vector<EdgeId> resultMap(g.getNumEdges() * 2);
-
-    std::vector<std::pair<NodeId, NodeId>> graphMap;
+    std::vector<EdgeId> resultEdgeMap(g.getNumEdges() * 2);
+    std::map<NodeId, std::set<NodeId>> graphMap;
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
+        // initialize the set for the node if it does not exist yet
+        if(graphMap.find(clusterId[v]) == graphMap.end()){
+            graphMap[clusterId[v]] = std::set<NodeId>();
+        }
         for (EdgeId e : g.getEdges(v)) {
             if (clusterId[v] != clusterId[g.getEdgeTarget(e)]) {
-                std::pair<NodeId, NodeId> vu = std::make_pair(clusterId[v], clusterId[g.getEdgeTarget(e)]);
-                graphMap.push_back(vu);
+                graphMap[clusterId[v]].insert(clusterId[g.getEdgeTarget(e)]);
             }
         }
     }
@@ -156,14 +158,14 @@ std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(Graph &g, const st
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
         for (EdgeId e : g.getEdges(v)) {
             if (clusterId[v] != clusterId[g.getEdgeTarget(e)]) {
-                resultMap[e] = edgeMapMap[std::make_pair(clusterId[v], clusterId[g.getEdgeTarget(e)])];
+                resultEdgeMap[e] = edgeMapMap[std::make_pair(clusterId[v], clusterId[g.getEdgeTarget(e)])];
             } else {
-                resultMap[e] = -1;
+                resultEdgeMap[e] = -1;
             }
         }
     }
 
-    return std::make_pair(result, resultMap);
+    return std::make_pair(result, resultEdgeMap);
 }
 
 std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin) {

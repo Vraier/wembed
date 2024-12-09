@@ -365,6 +365,15 @@ class VecRefImpl {
         }
     }
 
+    ALWAYS_INLINE void normed() {
+        double norm = this->norm();
+        if (norm > 0) {
+            for (int i = 0; i < this->dimension(); i++) {
+            coord.get()[i] /= norm;
+            }
+        }
+    }
+
     /**
      * Returns the derivative of the vector according to the inf norm.
      * 

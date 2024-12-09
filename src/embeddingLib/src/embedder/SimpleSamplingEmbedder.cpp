@@ -444,7 +444,7 @@ RepellingCandidates RTreeSampling::calculateRepellingCandidates(const EmbeddedGr
             vCandidates.clear();
             if (useInfNorm) {
                 rtree.getNodesWithinWeightedDistanceInfNormForClass(g.getPosition(v), g.getNodeWeight(v), edgeLength,
-                                                                    w_class, vCandidates);
+                                                                    w_class, vCandidates, buffer);
             } else {
                 rtree.getNodesWithinWeightedDistanceForClass(g.getPosition(v), g.getNodeWeight(v), edgeLength, w_class,
                                                              vCandidates, buffer);

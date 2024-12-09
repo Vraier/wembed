@@ -10,6 +10,7 @@
 #include "GraphIO.hpp"
 #include "Options.hpp"
 #include "Reconstruction.hpp"
+#include "StringManipulation.hpp"
 #include "TimeParser.hpp"
 
 void addOptions(CLI::App& app, Options& opts);
@@ -83,6 +84,7 @@ int main(int argc, char* argv[]) {
 }
 
 void addOptions(CLI::App& app, Options& options) {
+    // input files
     app.add_option("-g,--edge-list", options.edgeListPath, "Path to the edge list file")
         ->required()
         ->check(CLI::ExistingFile);
@@ -93,11 +95,14 @@ void addOptions(CLI::App& app, Options& options) {
         ->check(CLI::ExistingFile);
     app.add_option("--embedding-comment", options.embeddingComment, "Comment symbol for the embedding file");
     app.add_option("--embedding-delimiter", options.embeddingDelimiter, "Delimiter for the embedding file");
+    app.add_option("--emb-type", options.embType, "Type of the embedding. " + util::mapToString(embeddingTypeMap))
+        ->capture_default_str();
     app.add_option("-l,--log", options.logPath, "Path to the log file");
+    app.add_option("--log-type", options.logType, "Type of log file. " + util::mapToString(logTypeMap))
+        ->capture_default_str();
     app.add_option("-t,--time", options.timePath, "Path to the time file");
 
     app.add_option("--seed", options.seed, "Seed for the random number generator");
-    app.add_option("--log-type", options.logType, "Type of log file");
     app.add_option("--edge-sample-factor", options.edgeSampleScale,
                    "Factor for how many more non edges get sampled than edges");
 }

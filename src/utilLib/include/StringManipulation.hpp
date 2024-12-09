@@ -4,6 +4,7 @@
 #include <cctype>
 #include <locale>
 #include <vector>
+#include <map>
 
 namespace util {
 
@@ -19,9 +20,6 @@ std::string rtrim_copy(std::string s);
 
 /**
  * Splits a string into tokens. The tokens are separated by the delimiter
- * @param line the string to split
- * @param delimiter the delimiter to use
- * @return a vector of tokens
 */
 std::vector<std::string> splitIntoTokens(std::string &line, std::string delimiter = ",");
 
@@ -29,4 +27,17 @@ std::vector<std::string> splitIntoTokens(std::string &line, std::string delimite
  * Can be used to check if a string starts with a comment
 */
 bool startsWith(const std::string &s, std::string prefix = "%");
+
+template <typename T>
+std::string mapToString(const std::map<T, std::string>& map) {
+    std::string result = "";
+    for (const auto& [key, value] : map) {
+        result += std::to_string(static_cast<int>(key)) + ": " + value + ", ";
+    }
+    if (!result.empty()) {
+        result.pop_back(); // Remove the last space and comma
+        result.pop_back();
+    }
+    return result;
+}
 };  // namespace util

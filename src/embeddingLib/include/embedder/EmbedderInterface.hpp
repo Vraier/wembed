@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "Graph.hpp"
+
 /**
  * Interface for weighted embedder classes.
  */
@@ -23,6 +25,11 @@ class EmbedderInterface {
      * Calculates the whole embedding until termination criterion is met.
      */
     virtual void calculateEmbedding() = 0;
+
+    /**
+     * Returns the current graph. Manly important for layered embedder
+     */
+    virtual Graph getCurrentGraph() = 0;
 
     /**
      * Returns the current coordinates of the nodes.

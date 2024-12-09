@@ -1,6 +1,7 @@
 #include "LabelPropagation.hpp"
 
 #include "GraphAlgorithms.hpp"
+#include "Macros.hpp"
 #include "Rand.hpp"
 #include "Toolkit.hpp"
 
@@ -9,9 +10,9 @@ LabelPropagation::LabelPropagation(PartitionerOptions ops, const Graph& g, const
     ASSERT(edgeWs.size() == g.getNumEdges() * 2, "Number of edge weights does not match number of edges");
 }
 
-NodeParentPointer LabelPropagation::coarsenAllLayers() {
+ParentPointerTree LabelPropagation::coarsenAllLayers() {
     // hold information about all coarsened graphs
-    NodeParentPointer parentPointers;
+    ParentPointerTree parentPointers;
     std::vector<Graph> coarsenedGraphs;
     std::vector<std::vector<double>> edgeWeights;
     coarsenedGraphs.push_back(graph);
@@ -34,10 +35,10 @@ NodeParentPointer LabelPropagation::coarsenAllLayers() {
         }
 
         auto newGraph = GraphAlgo::coarsenGraph(coarsenedGraphs.back(), nextMapping);
+        ASSERT(GraphAlgo::isConnected(newGraph.first), "Coarsened graph is not connected");
         parentPointers.push_back(nextMapping);
         coarsenedGraphs.push_back(newGraph.first);
         edgeWeights.push_back(calculateNewEdgeWeights(edgeWeights.back(), newGraph.second));
-
         shrinkFactor = (double)coarsenedGraphs[coarsenedGraphs.size() - 1].getNumVertices() /
                        (double)coarsenedGraphs[coarsenedGraphs.size() - 2].getNumVertices();
     }
@@ -109,13 +110,13 @@ SingleLayerNodePointer LabelPropagation::labelPropagation(const Graph& currG, co
 
 SingleLayerNodePointer LabelPropagation::aggressivePropagation(const Graph& currG, const std::vector<double>& edgeWs,
                                                                const SingleLayerNodePointer& currParents) {
-    ASSERT(edgeWs.size() == currG.getNumEdges() * 2, "Number of edge weights does not match number of edges");
-    ASSERT(currG.getNumVertices() == currParents.size(), "Number of nodes and parents does not match");
+    ASSERT(edgeWs.size() == currG.getNumEdges() * 2,
+           "Number of edge weights " << edgeWs.size() << " does not match number of edges " << currG.getNumEdges() * 2);
 
     const int N = currG.getNumVertices();
 
     std::vector<int> numChildren(N, 0);
-    std::vector<NodeId> clusterId(N);
+    std::vector<NodeId> clusterId(N, -1);
     std::vector<double> edgeSum(N, 0);
 
     // count how many nodes were clustered in the last step
@@ -132,14 +133,16 @@ SingleLayerNodePointer LabelPropagation::aggressivePropagation(const Graph& curr
         }
 
         // v is now a node that was not merged in the last step
-        // v will not have an edge to another node that was not merge (they would have been contracted otherwise)
+        // v will not have an edge to another node that was not merge as they would have been contracted in the previous
+        // step otherwise
 
         // determine the cluster to which v has the most edge weight
         for (EdgeId e : currG.getEdges(v)) {
             edgeSum[currG.getEdgeTarget(e)] += edgeWs[e];
         }
         NodeId largestCluster = -1;
-        double maxWeight = 0;
+        double maxWeight = -1;
+        ASSERT(currG.getEdges(v).size() > 0, "Node " << v << " has no edges");
         for (EdgeId e : currG.getEdges(v)) {
             NodeId target = currG.getEdgeTarget(e);
             if (edgeSum[target] > maxWeight) {
@@ -184,6 +187,8 @@ SingleLayerNodePointer LabelPropagation::compactClusterIds(const SingleLayerNode
     SingleLayerNodePointer compacted(N);
     int currId = 0;
     for (int v = 0; v < N; v++) {
+        ASSERT(clusterIds[v] >= 0 && clusterIds[v] < N,
+               "Cluster id " << clusterIds[v] << " out of bounds [0," << N << "]");
         if (idMap[clusterIds[v]] == -1) {
             // cluster does not have a mapping yet
             idMap[clusterIds[v]] = currId;

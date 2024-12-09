@@ -1,13 +1,18 @@
 #include "AbstractSimpleEmbedder.hpp"
 
-#include <algorithm>
 #include <omp.h>
+
+#include <algorithm>
 
 #include "AdamOptimizer.hpp"
 #include "Graph.hpp"
 #include "SimpleOptimizer.hpp"
 
-std::vector<std::vector<double>> AbstractSimpleEmbedder::getCoordinates() { return graph.coordinates.convertToVector(); }
+Graph AbstractSimpleEmbedder::getCurrentGraph() { return graph.getGraph(); }
+
+std::vector<std::vector<double>> AbstractSimpleEmbedder::getCoordinates() {
+    return graph.coordinates.convertToVector();
+}
 
 std::vector<double> AbstractSimpleEmbedder::getWeights() { return graph.getAllNodeWeights(); }
 
@@ -63,7 +68,7 @@ void AbstractSimpleEmbedder::calculateEmbedding() {
 
     LOG_INFO("Finished calculating layout in iteration " << currIteration << " after " << numForceSteps
                                                          << " force steps and " << numWeightSteps << " weight steps");
-    //dumpDebugAtTermination();
+    // dumpDebugAtTermination();
 }
 
 void AbstractSimpleEmbedder::calculateStep() {
@@ -106,7 +111,7 @@ std::vector<double> AbstractSimpleEmbedder::constructUnitWeights(int N) {
 }
 
 std::vector<double> AbstractSimpleEmbedder::rescaleWeights(int dimensionHint, int embeddingDimension,
-                                                         const std::vector<double>& weights) {
+                                                           const std::vector<double>& weights) {
     const int N = weights.size();
     std::vector<double> rescaledWeights(N);
 

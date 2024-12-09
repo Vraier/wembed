@@ -1,10 +1,8 @@
 #pragma once
 
-#include "EmbeddedGraph.hpp"
 #include "Partitioner.hpp"
 
 using SingleLayerNodePointer = std::vector<NodeId>;
-using NodeParentPointer = std::vector<SingleLayerNodePointer>;
 
 class LabelPropagation : public Partitioner {
    public:
@@ -13,7 +11,7 @@ class LabelPropagation : public Partitioner {
     /**
      * Does lable propagation and coarsening until the graph is small enough
      */
-    virtual NodeParentPointer coarsenAllLayers();
+    virtual ParentPointerTree coarsenAllLayers();
 
    private:
     PartitionerOptions options;

@@ -43,6 +43,7 @@ class AbstractSimpleEmbedder : public EmbedderInterface {
     virtual void calculateStep();
     virtual void calculateEmbedding();
 
+    virtual Graph getCurrentGraph();
     virtual std::vector<std::vector<double>> getCoordinates();
     virtual std::vector<double> getWeights();
 

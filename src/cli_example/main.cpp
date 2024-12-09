@@ -1,9 +1,12 @@
-#include <iostream>
 #include <omp.h>
+
+#include <iostream>
 
 #include "EmbeddingIO.hpp"
 #include "GraphAlgorithms.hpp"
 #include "GraphIO.hpp"
+#include "LabelPropagation.hpp"
+#include "LayeredEmbedder.hpp"
 #include "Options.hpp"
 #include "SimpleSamplingEmbedder.hpp"
 #include "WEmbedEmbedder.hpp"
@@ -30,43 +33,52 @@ int main(int argc, char* argv[]) {
     }
 
     // Embed the graph
-    WEmbedEmbedder embedder(inputGraph, opts.embedderOptions);
-    //SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
+    std::unique_ptr<EmbedderInterface> embedder;
+    if (opts.layeredEmbedding) {
+        LabelPropagation coarsener(PartitionerOptions{}, inputGraph,
+                                   std::vector<double>(inputGraph.getNumEdges() * 2, 1.0));
+        embedder = std::make_unique<LayeredEmbedder>(inputGraph, coarsener, opts.embedderOptions);
+    } else {
+        embedder = std::make_unique<WEmbedEmbedder>(inputGraph, opts.embedderOptions);
+    }
 
-    #ifdef EMBEDDING_USE_ANIMATION
+    // SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
+
+#ifdef EMBEDDING_USE_ANIMATION
     if (opts.animate) {
         SFMLDrawer drawer;
-        while(!embedder.isFinished()) {
-            embedder.calculateStep();
-            std::vector<std::vector<double>> coordinates = embedder.getCoordinates();
-            std::vector<std::vector<double>> projection = Common::projectOntoPlane(coordinates); 
-            drawer.processFrame(inputGraph, projection);
+        while (!embedder->isFinished()) {
+            embedder->calculateStep();
+            Graph currentGraph = embedder->getCurrentGraph();
+            std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
+            std::vector<std::vector<double>> projection = Common::projectOntoPlane(coordinates);
+            drawer.processFrame(currentGraph, projection);
         }
     } else {
-        embedder.calculateEmbedding();
+        embedder->calculateEmbedding();
     }
-    #else
-    embedder.calculateEmbedding();
-    #endif
+#else
+    embedder->calculateEmbedding();
+#endif
 
     // Output timings
     if (opts.showTimings) {
         LOG_INFO("Printing Timings");
-        std::vector<util::TimingResult> timings = embedder.getTimings();
-        std::cout << util::timingsToStringRepresentation(timings);
+        // std::vector<util::TimingResult> timings = embedder.getTimings();
+        // std::cout << util::timingsToStringRepresentation(timings);
     }
 
     // Output the embedding
     if (opts.embeddingPath != "") {
-        std::vector<std::vector<double>> coordinates = embedder.getCoordinates();
-        std::vector<double> weights = embedder.getWeights();
+        std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
+        std::vector<double> weights = embedder->getWeights();
         EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
     }
 
     // Output the SVG
     if (opts.svgPath != "") {
-        std::vector<std::vector<double>> coordinates = embedder.getCoordinates();
-        std::vector<double> weights = embedder.getWeights();
+        std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
+        std::vector<double> weights = embedder->getWeights();
         SVGOutputWriter svgWriter;
         svgWriter.write(opts.svgPath, inputGraph, coordinates);
     }
@@ -82,14 +94,19 @@ void addOptions(CLI::App& app, Options& opts) {
 
     // Visualization
     app.add_option("--svg", opts.svgPath, "Path to the output svg file");
-    #ifdef EMBEDDING_USE_ANIMATION
+#ifdef EMBEDDING_USE_ANIMATION
     app.add_flag("--animate", opts.animate, "Animate the embedding, only avaliable if compiled with SFML");
-    #endif
+#endif
 
     // Embedder Options
+    app.add_flag("--layered", opts.layeredEmbedding, "Use layered embedding");
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint, "Dimension hint")->capture_default_str();
     app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")->capture_default_str();
-    app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")->capture_default_str();
-    app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")->capture_default_str();
+    app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
+        ->capture_default_str();
+    app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")
+        ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.speed, "Speed of the embedding process")->capture_default_str();
+    app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
+                 "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
 }

@@ -15,5 +15,6 @@ struct Options {
     bool animate = false;
 
     // Embedder Options
+    bool layeredEmbedding = false;
     EmbedderOptions embedderOptions;
 };

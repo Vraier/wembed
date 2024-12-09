@@ -1,7 +1,6 @@
 #pragma once
 
-#include "EmbeddedGraph.hpp"
-#include "GraphHierarchy.hpp"
+#include "Graph.hpp"
 
 /**
  * Configures the partitioner needed for the hierarchical embedding
@@ -16,6 +15,8 @@ struct PartitionerOptions {
     int numHierarchies = 1;
 };
 
+using ParentPointerTree = std::vector<std::vector<NodeId>>;
+
 /**
  * Interface for all partitioning algorithms.
  */
@@ -23,5 +24,5 @@ class Partitioner {
    public:
     virtual ~Partitioner(){};
 
-    virtual NodeParentPointer coarsenAllLayers() = 0;
+    virtual ParentPointerTree coarsenAllLayers() = 0;
 };

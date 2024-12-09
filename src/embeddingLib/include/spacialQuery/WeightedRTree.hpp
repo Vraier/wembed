@@ -9,7 +9,7 @@ class WeightedRTree {
    public:
     using CandidateList = std::vector<std::pair<NodeId, NodeId>>;
 
-    WeightedRTree(int dimension) : DIMENSION(dimension), buffer(dimension) {}
+    WeightedRTree(int dimension) : DIMENSION(dimension) {}
 
     /**
      * Rebuilds all r trees by inserting the positions into the right r-tree according to the weight class.
@@ -32,19 +32,18 @@ class WeightedRTree {
     /**
      * Same as other method but uses infNorm/box as distance metric.
     */
-    void getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output);
+    void getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
 
-    void getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius, size_t weight_class, std::vector<NodeId>& output);
+    void getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius, size_t weight_class, std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
 
     int getNumWeightClasses() const;
 
    private:
     void getKNNNeighbors(const RTree& rtree, CVecRef p, int k, std::vector<NodeId>& output) const;
     void getWithinRadius(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
-    void getWithinBox(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output);
+    void getWithinBox(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
 
     int DIMENSION;
-    VecBuffer<2> buffer; // used for min and maxCorner
 
     // assume nodes to always have the highest possible weight in a weight class
     // this way, no node will be missed when searching for non neighbors

@@ -64,21 +64,21 @@ void WeightedRTree::getNodesWithinWeightedDistanceForClass(CVecRef p, double wei
 }
 
 void WeightedRTree::getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius,
-                                                          std::vector<NodeId>& output) {
+                                                          std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(output.empty());
     for (int i = 0; i < maxWeightOfClass.size(); i++) {
-        getNodesWithinWeightedDistanceInfNormForClass(p, weight, radius, i, output);
+        getNodesWithinWeightedDistanceInfNormForClass(p, weight, radius, i, output, buffer);
     }
 }
 
 void WeightedRTree::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius,
-                                                                  size_t weight_class, std::vector<NodeId>& output) {
+                                                                  size_t weight_class, std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(rTrees.size() == maxWeightOfClass.size(), "RTrees and weight classes must have the same size");
     ASSERT(weight_class < maxWeightOfClass.size());
 
     double maxWeight = maxWeightOfClass[weight_class];
     double queryRadius = radius * std::pow(weight * maxWeight, 1.0 / (double)DIMENSION);
-    getWithinBox(rTrees[weight_class], p, queryRadius, output);
+    getWithinBox(rTrees[weight_class], p, queryRadius, output, buffer);
 }
 
 int WeightedRTree::getNumWeightClasses() const { return maxWeightOfClass.size(); }
@@ -103,7 +103,7 @@ void WeightedRTree::getWithinRadius(const RTree& rtree, CVecRef p, double radius
     rtree.query_range(min_corner.erase(), max_corner.erase(), p, radius, output);
 }
 
-void WeightedRTree::getWithinBox(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output) {
+void WeightedRTree::getWithinBox(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);
 
