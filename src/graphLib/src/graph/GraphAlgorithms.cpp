@@ -67,69 +67,6 @@ std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(Gr
     return std::make_pair(connectedComponent, componentSize);
 }
 
-Graph GraphAlgo::getLargestComponent(Graph &unconnected) { return getLargestComponentWithMapping(unconnected).first; }
-
-std::pair<Graph, std::map<NodeId, NodeId>> GraphAlgo::getLargestComponentWithMapping(Graph &unconnected) {
-    auto cc = GraphAlgo::calculateComponentId(unconnected);
-
-    std::vector<int> connectedComponent = cc.first;
-    std::vector<int> componentSize = cc.second;
-
-    // find largest component
-    int largestComponent = -1;
-    int largestSize = -1;
-    for (int i = 0; i < componentSize.size(); i++) {
-        if (componentSize[i] > largestSize) {
-            largestSize = componentSize[i];
-            largestComponent = i;
-        }
-    }
-
-    // calculate the mapping of old to new nodeIds
-    // also calculate number of edges in new graph
-    std::unordered_map<int, int> nodeIdMapping;
-    int currIdCounter = 0;
-    int newEdges = 0;
-    for (int v = 0; v < unconnected.getNumVertices(); v++) {
-        if (connectedComponent[v] == largestComponent) {
-            nodeIdMapping[v] = currIdCounter;
-            currIdCounter++;
-
-            // calculate number of new edges
-            for (int u : unconnected.getNeighbors(v)) {
-                if (connectedComponent[u] == largestComponent) {
-                    newEdges++;
-                }
-            }
-        }
-    }
-    newEdges /= 2;
-
-    // add nodes and edges to new graph
-    Graph connected;
-    connected.setSize(largestSize, newEdges);
-    for (int v = 0; v < unconnected.getNumVertices(); v++) {
-        if (connectedComponent[v] == largestComponent) {
-            for (int u : unconnected.getNeighbors(v)) {
-                if (connectedComponent[u] == largestComponent) {
-                    connected.addEdge(nodeIdMapping[u]);
-                }
-            }
-            connected.nextNode();
-        }
-    }
-
-    // calculate mapping von new id to old id
-    std::map<NodeId, NodeId> newToOld;
-    for (auto it = nodeIdMapping.begin(); it != nodeIdMapping.end(); it++) {
-        newToOld[it->second] = it->first;
-    }
-
-    LOG_DEBUG("Calculated biggest component. Unconnected " << unconnected.getNumVertices() << ", Connected "
-                                                           << connected.getNumVertices());
-    return std::make_pair(connected, newToOld);
-}
-
 std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(Graph &g, const std::vector<NodeId> &clusterId) {
     ASSERT(Toolkit::noGapsInVector(clusterId));
 

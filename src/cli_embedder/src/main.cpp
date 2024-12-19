@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (!GraphAlgo::isConnected(inputGraph)) {
-        LOG_ERROR( "Graph is not connected");
+        LOG_ERROR("Graph is not connected");
         return 0;
     }
 

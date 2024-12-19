@@ -29,49 +29,6 @@ TEST(GraphAlgorithm, ConnectedComponents) {
     EXPECT_EQ(componentSize[1], 2);
 }
 
-// test for calculating the largest connected component of a graph
-TEST(GraphAlgorithm, LargestConnectedComponent) {
-    std::map<int, std::set<int>> map;
-    map[0] = {1};
-    map[1] = {0, 2};
-    map[2] = {1};
-    map[3] = {4};
-    map[4] = {3};
-
-    Graph g(map);
-
-    Graph largest = GraphAlgo::getLargestComponent(g);
-
-    // check that the largest component has the correct size
-    EXPECT_EQ(largest.getNumVertices(), 3);
-    EXPECT_EQ(largest.getNumEdges(), 2);
-}
-
-// test for calculating the component mapping of a graph
-TEST(GraphAlgorithm, ComponentMapping) {
-    std::map<int, std::set<int>> map;
-    map[0] = {1};
-    map[1] = {0, 4};
-    map[2] = {3};
-    map[3] = {2};
-    map[4] = {1};
-
-    Graph g(map);
-
-    auto result = GraphAlgo::getLargestComponentWithMapping(g);
-    Graph largest = result.first;
-    std::map<int, int> mapping = result.second;
-
-    // check that the largest component has the correct size
-    EXPECT_EQ(largest.getNumVertices(), 3);
-    EXPECT_EQ(largest.getNumEdges(), 2);
-
-    // check that the mapping is correct
-    EXPECT_EQ(mapping[0], 0);
-    EXPECT_EQ(mapping[1], 1);
-    EXPECT_EQ(mapping[2], 4);
-}
-
 // test for coarsening a graph
 TEST(GraphAlgorithm, Coarsening) {
     std::map<int, std::set<int>> map;

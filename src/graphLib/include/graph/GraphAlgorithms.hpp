@@ -18,11 +18,7 @@ class GraphAlgo {
      * returns a new graph the only contains the larges connected component of the given graph.
      * The indices of the new graph are mapped to fit between 0..newSize
      */
-    static Graph getLargestComponent(Graph &unconnected);
-    /**
-     * Also returns a mapping from new to old node ids;
-     */
-    static std::pair<Graph, std::map<int, int>> getLargestComponentWithMapping(Graph &unconnected);
+    //static Graph getLargestComponent(Graph &unconnected);
 
     /**
      * returns a new graph that contracts the nodes in g according to the mapping in clusterId
