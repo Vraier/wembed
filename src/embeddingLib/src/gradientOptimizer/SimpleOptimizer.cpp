@@ -19,7 +19,7 @@ void SimpleOptimizer::update(VecList& parameters, const VecList& gradients) {
     ASSERT(gradients.size() == numNodes, "Number of nodes in gradients does not match numNodes");
 
     t++;
-    double currCooling = std::pow(coolingFactor, t);
+    double currCooling = Toolkit::myPow(coolingFactor, t);
     for (int v = 0; v < numNodes; v++) {
         // cap the maximum replacement of the node
         tmpGradient[v] = gradients[v];

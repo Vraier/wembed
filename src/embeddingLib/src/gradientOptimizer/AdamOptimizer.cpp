@@ -23,7 +23,7 @@ void AdamOptimizer::update(VecList& parameters, const VecList& gradients) {
     ASSERT(gradients.size() == numNodes, "Number of nodes in gradients does not match numNodes");
 
     t++;
-    double currCooling = std::pow(coolingFactor, t);
+    double currCooling = Toolkit::myPow(coolingFactor, t);
     for (int n = 0; n < parameters.size(); n++) {
         for (int i = 0; i < dimension; i++) {
             m[n][i] = beta1 * m[n][i] + (1.0 - beta1) * gradients[n][i];

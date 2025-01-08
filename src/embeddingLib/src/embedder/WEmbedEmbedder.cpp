@@ -82,7 +82,7 @@ std::vector<util::TimingResult> WEmbedEmbedder::getTimings() const { return time
 
 void WEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(buffer)
+#pragma omp parallel for firstprivate(buffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
@@ -103,7 +103,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     // this helps to balance the load
     std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(rTreeBuffer)
+#pragma omp parallel for firstprivate(rTreeBuffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
     }
@@ -111,7 +111,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
 
     timer.startTiming("sum_of_forces", "Compute Sum of Forces for Each Candidate");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(forceBuffer)
+#pragma omp parallel for firstprivate(forceBuffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
@@ -152,12 +152,12 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / std::pow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
     if (weightDist <= options.sigmoidLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (std::pow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
     }
 
     currentForce[v] += result;
@@ -194,12 +194,12 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / std::pow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
     if (weightDist > options.sigmoidLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (std::pow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
     }
 
     currentForce[v] += result;
@@ -228,7 +228,7 @@ std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embedd
 
     for (NodeId v = 0; v < N; v++) {
         if (dimensionHint > 0) {
-            rescaledWeights[v] = std::pow(weights[v], (double)dimensionHint / (double)embeddingDimension);
+            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)dimensionHint / (double)embeddingDimension);
         } else {
             rescaledWeights[v] = weights[v];
         }
@@ -245,7 +245,7 @@ std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embedd
 }
 
 std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int dimension, int N) {
-    const double CUBE_SIDE_LENGTH = std::pow(N, 1.0 / dimension);
+    const double CUBE_SIDE_LENGTH = Toolkit::myPow(N, 1.0 / dimension);
     std::vector<std::vector<double>> coords(N, std::vector<double>(dimension));
 
     for (int i = 0; i < N; i++) {

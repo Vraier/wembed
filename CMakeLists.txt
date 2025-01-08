@@ -8,12 +8,8 @@ add_library(wembed_flags INTERFACE)
 target_compile_features(wembed_flags INTERFACE cxx_std_20)
 target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -DBOOST_ALLOW_DEPRECATED_HEADERS -fno-omit-frame-pointer)
 
-
-# try with BUILD_INTERCAE as well
-
-
 #target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:RELEASE>:-mtune=native -march=native>>") # for some reason compiling with pip does not work with this
-target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") # for some reason google test does not work with address sanitizer
+target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") 
 target_link_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>")
 
 # Dependencies

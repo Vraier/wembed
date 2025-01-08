@@ -122,7 +122,7 @@ void SimpleSamplingEmbedder::calculateAllRepellingForces() {
     // i think nodes with a large degree are a big problem here
     // 'dynamic' lets each thread grab a new node as it finished 
     // this helps to balance the load
-    #pragma omp parallel for schedule(dynamic) 
+    #pragma omp parallel for 
     for(NodeId v = 0; v < graph.getNumVertices(); v++) {
         repellingCandidates[v]= rTree.calculateRepellingCandidatesForNode(graph, v, timer);
     }

@@ -9,5 +9,8 @@ RUN apt-get install -y --no-install-recommends cmake
 RUN apt-get install -y --no-install-recommends libeigen3-dev
 RUN apt-get install -y --no-install-recommends libboost-all-dev
 
+# For animations
+# RUN apt-get install -y --no-install-recommends libsfml-dev
+
 # Python header
 RUN apt-get install -y --no-install-recommends python3-dev

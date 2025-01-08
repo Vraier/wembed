@@ -42,7 +42,7 @@ void HierarchyEmbedder::initializeNewRun() {
     if (opts.embedderOptions.dimensionHint > 0) {
         for (NodeId v = 0; v < N; v++) {
             initialWeights[v] =
-                std::pow(initialWeights[v], (double)opts.dimension / (double)opts.embedderOptions.dimensionHint);
+                Toolkit::myPow(initialWeights[v], (double)opts.dimension / (double)opts.embedderOptions.dimensionHint);
         }
     }
     // scale the weights so that the mean is 1
@@ -130,7 +130,7 @@ GraphHierarchy* HierarchyEmbedder::buildHierarchy() {
     std::vector<double> edgeWeights(originalGraph.getNumEdges() * 2);
     for (NodeId v = 0; v < originalGraph.getNumVertices(); v++) {
         for (EdgeId e : originalGraph.getEdges(v)) {
-            edgeWeights[e] = 1.0 / std::pow(initialWeights[v] * initialWeights[originalGraph.getEdgeTarget(e)],
+            edgeWeights[e] = 1.0 / Toolkit::myPow(initialWeights[v] * initialWeights[originalGraph.getEdgeTarget(e)],
                                             1.0 / (double)opts.dimension);
         }
     }
@@ -171,7 +171,7 @@ void HierarchyEmbedder::expandPositions(int currLayer) {
         int parent = graphHierarchy->getParent(currLayer, v);
 
         double stretch =
-            std::pow(graphHierarchy->getTotalContainedNodes(currLayer + 1, parent), 1.0 / (double)opts.dimension);
+            Toolkit::myPow(graphHierarchy->getTotalContainedNodes(currLayer + 1, parent), 1.0 / (double)opts.dimension);
         stretch = 1.0;
 
         hackVec[0].setToRandomUnitVector();

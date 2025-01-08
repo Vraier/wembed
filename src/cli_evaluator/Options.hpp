@@ -10,7 +10,7 @@ struct Options {
 
     // input files
     std::string edgeListPath = "";
-    std::string edgeListComment = "%";
+    std::string edgeListComment = "#";
     std::string edgeListDelimiter = " ";
     
     std::string embeddingPath = "";

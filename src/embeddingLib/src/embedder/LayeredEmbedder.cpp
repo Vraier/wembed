@@ -49,7 +49,7 @@ void LayeredEmbedder::expandPositions() {
         WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
                                        WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
 
-    double stretch = std::pow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
+    double stretch = Toolkit::myPow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
                               1.0 / (double)options.embeddingDimension);
 
     for (int v = 0; v < newN; v++) {
@@ -143,7 +143,7 @@ void SingleLayerEmbedder::setWeights(const std::vector<double>& weights) {
 
 void SingleLayerEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(buffer)
+#pragma omp parallel for firstprivate(buffer)
     for (NodeId v = 0; v < N; v++) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
@@ -161,13 +161,13 @@ void SingleLayerEmbedder::calculateAllRepellingForces() {
     // this helps to balance the load
     std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(rTreeBuffer)
+#pragma omp parallel for firstprivate(rTreeBuffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
     }
 
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for schedule(dynamic) firstprivate(forceBuffer)
+#pragma omp parallel for firstprivate(forceBuffer)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
@@ -207,12 +207,12 @@ void SingleLayerEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / std::pow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
     if (weightDist <= options.sigmoidLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (std::pow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
     }
 
     currentForce[v] += result;
@@ -249,12 +249,12 @@ void SingleLayerEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / std::pow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
     if (weightDist > options.sigmoidLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (std::pow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
     }
 
     currentForce[v] += result;
@@ -269,18 +269,12 @@ void SingleLayerEmbedder::updateRTree() {
 std::vector<NodeId> SingleLayerEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
     std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
-        std::vector<NodeId> tmp;
         if (options.useInfNorm) {
             currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
-                                                                       options.sigmoidLength, w_class, tmp, buffer);
+                                                                       options.sigmoidLength, w_class, candidates, buffer);
         }
         currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
-                                                            options.sigmoidLength, w_class, tmp, buffer);
-        for (NodeId u : tmp) {
-            if (v != u) {
-                candidates.push_back(u);
-            }
-        }
+                                                            options.sigmoidLength, w_class, candidates, buffer);
     }
     return candidates;
 }

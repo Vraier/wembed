@@ -59,7 +59,7 @@ void WeightedRTree::getNodesWithinWeightedDistanceForClass(CVecRef p, double wei
     ASSERT(weight_class < maxWeightOfClass.size());
 
     double maxWeight = maxWeightOfClass[weight_class];
-    double queryRadius = radius * std::pow(weight * maxWeight, 1.0 / (double)DIMENSION);
+    double queryRadius = radius * Toolkit::myPow(weight * maxWeight, 1.0 / (double)DIMENSION);
     getWithinRadius(rTrees[weight_class], p, queryRadius, output, buffer);
 }
 
@@ -77,7 +77,7 @@ void WeightedRTree::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, dou
     ASSERT(weight_class < maxWeightOfClass.size());
 
     double maxWeight = maxWeightOfClass[weight_class];
-    double queryRadius = radius * std::pow(weight * maxWeight, 1.0 / (double)DIMENSION);
+    double queryRadius = radius * Toolkit::myPow(weight * maxWeight, 1.0 / (double)DIMENSION);
     getWithinBox(rTrees[weight_class], p, queryRadius, output, buffer);
 }
 

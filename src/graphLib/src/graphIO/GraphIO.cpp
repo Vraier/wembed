@@ -9,6 +9,7 @@
 
 Graph GraphIO::readEdgeList(std::string filePath, std::string comment, std::string delimiter) {
     LOG_INFO("Reading in graph from edge list");
+
     std::vector<std::pair<NodeId, NodeId>> graphEdges;
 
     std::ifstream input(filePath);

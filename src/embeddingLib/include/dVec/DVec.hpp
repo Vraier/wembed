@@ -8,6 +8,7 @@
 
 #include "Macros.hpp"
 #include "Rand.hpp"
+#include "Toolkit.hpp"
 
 namespace impl {
 
@@ -410,7 +411,7 @@ class VecRefImpl {
             coord.get()[i] = Rand::gaussDistribution(0.0, 1.0);
         }
         double length = norm();
-        double radius = std::pow(Rand::randomDouble(0.0, 1.0), 1.0 / (double)dimension());
+        double radius = Toolkit::myPow(Rand::randomDouble(0.0, 1.0), 1.0 / (double)dimension());
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] *= radius / length;
         }

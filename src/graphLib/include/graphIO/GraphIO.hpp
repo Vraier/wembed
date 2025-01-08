@@ -16,7 +16,7 @@ class GraphIO {
      *
      * Graph ids have to be consecutive starting from 0.
      */
-    static Graph readEdgeList(std::string filePath, std::string comment = "%", std::string delimiter = " ");
+    static Graph readEdgeList(std::string filePath, std::string comment = "#", std::string delimiter = " ");
 
     /**
      * Writes the graph to file in the edge list format.

@@ -33,7 +33,7 @@ class EmbeddingIO {
      *
      * Assumes the ids in the file to be consecutive starting from 0.
      */
-    static std::vector<std::vector<double>> readCoordinatesFromFile(std::string filePath, std::string comment = "%",
+    static std::vector<std::vector<double>> readCoordinatesFromFile(std::string filePath, std::string comment = "#",
                                                                     std::string delimiter = ",");
 
     /**
