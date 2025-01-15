@@ -5,6 +5,8 @@
 #include "GraphIO.hpp"
 
 struct Options {
+    int seed = -1;
+
     // Input / Output
     std::string graphPath = "";
     std::string embeddingPath = "";

@@ -58,6 +58,7 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
     }
 
     LOG_DEBUG("Best best F1 at: " << bestF1Idx);
+    unused(bestF1Idx);
     std::vector<std::string> result = {std::to_string(bestPrecision),  // precision
                                        std::to_string(bestRecall),     // recall
                                        std::to_string(bestF1)};        // F1-score

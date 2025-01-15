@@ -1,4 +1,4 @@
-set(target cli_example)
+set(target cli_wembed)
 
 add_executable(${target})
 

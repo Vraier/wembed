@@ -23,11 +23,13 @@ void LayeredEmbedder::calculateEmbedding() {
 
 void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
     LOG_WARNING("Setting coordinates for layered embedder has no effect");
+    unused(coordinates);
     return;
 }
 
 void LayeredEmbedder::setWeights(const std::vector<double>& weights) {
     LOG_WARNING("Setting weights for layered embedder has no effect");
+    unused(weights);
     return;
 }
 
@@ -45,9 +47,16 @@ void LayeredEmbedder::expandPositions() {
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
     std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
     std::vector<std::vector<double>> newPositions(newN);
-    std::vector<double> newWeights =
-        WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
-                                       WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
+
+    std::vector<double> newWeights;
+    if(options.weightType == WeightType::Degree){
+        newWeights = WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
+                                                  WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
+    } else if(options.weightType == WeightType::Unit){
+        newWeights = WEmbedEmbedder::constructUnitWeights(newN);
+    } else {
+        LOG_ERROR("Weight type not supported");
+    }
 
     double stretch = Toolkit::myPow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
                               1.0 / (double)options.embeddingDimension);

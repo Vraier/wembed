@@ -53,14 +53,14 @@ make -j4
 
 ## Structure
 
-All source files can be found in [src](src/), this includes the [library](src/embeddingLib/), [python bindings](src/bindings/) and small example command line applications for [C++](src/cli_example/) and [Python](src/cli_python_example/).
+All source files can be found in [src](src/), this includes the [library](src/embeddingLib/), [python bindings](src/bindings/) and small example command line applications for [C++](src/cli_wembed/) and [Python](src/cli_python_example/).
 Unit tests using google test are found in [tests](tests/).
 If you want to run WEmbed in a docker container, you can use the Dockerfile in [docker_dev](docker_dev/) ([docker_build](docker_build/) is used to build python packages).
 
 
 ## Usage and file formats
 
-Both the [C++ example](src/cli_example/) and the [Python example](src/cli_python_example/) show how to use the code.
+Both the [C++ example](src/cli_wembed/) and the [Python example](src/cli_python_example/) show how to use the code.
 
 * Start by creating a graph object.
   This can be done with a file or a `vector of pairs` representing an edge list.

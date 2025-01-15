@@ -50,41 +50,51 @@ int main(int argc, char* argv[]) {
     std::vector<std::unique_ptr<Metric>> metrics;
     metrics.push_back(std::make_unique<GeneralGraphInfo>(inputGraph));
     metrics.push_back(std::make_unique<TimeParser>(options.timePath));
-    metrics.push_back(std::make_unique<ConfigParser>(options.logPath, options.logType));
+    // metrics.push_back(std::make_unique<ConfigParser>(options.logPath, options.logType)); // TODO check if we need
+    // this
     metrics.push_back(std::make_unique<Reconstruction>(inputGraph, embedding, options.nodeSamplePercent));
     metrics.push_back(std::make_unique<EdgeDetection>(inputGraph, embedding, options.edgeSampleScale));
 
     // print the header for an svg file
     std::vector<std::string> valueNames;
     std::vector<std::string> tmpNames;
+    std::vector<std::string> valueMetrics;
+    std::vector<std::string> tmpMetrics;
 
-    valueNames.push_back("metric-type");
+    valueNames.push_back("edge-list-path");
+    valueNames.push_back("embedding-path");
+    valueNames.push_back("emb-type");
+    valueNames.push_back("seed");
+    valueNames.push_back("edge-sample-factor");
+    valueNames.push_back("node-sample-percent");
+
+    valueMetrics.push_back(options.edgeListPath);
+    valueMetrics.push_back(options.embeddingPath);
+    valueMetrics.push_back(std::to_string(options.embType));
+    valueMetrics.push_back(std::to_string(options.seed));
+    valueMetrics.push_back(std::to_string(options.edgeSampleScale));
+    valueMetrics.push_back(std::to_string(options.nodeSamplePercent));
 
     for (auto& m : metrics) {
         tmpNames = m->getMetricNames();
         valueNames.insert(valueNames.end(), tmpNames.begin(), tmpNames.end());
     }
-    Metric::printCSVToConsole(valueNames);
-
-    // calculate and print the metrics for an svg file
-    std::vector<std::string> valueMetrics;
-    std::vector<std::string> tmpMetrics;
-
-    valueMetrics.push_back(std::to_string(options.embType));
-
     for (auto& m : metrics) {
         tmpMetrics = m->getMetricValues();
         valueMetrics.insert(valueMetrics.end(), tmpMetrics.begin(), tmpMetrics.end());
     }
 
     Metric::printCSVToConsole(valueNames);
+    if (options.headerOnly) {
+        return 0;
+    }
     Metric::printCSVToConsole(valueMetrics);
-
     return 0;
 }
 
 void addOptions(CLI::App& app, Options& options) {
     // input files
+    app.add_flag("--header-only", options.headerOnly, "Only prints the names of the metrics");
     app.add_option("-g,--edge-list", options.edgeListPath, "Path to the edge list file")
         ->required()
         ->check(CLI::ExistingFile);

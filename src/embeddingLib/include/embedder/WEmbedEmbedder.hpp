@@ -23,8 +23,16 @@ class WEmbedEmbedder : public EmbedderInterface {
           currentWeights(g.getNumVertices()) {
         // Initialize coordinates randomly and weights based on degree
         setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, g.getNumVertices()));
-        setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
+        if(opts.weightType == WeightType::Degree){
+            setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
                                                   WEmbedEmbedder::constructDegreeWeights(g)));
+        }
+        else if(opts.weightType == WeightType::Unit){
+            setWeights(WEmbedEmbedder::constructUnitWeights(g.getNumVertices()));
+        }
+        else {
+            LOG_ERROR("Weight type not supported");
+        }
         optimizer.reset();
     };
 
@@ -46,7 +54,7 @@ class WEmbedEmbedder : public EmbedderInterface {
     // Functions for calculating initial layouts
     static std::vector<std::vector<double>> constructRandomCoordinates(int dimension, int numVertices);
     static std::vector<double> constructDegreeWeights(const Graph &g);
-    static std::vector<double> constructUnitWeights(int N);  // TODO: use the unit weights
+    static std::vector<double> constructUnitWeights(int N);
     static std::vector<double> rescaleWeights(int dimensionHint, int embeddingDimension,
                                               const std::vector<double> &weights);
 

@@ -10,6 +10,7 @@
 #include "Options.hpp"
 #include "SimpleSamplingEmbedder.hpp"
 #include "WEmbedEmbedder.hpp"
+#include "StringManipulation.hpp"
 
 #ifdef EMBEDDING_USE_ANIMATION
 #include "SFMLDrawer.hpp"
@@ -24,6 +25,11 @@ int main(int argc, char* argv[]) {
     Options opts;
     addOptions(app, opts);
     CLI11_PARSE(app, argc, argv);
+
+    // set the seed
+    if (opts.seed != -1) {
+        Rand::setSeed(opts.seed);
+    }
 
     // Read the graph
     Graph inputGraph = GraphIO::readEdgeList(opts.graphPath);
@@ -99,9 +105,12 @@ void addOptions(CLI::App& app, Options& opts) {
 #endif
 
     // Embedder Options
+    app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")->capture_default_str();
     app.add_flag("--layered", opts.layeredEmbedding, "Use layered embedding");
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint, "Dimension hint")->capture_default_str();
     app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")->capture_default_str();
+    app.add_option("--weight-type", opts.embedderOptions.weightType, "Affects the initial weights: " + util::mapToString(weightTypeMap))
+        ->capture_default_str();
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();
     app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")

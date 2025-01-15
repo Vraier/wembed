@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <string>
+#include <map>
 
 enum OptimizerType { Simple = 0, Adam = 1 };
 
@@ -31,6 +32,8 @@ enum EmbedderType {
 };
 
 enum WeightType { Unit = 0, Degree = 1, Original = 2 };
+
+extern std::map<WeightType, std::string> weightTypeMap;
 
 enum class SamplingHeuristicType { Quadratic = 0, Random = 1, Girg = 2, BFS = 3, Distance = 4, RTree = 5, DiscANN = 6 };
 

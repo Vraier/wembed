@@ -17,8 +17,6 @@ int GraphAlgo::getNumberOfConnectedComponents(Graph &g) {
 bool GraphAlgo::isConnected(Graph &g) { return getNumberOfConnectedComponents(g) == 1; }
 
 std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(Graph &g) {
-    LOG_INFO("Finding connected components...");
-
     int n = g.getNumVertices();
 
     std::vector<int> connectedComponent(n, -1);
@@ -61,7 +59,6 @@ std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(Gr
         }
     }
 
-    LOG_INFO("Found " << componentSize.size() << " components");
     ASSERT(componentSize.size() >= 1);
     ASSERT(std::accumulate(componentSize.begin(), componentSize.end(), 0) == n);
     return std::make_pair(connectedComponent, componentSize);

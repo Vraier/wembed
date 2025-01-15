@@ -8,7 +8,7 @@ class Rand {
     // implements singleton pattern
     Rand();
     static Rand *instance;
-    static Rand *get();  // this return the singleton but is not needed for the user
+    static Rand *get();  // this returns the singleton but is not needed for the user
 
     std::mt19937 generator;
 

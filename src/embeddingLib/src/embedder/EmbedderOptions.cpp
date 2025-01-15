@@ -1,5 +1,11 @@
 #include "EmbedderOptions.hpp"
 
+std::map<WeightType, std::string> weightTypeMap = {
+    {WeightType::Unit, "Unit"},
+    {WeightType::Degree, "Degree"},
+    {WeightType::Original, "Original"}
+};
+
 std::string optimizerTypeToString(OptimizerType type) {
     switch (type) {
         case Simple:

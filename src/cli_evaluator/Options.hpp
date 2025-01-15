@@ -7,6 +7,7 @@
 #include "ConfigParser.hpp"
 
 struct Options {
+    bool headerOnly = false;
 
     // input files
     std::string edgeListPath = "";
@@ -25,7 +26,6 @@ struct Options {
 
     // evaluation parameters
     int seed = -1;
-    bool printMetricNames = false;
     double edgeSampleScale = 10.0; // how many more non edges get sampled than edges
     double nodeSamplePercent = 0.01; // amount of nodes that get sampled during reconstruction metric (each node has linear runtime!!). Capped at max 1000 nodes
 };
