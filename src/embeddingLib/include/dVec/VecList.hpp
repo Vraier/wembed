@@ -11,10 +11,9 @@ class VecList {
 
    public:
     VecList(unsigned int dimension) : num_elements(0), dim(dimension), data() {}
-    VecList(unsigned int dimension, size_t size)
-        : num_elements(size), dim(dimension), data() {
+    VecList(unsigned int dimension, size_t size) : num_elements(size), dim(dimension), data() {
         setSize(num_elements, 0.0);
-        }
+    }
 
     VecList(std::vector<std::vector<double>> list) : num_elements(list.size()), dim(list[0].size()), data() {
         setSize(num_elements);
@@ -32,7 +31,7 @@ class VecList {
     }
 
     void setSize(size_t new_size, double default_value) {
-        //ASSERT(size() == 0);
+        // ASSERT(size() == 0);
         setSize(new_size);
         for (size_t i = 0; i < size(); ++i) {
             (*this)[i].setAll(default_value);
@@ -40,6 +39,7 @@ class VecList {
     }
 
     void setAll(double default_value) {
+        #pragma omp parallel for
         for (size_t i = 0; i < size(); ++i) {
             (*this)[i].setAll(default_value);
         }

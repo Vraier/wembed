@@ -24,6 +24,7 @@ void AdamOptimizer::update(VecList& parameters, const VecList& gradients) {
 
     t++;
     double currCooling = Toolkit::myPow(coolingFactor, t);
+#pragma omp parallel for
     for (int n = 0; n < parameters.size(); n++) {
         for (int i = 0; i < dimension; i++) {
             m[n][i] = beta1 * m[n][i] + (1.0 - beta1) * gradients[n][i];

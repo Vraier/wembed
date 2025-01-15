@@ -49,17 +49,18 @@ void LayeredEmbedder::expandPositions() {
     std::vector<std::vector<double>> newPositions(newN);
 
     std::vector<double> newWeights;
-    if(options.weightType == WeightType::Degree){
-        newWeights = WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
-                                                  WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
-    } else if(options.weightType == WeightType::Unit){
+    if (options.weightType == WeightType::Degree) {
+        newWeights =
+            WEmbedEmbedder::rescaleWeights(options.dimensionHint, options.embeddingDimension,
+                                           WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
+    } else if (options.weightType == WeightType::Unit) {
         newWeights = WEmbedEmbedder::constructUnitWeights(newN);
     } else {
         LOG_ERROR("Weight type not supported");
     }
 
     double stretch = Toolkit::myPow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
-                              1.0 / (double)options.embeddingDimension);
+                                    1.0 / (double)options.embeddingDimension);
 
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
@@ -94,11 +95,14 @@ void SingleLayerEmbedder::calculateStep() {
     currentForce.setAll(0);
     oldPositions.setAll(0);
 
+    // rebuid the rTree with new positions
+    updateRTree();  // this is hard to parallelize
     // calculate forces
     calculateAllAttractingForces();
     calculateAllRepellingForces();
 
     // save old positions to calculate change later
+#pragma omp parallel for
     for (int v = 0; v < N; v++) {
         oldPositions[v] = currentPositions[v];
     }
@@ -161,9 +165,6 @@ void SingleLayerEmbedder::calculateAllAttractingForces() {
 }
 
 void SingleLayerEmbedder::calculateAllRepellingForces() {
-    // rebuid the rTree with new positions
-    updateRTree();
-
     // find nodes that are too close to each other
     // i think nodes with a large degree are a big problem here
     // 'dynamic' lets each thread grab a new node as it finished
@@ -279,8 +280,8 @@ std::vector<NodeId> SingleLayerEmbedder::getRepellingCandidatesForNode(NodeId v,
     std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
         if (options.useInfNorm) {
-            currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
-                                                                       options.sigmoidLength, w_class, candidates, buffer);
+            currentRTree.getNodesWithinWeightedDistanceInfNormForClass(
+                currentPositions[v], currentWeights[v], options.sigmoidLength, w_class, candidates, buffer);
         }
         currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
                                                             options.sigmoidLength, w_class, candidates, buffer);
