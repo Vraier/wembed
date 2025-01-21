@@ -50,6 +50,11 @@ struct EmbedderOptions {
     int embeddingDimension = 4;
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
 
+    // Gradient descent parameters
+    double coolingFactor = 0.99; // strong influence for runtime
+    double speed = 10;
+    int maxIterations = 2000;
+
     // approximation
     int maxApproxComparisons = 50;
     int approxSelectionType = 0;         // what method is used to traverse the tree
@@ -69,11 +74,8 @@ struct EmbedderOptions {
     int numWeightSamplesPerCluster = 10;
 
     // Fruchterman
-    int maxIterations = 2000;
     double cRep = 2.0;
     double cSpring = 0.5;
-    double coolingFactor = 0.987;
-    double speed = 0.7;
     double maxDisplacement = 10;
     double forceExponent = 2;
     bool relaxedEdgeLength = false;  // determines if the edges should be exactly the ideal edge length or only smaller
