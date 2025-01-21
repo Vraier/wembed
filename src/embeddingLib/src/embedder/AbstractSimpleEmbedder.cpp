@@ -117,7 +117,7 @@ std::vector<double> AbstractSimpleEmbedder::rescaleWeights(int dimensionHint, in
 
     for (NodeId v = 0; v < N; v++) {
         if (dimensionHint > 0) {
-            rescaledWeights[v] = std::pow(weights[v], (double)dimensionHint / (double)embeddingDimension);
+            rescaledWeights[v] = std::pow(weights[v], (double)embeddingDimension / (double)dimensionHint);
         } else {
             rescaledWeights[v] = weights[v];
         }

@@ -228,7 +228,7 @@ std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embedd
 
     for (NodeId v = 0; v < N; v++) {
         if (dimensionHint > 0) {
-            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)dimensionHint / (double)embeddingDimension);
+            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)embeddingDimension/ (double)dimensionHint);
         } else {
             rescaledWeights[v] = weights[v];
         }
