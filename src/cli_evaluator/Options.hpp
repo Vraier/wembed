@@ -27,7 +27,7 @@ struct Options {
     // evaluation parameters
     int seed = -1;
     double edgeSampleScale = 10.0; // how many more non edges get sampled than edges
-    double nodeSamplePercent = 0.01; // amount of nodes that get sampled during reconstruction metric (each node has linear runtime!!). Capped at max 1000 nodes
+    double nodeSamplePercent = 0.01; // amount of nodes that get sampled during reconstruction metric (each node has linear runtime!!). Capped at max 5000 nodes
 };
 
 std::map<EmbeddingType, std::string> embeddingTypeMap = {

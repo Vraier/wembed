@@ -8,9 +8,8 @@
 #include "LabelPropagation.hpp"
 #include "LayeredEmbedder.hpp"
 #include "Options.hpp"
-#include "SimpleSamplingEmbedder.hpp"
-#include "WEmbedEmbedder.hpp"
 #include "StringManipulation.hpp"
+#include "WEmbedEmbedder.hpp"
 
 #ifdef EMBEDDING_USE_ANIMATION
 #include "SFMLDrawer.hpp"
@@ -70,8 +69,8 @@ int main(int argc, char* argv[]) {
     // Output timings
     if (opts.showTimings) {
         LOG_INFO("Printing Timings");
-        // std::vector<util::TimingResult> timings = embedder.getTimings();
-        // std::cout << util::timingsToStringRepresentation(timings);
+        std::vector<util::TimingResult> timings = embedder->getTimings();
+        std::cout << util::timingsToStringRepresentation(timings);
     }
 
     // Output the embedding
@@ -109,7 +108,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--layered", opts.layeredEmbedding, "Use layered embedding");
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint, "Dimension hint")->capture_default_str();
     app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")->capture_default_str();
-    app.add_option("--weight-type", opts.embedderOptions.weightType, "Affects the initial weights: " + util::mapToString(weightTypeMap))
+    app.add_option("--weight-type", opts.embedderOptions.weightType,
+                   "Affects the initial weights: " + util::mapToString(weightTypeMap))
         ->capture_default_str();
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();

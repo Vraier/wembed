@@ -5,7 +5,7 @@ add_subdirectory(evaluationLib)
 add_subdirectory(drawLib)
 
 
-add_subdirectory(bindings)
+#add_subdirectory(bindings)
 add_subdirectory(cli_wembed)
 add_subdirectory(cli_evaluator)
 

@@ -12,9 +12,13 @@
 #include "WeightedRTree.hpp"
 
 class SingleLayerEmbedder {
+    using Timer = util::Timer;
+
    public:
-    SingleLayerEmbedder(std::shared_ptr<GraphHierarchy> hierarchy, int layer, EmbedderOptions opts)
-        : options(opts),
+    SingleLayerEmbedder(std::shared_ptr<GraphHierarchy> hierarchy, int layer, EmbedderOptions opts,
+                        std::shared_ptr<Timer> timer_ptr)
+        : timer(timer_ptr),
+          options(opts),
           LAYER(layer),
           graph(hierarchy->graphs[LAYER]),
           N(hierarchy->getLayerSize(LAYER)),
@@ -53,6 +57,7 @@ class SingleLayerEmbedder {
     virtual void updateRTree();
     virtual std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
 
+    std::shared_ptr<Timer> timer;
     EmbedderOptions options;
     int LAYER;  // layer in the hierachy
     Graph graph;
@@ -77,11 +82,12 @@ class LayeredEmbedder : public EmbedderInterface {
 
    public:
     LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
-        : options(opts),
+        : timer(std::make_shared<Timer>()),
+          options(opts),
           originalGraph(g),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
           currentLayer(hierarchy->getNumLayers() - 1),
-          currentEmbedder(hierarchy, currentLayer, opts) {};
+          currentEmbedder(hierarchy, currentLayer, opts, timer) {};
 
     virtual void calculateStep();
     virtual bool isFinished();
@@ -92,9 +98,12 @@ class LayeredEmbedder : public EmbedderInterface {
 
     virtual std::vector<std::vector<double>> getCoordinates();
     virtual std::vector<double> getWeights();
+    virtual std::vector<util::TimingResult> getTimings();
     virtual Graph getCurrentGraph();
 
    private:
+    std::shared_ptr<Timer> timer;
+
     // decreases the layer and initializes a new embedder
     virtual void expandPositions();
 

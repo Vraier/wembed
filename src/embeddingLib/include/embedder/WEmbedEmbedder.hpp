@@ -48,8 +48,7 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates);
     virtual void setWeights(const std::vector<double> &weights);
-
-    std::vector<util::TimingResult> getTimings() const;
+    std::vector<util::TimingResult> getTimings();
 
     // Functions for calculating initial layouts
     static std::vector<std::vector<double>> constructRandomCoordinates(int dimension, int numVertices);

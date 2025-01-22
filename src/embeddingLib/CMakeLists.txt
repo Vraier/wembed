@@ -24,7 +24,7 @@ set(HEADERS
         include/spacialQuery/WeightedRTree.hpp
 
         # Embedder
-        include/embedder/EmbedderFactory.hpp
+        #include/embedder/EmbedderFactory.hpp
         include/embedder/EmbedderOptions.hpp
 
         include/embedder/AbstractSimpleEmbedder.hpp
@@ -68,7 +68,7 @@ set(SOURCES
         src/spacialQuery/WeightedRTree.cpp
 
         # Embedder
-        src/embedder/EmbedderFactory.cpp
+        #src/embedder/EmbedderFactory.cpp
         src/embedder/EmbedderOptions.cpp
 
         src/embedder/AbstractSimpleEmbedder.cpp

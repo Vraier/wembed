@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "Graph.hpp"
+#include "Timings.hpp"
 
 /**
  * Interface for weighted embedder classes.
@@ -40,6 +41,11 @@ class EmbedderInterface {
      * Returns the current weights of the nodes.
      */
     virtual std::vector<double> getWeights() = 0;
+
+    /*
+     * Returns timing results for the duration of different phases of the embedding
+     */
+    virtual std::vector<util::TimingResult> getTimings() = 0;
 
     /**
      * Sets the coordinates of the nodes.
