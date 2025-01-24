@@ -79,6 +79,11 @@ void WEmbedEmbedder::setCoordinates(const std::vector<std::vector<double>>& coor
 void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
     ASSERT(graph.getNumVertices() == weights.size());
     currentWeights = weights;
+
+    // sort the node ids by weight
+    std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
+    std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
+              [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
 }
 
 std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer.getHierarchicalTimingResults(); }
@@ -108,7 +113,8 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     timer.startTiming("sum_of_forces", "Summing repelling Forces for each Node");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
 #pragma omp parallel for firstprivate(forceBuffer)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
+    for (int i = 0; i < graph.getNumVertices(); i++) {
+        NodeId v = sortedNodeIds[i];
         for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
                 repulstionForce(v, u, forceBuffer);
@@ -224,7 +230,7 @@ std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embedd
 
     for (NodeId v = 0; v < N; v++) {
         if (dimensionHint > 0) {
-            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)embeddingDimension/ (double)dimensionHint);
+            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)embeddingDimension / (double)dimensionHint);
         } else {
             rescaledWeights[v] = weights[v];
         }

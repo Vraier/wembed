@@ -100,7 +100,7 @@ void WeightedRTree::getWithinRadius(const RTree& rtree, CVecRef p, double radius
         min_corner[i] -= radius;
         max_corner[i] += radius;
     }
-    rtree.query_range(min_corner.erase(), max_corner.erase(), p, radius, output);
+    rtree.query_sphere(min_corner.erase(), max_corner.erase(), p, radius, output);
 }
 
 void WeightedRTree::getWithinBox(const RTree& rtree, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const {

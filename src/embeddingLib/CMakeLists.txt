@@ -20,6 +20,7 @@ set(HEADERS
         include/partition/LabelPropagation.hpp
         include/partition/GraphHierarchy.hpp
 
+        include/spacialQuery/SpacialIndex.hpp
         include/spacialQuery/RTree.hpp
         include/spacialQuery/WeightedRTree.hpp
 

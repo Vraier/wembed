@@ -11,7 +11,7 @@
 
 #include "Graph.hpp"
 #include "VecList.hpp"
-
+#include "SpacialIndex.hpp"
 
 // Define a type that is accepted by the boost rtree. Unfortunately, a fixed dimension is enforced
 template<size_t D, typename RefType>
@@ -289,7 +289,7 @@ namespace predicates {
 
 
 // the actual usable class
-class RTree {
+class RTree: public SpatialIndex {
   public:
     template <typename Range>
     RTree(Range&& r, size_t dimension):
@@ -298,21 +298,18 @@ class RTree {
             ASSERT(dimension >= 1 && dimension <= impl::MAX_DIMENSION);
         }
 
-    template <typename OutputContainer>
-    ALWAYS_INLINE size_t query_nearest(CVecRef point, unsigned int number, OutputContainer& out) const {
-        return query_impl<predicates::KNearestPredicates, OutputContainer, CVecRef, unsigned int>(
+    size_t query_nearest(CVecRef point, unsigned int number, std::vector<int>& out) const override {
+        return query_impl<predicates::KNearestPredicates, std::vector<int>, CVecRef, unsigned int>(
             point, number, out);
     }
 
-    template <typename OutputContainer>
-    ALWAYS_INLINE size_t query_range(CVecRef minCorner, CVecRef maxCorner, CVecRef point, double radius, OutputContainer& out) const {
-        return query_impl<predicates::InRangePredicates, OutputContainer, CVecRef, CVecRef, CVecRef, double>(
+    size_t query_sphere(CVecRef minCorner, CVecRef maxCorner, CVecRef point, double radius, std::vector<int>& out) const override {
+        return query_impl<predicates::InRangePredicates, std::vector<int>, CVecRef, CVecRef, CVecRef, double>(
             minCorner, maxCorner, point, radius, out);
     }
 
-    template <typename OutputContainer>
-    ALWAYS_INLINE size_t query_box(CVecRef minCorner, CVecRef maxCorner, OutputContainer& out) const {
-        return query_impl<predicates::InBoxPredicates, OutputContainer, CVecRef, CVecRef>(
+    size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<int>& out) const override {
+        return query_impl<predicates::InBoxPredicates, std::vector<int>, CVecRef, CVecRef>(
             minCorner, maxCorner, out);
     }
 

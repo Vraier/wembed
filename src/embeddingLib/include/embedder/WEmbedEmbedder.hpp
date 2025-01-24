@@ -17,23 +17,22 @@ class WEmbedEmbedder : public EmbedderInterface {
           graph(g),
           optimizer(opts.embeddingDimension, g.getNumVertices(), opts.speed, opts.coolingFactor, 0.9, 0.999, 10e-8),
           currentRTree(opts.embeddingDimension),
+          sortedNodeIds(g.getNumVertices()),
           currentForce(opts.embeddingDimension, g.getNumVertices()),
           currentPositions(opts.embeddingDimension, g.getNumVertices()),
           oldPositions(opts.embeddingDimension, g.getNumVertices()),
           currentWeights(g.getNumVertices()) {
         // Initialize coordinates randomly and weights based on degree
         setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, g.getNumVertices()));
-        if(opts.weightType == WeightType::Degree){
+        if (opts.weightType == WeightType::Degree) {
             setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
-                                                  WEmbedEmbedder::constructDegreeWeights(g)));
-        }
-        else if(opts.weightType == WeightType::Unit){
+                                                      WEmbedEmbedder::constructDegreeWeights(g)));
+        } else if (opts.weightType == WeightType::Unit) {
             setWeights(WEmbedEmbedder::constructUnitWeights(g.getNumVertices()));
-        }
-        else {
+        } else {
             LOG_ERROR("Weight type not supported");
         }
-        optimizer.reset();
+        optimizer.reset();        
     };
 
     virtual ~WEmbedEmbedder() {};
@@ -78,7 +77,8 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedRTree currentRTree;  // changes every iteration
+    WeightedRTree currentRTree;      // changes every iteration
+    std::vector<int> sortedNodeIds;  // node ids sorted by weight
 
     int currentIteration = 0;
     bool insignificantPosChange = false;
@@ -88,6 +88,4 @@ class WEmbedEmbedder : public EmbedderInterface {
     VecList currentPositions;
     VecList oldPositions;
     std::vector<double> currentWeights;  // currently not changed during gradient descent
-
-    //
 };
