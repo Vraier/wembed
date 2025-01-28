@@ -406,7 +406,6 @@ class VecRefImpl {
     }
 
     ALWAYS_INLINE void setToRandomUnitVector() {
-        // TODO: This looks buggy. The points only seem to be on the edge of the sphere. But they should also be inside
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] = Rand::gaussDistribution(0.0, 1.0);
         }

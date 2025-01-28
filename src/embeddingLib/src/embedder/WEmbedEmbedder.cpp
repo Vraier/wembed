@@ -8,40 +8,44 @@ void WEmbedEmbedder::calculateStep() {
     oldPositions.setAll(0);
 
     timer.startTiming("rTree", "Construct R-Tree");
-    updateRTree();
+    updateRTree();  // sequential
     timer.stopTiming("rTree");
 
     // attracting forces
     timer.startTiming("attracting_forces", "Attracting Forces");
-    calculateAllAttractingForces();
+    calculateAllAttractingForces();  // parallel
     timer.stopTiming("attracting_forces");
 
     // repelling forces
     timer.startTiming("repelling_forces", "Repelling Forces");
-    calculateAllRepellingForces();
+    calculateAllRepellingForces();  // parallel
     timer.stopTiming("repelling_forces");
 
     // applying gradient
     timer.startTiming("apply_forces", "Applying Forces");
     // save old positions to calculate change later
+#pragma omp parallel for schedule(static)
     for (int v = 0; v < N; v++) {
         oldPositions[v] = currentPositions[v];
     }
     // update positions based on force vector
-    optimizer.update(currentPositions, currentForce);
+    optimizer.update(currentPositions, currentForce);  // parallel
     timer.stopTiming("apply_forces");
 
     // calculate change in position
     timer.startTiming("position_change", "Change in Positions");
     VecBuffer<1> buffer(options.embeddingDimension);
-    TmpVec<0> tmpVec(buffer);
     double sumNormSquared = 0;
     double sumNormDiffSquared = 0;
+
+#pragma omp parallel for reduction(+ : sumNormSquared, sumNormDiffSquared), firstprivate(buffer), schedule(static)
     for (int v = 0; v < N; v++) {
-        sumNormSquared += oldPositions[v].sqNorm();
+        TmpVec<0> tmpVec(buffer);
         tmpVec = oldPositions[v] - currentPositions[v];
+        sumNormSquared += oldPositions[v].sqNorm();
         sumNormDiffSquared += tmpVec.sqNorm();
     }
+
     if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
         insignificantPosChange = true;
     }
@@ -90,8 +94,8 @@ std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer.getH
 
 void WEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(buffer)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
+#pragma omp parallel for firstprivate(buffer), schedule(runtime)
+    for (NodeId v: sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
         }
@@ -104,17 +108,16 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     // TODO: nodes with larger weight should be treated first
     std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(rTreeBuffer)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
+#pragma omp parallel for firstprivate(rTreeBuffer), schedule(runtime)
+    for (NodeId v: sortedNodeIds) {
         repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
     }
     timer.stopTiming("candidates");
 
     timer.startTiming("sum_of_forces", "Summing repelling Forces for each Node");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(forceBuffer)
-    for (int i = 0; i < graph.getNumVertices(); i++) {
-        NodeId v = sortedNodeIds[i];
+#pragma omp parallel for firstprivate(forceBuffer), schedule(runtime)
+    for (NodeId v: sortedNodeIds) {
         for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
                 repulstionForce(v, u, forceBuffer);

@@ -51,9 +51,11 @@ void LayeredEmbedder::expandPositions() {
     TmpVec<0> tmpVec(buffer);
 
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
+    int oldN = hierarchy->graphs[currentLayer].getNumVertices();
     std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
     std::vector<std::vector<double>> newPositions(newN);
 
+    // calculate new weights
     std::vector<double> newWeights;
     if (options.weightType == WeightType::Degree) {
         newWeights =
@@ -65,19 +67,18 @@ void LayeredEmbedder::expandPositions() {
         LOG_ERROR("Weight type not supported");
     }
 
-    double stretch = Toolkit::myPow((double)newN / (double)hierarchy->graphs[currentLayer].getNumVertices(),
-                                    1.0 / (double)options.embeddingDimension);
-
+    // calculate new positions
+    double stretch = Toolkit::myPow((double)newN / (double)oldN, 1.0 / (double)options.embeddingDimension);
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldPostions.size(), "Parent node " << parent << " is out of bounds " << oldPostions.size());
 
         tmpVec.setToRandomUnitVector();
-        tmpVec *= (stretch * 0.1);
+        tmpVec *= 0.1;
         newPositions[v] = oldPostions[parent];
         for (int d = 0; d < options.embeddingDimension; d++) {
-            newPositions[v][d] *= stretch;
             newPositions[v][d] += tmpVec[d];
+            newPositions[v][d] *= stretch;
         }
     }
 
@@ -105,21 +106,21 @@ void SingleLayerEmbedder::calculateStep() {
 
     // rebuid the rTree with new positions
     timer->startTiming("rTree", "Construct R-Tree");
-    updateRTree();  // this is hard to parallelize
+    updateRTree();  // sequential
     timer->stopTiming("rTree");
 
     // calculate forces
     timer->startTiming("attracting_forces", "Attracting Forces");
-    calculateAllAttractingForces();
+    calculateAllAttractingForces();  // parallel
     timer->stopTiming("attracting_forces");
 
     timer->startTiming("repelling_forces", "Repelling Forces");
-    calculateAllRepellingForces();
+    calculateAllRepellingForces();  // parallel
     timer->stopTiming("repelling_forces");
 
     // save old positions to calculate change later
     timer->startTiming("apply_forces", "Applying Forces");
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
     for (int v = 0; v < N; v++) {
         oldPositions[v] = currentPositions[v];
     }
@@ -130,16 +131,18 @@ void SingleLayerEmbedder::calculateStep() {
 
     // calculate change in position
     timer->startTiming("position_change", "Change in Positions");
-
     VecBuffer<1> buffer(options.embeddingDimension);
-    TmpVec<0> tmpVec(buffer);
     double sumNormSquared = 0;
     double sumNormDiffSquared = 0;
+
+#pragma omp parallel for reduction(+ : sumNormSquared, sumNormDiffSquared), firstprivate(buffer), schedule(static)
     for (int v = 0; v < N; v++) {
-        sumNormSquared += oldPositions[v].sqNorm();
+        TmpVec<0> tmpVec(buffer);
         tmpVec = oldPositions[v] - currentPositions[v];
+        sumNormSquared += oldPositions[v].sqNorm();
         sumNormDiffSquared += tmpVec.sqNorm();
     }
+
     if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
         insignificantPosChange = true;
     }
@@ -176,7 +179,7 @@ void SingleLayerEmbedder::setWeights(const std::vector<double>& weights) {
 
 void SingleLayerEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(buffer)
+#pragma omp parallel for firstprivate(buffer), schedule(runtime)
     for (NodeId v = 0; v < N; v++) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
@@ -190,7 +193,7 @@ void SingleLayerEmbedder::calculateAllRepellingForces() {
     // TODO: nodes with larger weight should be treated first
     std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(rTreeBuffer)
+#pragma omp parallel for firstprivate(rTreeBuffer), schedule(runtime)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
     }
@@ -198,7 +201,7 @@ void SingleLayerEmbedder::calculateAllRepellingForces() {
 
     timer->startTiming("sum_of_forces", "Summing repelling Forces for each Node");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(forceBuffer)
+#pragma omp parallel for firstprivate(forceBuffer), schedule(runtime)
     for (NodeId v = 0; v < graph.getNumVertices(); v++) {
         for (NodeId u : repellingCandidates[v]) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
