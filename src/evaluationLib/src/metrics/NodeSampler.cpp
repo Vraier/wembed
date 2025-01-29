@@ -5,13 +5,15 @@
 std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding,
                                                       double nodeSampleFraction) {
     int N = graph.getNumVertices();
-    std::vector<bool> isNeighbor(N, false);                                              // reused for every node
-    std::vector<int> nodePermutation = Rand::randomPermutation(N);                       // used to sample random nodes
+    std::vector<int> nodePermutation = Rand::randomPermutation(N);                   // used to sample random nodes
     const int numSampledNodes = std::min({(int)(N * nodeSampleFraction), N, 5000});  // sample at most 5000 nodes
-    std::vector<nodeEntry> result;
+    std::vector<bool> isNeighbor(N, false);                                          // reused for every node
+
+    std::vector<nodeEntry> result(numSampledNodes);
 
     LOG_INFO("Sampling " << numSampledNodes << " nodes");
 
+#pragma omp parallel for firstprivate(isNeighbor), schedule(runtime)
     for (int i = 0; i < numSampledNodes; i++) {
         nodeEntry newEntry;
 
@@ -45,7 +47,7 @@ std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::s
         for (NodeId w : graph.getNeighbors(v)) {
             isNeighbor[w] = false;
         }
-        result.push_back(newEntry);
+        result[i] = newEntry;
     }
 
     LOG_INFO("Finished sampling");
