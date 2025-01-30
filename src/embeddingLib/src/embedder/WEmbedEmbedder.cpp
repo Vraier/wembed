@@ -4,6 +4,10 @@ void WEmbedEmbedder::calculateStep() {
     currentIteration++;
     const int N = graph.getNumVertices();
 
+    if (N > 1000000 && currentIteration % 10 == 0) {
+        std::cout << "(Iteration " << currentIteration << ")" << std::endl;
+    }
+
     currentForce.setAll(0);
     oldPositions.setAll(0);
 
@@ -85,6 +89,7 @@ void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
     currentWeights = weights;
 
     // sort the node ids by weight
+    sortedNodeIds.resize(graph.getNumVertices());
     std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
     std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
               [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
@@ -95,7 +100,7 @@ std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer.getH
 void WEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
 #pragma omp parallel for firstprivate(buffer), schedule(runtime)
-    for (NodeId v: sortedNodeIds) {
+    for (NodeId v : sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
         }
@@ -104,27 +109,19 @@ void WEmbedEmbedder::calculateAllAttractingForces() {
 
 void WEmbedEmbedder::calculateAllRepellingForces() {
     // find nodes that are too close to each other
-    timer.startTiming("candidates", "Finding Repelling Candidates");
-    // TODO: nodes with larger weight should be treated first
     std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(rTreeBuffer), schedule(runtime)
-    for (NodeId v: sortedNodeIds) {
-        repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
-    }
-    timer.stopTiming("candidates");
-
-    timer.startTiming("sum_of_forces", "Summing repelling Forces for each Node");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(forceBuffer), schedule(runtime)
-    for (NodeId v: sortedNodeIds) {
-        for (NodeId u : repellingCandidates[v]) {
+
+#pragma omp parallel for firstprivate(rTreeBuffer, forceBuffer), schedule(runtime)
+    for (NodeId v : sortedNodeIds) {
+        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, rTreeBuffer);
+        for (NodeId u : repellingCandidates) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
                 repulstionForce(v, u, forceBuffer);
             }
         }
     }
-    timer.stopTiming("sum_of_forces");
 }
 
 void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {

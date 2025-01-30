@@ -65,7 +65,9 @@ class SingleLayerEmbedder {
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedRTree currentRTree;  // changes every iteration
+    WeightedRTree currentRTree;      // changes every iteration
+    std::vector<int> sortedNodeIds;  // node ids sorted by weight
+
     bool insignificantPosChange = false;
     int currentIteration = 0;
 

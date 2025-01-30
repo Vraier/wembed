@@ -95,6 +95,10 @@ void SingleLayerEmbedder::calculateStep() {
     currentIteration++;
     const int N = hierarchy->getLayerSize(LAYER);
 
+    if(N > 1000000 && currentIteration % 10 == 0) {
+        std::cout << "(Iteration " << currentIteration << ")" << std::endl;
+    }
+
     if (N <= 1) {
         // this happens in the first hierarchy layer
         insignificantPosChange = true;
@@ -175,12 +179,18 @@ void SingleLayerEmbedder::setCoordinates(const std::vector<std::vector<double>>&
 void SingleLayerEmbedder::setWeights(const std::vector<double>& weights) {
     ASSERT(N == weights.size());
     currentWeights = weights;
+
+    // sort the node ids by weight
+    sortedNodeIds.resize(N);
+    std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
+    std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
+              [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
 }
 
 void SingleLayerEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
 #pragma omp parallel for firstprivate(buffer), schedule(runtime)
-    for (NodeId v = 0; v < N; v++) {
+    for (NodeId v: sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
         }
@@ -189,27 +199,17 @@ void SingleLayerEmbedder::calculateAllAttractingForces() {
 
 void SingleLayerEmbedder::calculateAllRepellingForces() {
     // find nodes that are too close to each other
-    timer->startTiming("candidates", "Finding Repelling Candidates");
-    // TODO: nodes with larger weight should be treated first
-    std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(rTreeBuffer), schedule(runtime)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
-        repellingCandidates[v] = getRepellingCandidatesForNode(v, rTreeBuffer);
-    }
-    timer->stopTiming("candidates");
-
-    timer->startTiming("sum_of_forces", "Summing repelling Forces for each Node");
     VecBuffer<1> forceBuffer(options.embeddingDimension);
-#pragma omp parallel for firstprivate(forceBuffer), schedule(runtime)
-    for (NodeId v = 0; v < graph.getNumVertices(); v++) {
-        for (NodeId u : repellingCandidates[v]) {
+#pragma omp parallel for firstprivate(rTreeBuffer, forceBuffer), schedule(runtime)
+    for (NodeId v: sortedNodeIds) {
+        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, rTreeBuffer);
+        for (NodeId u : repellingCandidates) {
             if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
                 repulstionForce(v, u, forceBuffer);
             }
         }
     }
-    timer->stopTiming("sum_of_forces");
 }
 
 void SingleLayerEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {

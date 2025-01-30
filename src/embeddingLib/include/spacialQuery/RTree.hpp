@@ -121,7 +121,7 @@ namespace impl {
 
     namespace bgi = boost::geometry::index;
 
-    constexpr size_t MAX_DIMENSION = 8;
+    constexpr size_t MAX_DIMENSION = 16;
 
     template <size_t D, template<size_t DIM> class PredicateMapper, typename OutIter, typename ValueType, typename... Args>
     struct QueryDispatch;
@@ -138,7 +138,7 @@ namespace impl {
 
     template<size_t D>
     class RTreeWrapper: public ErasedRTree {
-        using RTree = bgi::rtree<std::pair<PointType<D>, NodeId>, bgi::linear<16>>;
+        using RTree = bgi::rtree<std::pair<PointType<D>, NodeId>, bgi::linear<8>>;
 
         template<typename OutIter, typename ValueType>
         struct MappedOutputIt {
