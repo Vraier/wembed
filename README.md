@@ -2,7 +2,7 @@
 
 This project contains the source code of `WEmbed` for calculating low dimensional weighted node embeddings. 
 The library is written in C++ and includes Python bindings.
-Below is an example of a two dimensional embedding of [1] calculated by WEmbed.
+Below is an example of a two-dimensional embedding of [1] calculated by WEmbed.
 
 ![](assets/internet_graph.jpg)
 
@@ -16,14 +16,14 @@ Note that WEmbed had no knowledge of the countries during the embedding process 
 
 ## Installing the Python module
 
-On most Linux systems we provide prebuild binaries and you should be able to install WEmbed via  pip.
+On most Linux systems we provide prebuild binaries, and you should be able to install WEmbed via pip.
 We recommend creating a new virtual environment before installing WEmbed.
 ```
 python -m venv .venv
 source .venv/bin/activate
 pip install wembed
 ```
-If your Linux system is not supported or you are on Windows or Mac, pip will try to build WEmbed from source. 
+If your Linux system is not supported, or you are on Windows/Mac, pip will try to build WEmbed from source. 
 In this case you have to make sure, that you install all necessary dependencies.
 
 
@@ -80,9 +80,7 @@ Both the [C++ example](src/cli_wembed/) and the [Python example](src/cli_python_
 
 ## Work in progress
 
-Note that WEmbed is still quiet experimental, so expect major changes in the future. Some code sections that will be changed in the immediate future include:
+Note that WEmbed is still quiet experimental, expect major changes in the future. Some code sections that will be changed in the immediate future include:
 
-* Improve the interface. Currently it is cumbersome to construct, options, embedders and embeddings. This should be easier.
 * Make a larger portion of the library accessible through the Python bindings
-* Provide more user friendly executables
 * The repository contains some embedding code that is dead or outdated. This has to be updated or removed

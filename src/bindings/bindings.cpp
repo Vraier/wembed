@@ -2,15 +2,17 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include <boost/geometry.hpp>
 #include <iostream>
 
+#include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "EmbeddingIO.hpp"
 #include "Graph.hpp"
 #include "GraphAlgorithms.hpp"
 #include "GraphIO.hpp"
-#include "SimpleSamplingEmbedder.hpp"
+#include "LabelPropagation.hpp"
+#include "LayeredEmbedder.hpp"
+#include "WEmbedEmbedder.hpp"
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -21,20 +23,20 @@ class PyEmbedderInterface : public EmbedderInterface {
    public:
     using EmbedderInterface::EmbedderInterface;
 
-    void calculateStep() override { PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, calculateStep, ); }
+    void calculateStep() override { PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, calculateStep); }
 
-    bool isFinished() override { PYBIND11_OVERRIDE_PURE(bool, EmbedderInterface, isFinished, ); }
+    bool isFinished() override { PYBIND11_OVERRIDE_PURE(bool, EmbedderInterface, isFinished); }
 
-    void calculateEmbedding() override { PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, calculateEmbedding, ); }
+    void calculateEmbedding() override { PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, calculateEmbedding); }
 
-    Graph getCurrentGraph() override { PYBIND11_OVERRIDE_PURE(Graph, EmbedderInterface, getCurrentGraph, ); }
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE_PURE(Graph, EmbedderInterface, getCurrentGraph); }
 
     std::vector<std::vector<double>> getCoordinates() override {
-        PYBIND11_OVERRIDE_PURE(std::vector<std::vector<double>>, EmbedderInterface, getCoordinates, );
+        PYBIND11_OVERRIDE_PURE(std::vector<std::vector<double>>, EmbedderInterface, getCoordinates);
     }
 
     std::vector<double> getWeights() override {
-        PYBIND11_OVERRIDE_PURE(std::vector<double>, EmbedderInterface, getWeights, );
+        PYBIND11_OVERRIDE_PURE(std::vector<double>, EmbedderInterface, getWeights);
     }
 
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
@@ -46,77 +48,53 @@ class PyEmbedderInterface : public EmbedderInterface {
     }
 };
 
-class PyAbstractSimpleEmbedder : public AbstractSimpleEmbedder {
+class PyWEmbedEmbedder : public WEmbedEmbedder {
    public:
-    using AbstractSimpleEmbedder::AbstractSimpleEmbedder;
+    using WEmbedEmbedder::WEmbedEmbedder;
 
-    void calculateStep() override { PYBIND11_OVERRIDE(void, AbstractSimpleEmbedder, calculateStep, ); }
+    void calculateStep() override { PYBIND11_OVERRIDE(void, WEmbedEmbedder, calculateStep); }
 
-    bool isFinished() override { PYBIND11_OVERRIDE(bool, AbstractSimpleEmbedder, isFinished, ); }
+    bool isFinished() override { PYBIND11_OVERRIDE(bool, WEmbedEmbedder, isFinished); }
 
-    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, AbstractSimpleEmbedder, calculateEmbedding, ); }
-
-    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, AbstractSimpleEmbedder, getCurrentGraph, ); }
+    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, WEmbedEmbedder, calculateEmbedding); }
 
     std::vector<std::vector<double>> getCoordinates() override {
-        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, AbstractSimpleEmbedder, getCoordinates, );
+        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, WEmbedEmbedder, getCoordinates);
     }
 
-    std::vector<double> getWeights() override {
-        PYBIND11_OVERRIDE(std::vector<double>, AbstractSimpleEmbedder, getWeights, );
-    }
+    std::vector<double> getWeights() override { PYBIND11_OVERRIDE(std::vector<double>, WEmbedEmbedder, getWeights); }
 
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
-        PYBIND11_OVERRIDE(void, AbstractSimpleEmbedder, setCoordinates, coordinates);
+        PYBIND11_OVERRIDE(void, WEmbedEmbedder, setCoordinates, coordinates);
     }
 
     void setWeights(const std::vector<double> &weights) override {
-        PYBIND11_OVERRIDE(void, AbstractSimpleEmbedder, setWeights, weights);
-    }
-
-   protected:
-    TmpCVec<REP_BUFFER> repulsionForce(int v, int u) override {
-        PYBIND11_OVERRIDE_PURE(TmpCVec<REP_BUFFER>, AbstractSimpleEmbedder, repulsionForce, v, u);
-    }
-    TmpCVec<ATTR_BUFFER> attractionForce(int v, int u) override {
-        PYBIND11_OVERRIDE_PURE(TmpCVec<ATTR_BUFFER>, AbstractSimpleEmbedder, attractionForce, v, u);
+        PYBIND11_OVERRIDE(void, WEmbedEmbedder, setWeights, weights);
     }
 };
 
-class PySimpleSamplingEmbedder : public SimpleSamplingEmbedder {
+class PyLayeredEmbedder : public LayeredEmbedder {
    public:
-    using SimpleSamplingEmbedder::SimpleSamplingEmbedder;
+    using LayeredEmbedder::LayeredEmbedder;
 
-    void calculateStep() override { PYBIND11_OVERRIDE(void, SimpleSamplingEmbedder, calculateStep, ); }
+    void calculateStep() override { PYBIND11_OVERRIDE(void, LayeredEmbedder, calculateStep); }
 
-    bool isFinished() override { PYBIND11_OVERRIDE(bool, SimpleSamplingEmbedder, isFinished, ); }
+    bool isFinished() override { PYBIND11_OVERRIDE(bool, LayeredEmbedder, isFinished); }
 
-    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, SimpleSamplingEmbedder, calculateEmbedding, ); }
-
-    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, SimpleSamplingEmbedder, getCurrentGraph, ); }
+    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, LayeredEmbedder, calculateEmbedding); }
 
     std::vector<std::vector<double>> getCoordinates() override {
-        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, SimpleSamplingEmbedder, getCoordinates, );
+        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, LayeredEmbedder, getCoordinates);
     }
 
-    std::vector<double> getWeights() override {
-        PYBIND11_OVERRIDE(std::vector<double>, SimpleSamplingEmbedder, getWeights, );
-    }
+    std::vector<double> getWeights() override { PYBIND11_OVERRIDE(std::vector<double>, LayeredEmbedder, getWeights); }
 
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
-        PYBIND11_OVERRIDE(void, SimpleSamplingEmbedder, setCoordinates, coordinates);
+        PYBIND11_OVERRIDE(void, LayeredEmbedder, setCoordinates, coordinates);
     }
 
     void setWeights(const std::vector<double> &weights) override {
-        PYBIND11_OVERRIDE(void, SimpleSamplingEmbedder, setWeights, weights);
-    }
-
-   protected:
-    TmpCVec<REP_BUFFER> repulsionForce(int v, int u) override {
-        PYBIND11_OVERRIDE_PURE(TmpCVec<REP_BUFFER>, SimpleSamplingEmbedder, repulsionForce, v, u);
-    }
-    TmpCVec<ATTR_BUFFER> attractionForce(int v, int u) override {
-        PYBIND11_OVERRIDE_PURE(TmpCVec<ATTR_BUFFER>, SimpleSamplingEmbedder, attractionForce, v, u);
+        PYBIND11_OVERRIDE(void, LayeredEmbedder, setWeights, weights);
     }
 };
 
@@ -145,16 +123,18 @@ PYBIND11_MODULE(_core, m) {
         .def_readwrite("embeddingDimension", &EmbedderOptions::embeddingDimension)
         .def_readwrite("maxIterations", &EmbedderOptions::maxIterations)
         .def_readwrite("speed", &EmbedderOptions::speed)
-        .def_readwrite("coolingFactor", &EmbedderOptions::coolingFactor)
+        .def_readwrite("cooling", &EmbedderOptions::coolingFactor)
+        .def_readwrite("useInfNorm", &EmbedderOptions::useInfNorm)
         .def("__repr__", [](const EmbedderOptions &a) {
             return "EmbedderOptions(dimensionHint=" + std::to_string(a.dimensionHint) +
                    ", embeddingDimension=" + std::to_string(a.embeddingDimension) +
+                   ", weightType=" + std::to_string(a.weightType) +
                    ", maxIterations=" + std::to_string(a.maxIterations) + ", speed=" + std::to_string(a.speed) +
-                   ", coolingFactor=" + std::to_string(a.coolingFactor) + ")";
+                   ", cooling=" + std::to_string(a.coolingFactor) + ", useInfNorm=" + std::to_string(a.useInfNorm) +
+                   ")";
         });
 
     py::class_<EmbedderInterface, PyEmbedderInterface>(m, "EmbedderInterface")
-        .def(py::init<>())
         .def("calculateStep", &EmbedderInterface::calculateStep)
         .def("isFinished", &EmbedderInterface::isFinished)
         .def("calculateEmbedding", &EmbedderInterface::calculateEmbedding)
@@ -163,34 +143,43 @@ PYBIND11_MODULE(_core, m) {
         .def("setCoordinates", &EmbedderInterface::setCoordinates)
         .def("setWeights", &EmbedderInterface::setWeights);
 
-    py::class_<AbstractSimpleEmbedder, PyAbstractSimpleEmbedder>(m, "AbstractSimpleEmbedder")
+    py::class_<WEmbedEmbedder, PyWEmbedEmbedder>(m, "Embedder")
         .def(py::init<Graph &, EmbedderOptions>())
-        .def("calculateStep", &AbstractSimpleEmbedder::calculateStep)
-        .def("isFinished", &AbstractSimpleEmbedder::isFinished)
-        .def("calculateEmbedding", &AbstractSimpleEmbedder::calculateEmbedding)
-        .def("getCoordinates", &AbstractSimpleEmbedder::getCoordinates)
-        .def("getWeights", &AbstractSimpleEmbedder::getWeights)
-        .def("setCoordinates", &AbstractSimpleEmbedder::setCoordinates)
-        .def("setWeights", &AbstractSimpleEmbedder::setWeights);
+        .def("calculateStep", &WEmbedEmbedder::calculateStep)
+        .def("isFinished", &WEmbedEmbedder::isFinished)
+        .def("calculateEmbedding", &WEmbedEmbedder::calculateEmbedding)
+        .def("getCoordinates", &WEmbedEmbedder::getCoordinates)
+        .def("getWeights", &WEmbedEmbedder::getWeights)
+        .def("setCoordinates", &WEmbedEmbedder::setCoordinates)
+        .def("setWeights", &WEmbedEmbedder::setWeights)
+        .def("getTimings", &WEmbedEmbedder::getTimings);
 
-    py::class_<SimpleSamplingEmbedder, PySimpleSamplingEmbedder>(m, "Embedder") // TODO: rename when exposing other embedders
-        .def(py::init<Graph &, EmbedderOptions>())
-        .def("calculateStep", &SimpleSamplingEmbedder::calculateStep)
-        .def("isFinished", &SimpleSamplingEmbedder::isFinished)
-        .def("calculateEmbedding", &SimpleSamplingEmbedder::calculateEmbedding)
-        .def("getCoordinates", &SimpleSamplingEmbedder::getCoordinates)
-        .def("getWeights", &SimpleSamplingEmbedder::getWeights)
-        .def("setCoordinates", &SimpleSamplingEmbedder::setCoordinates)
-        .def("setWeights", &SimpleSamplingEmbedder::setWeights);
+    py::class_<LayeredEmbedder, PyLayeredEmbedder>(m, "LayeredEmbedder")
+        .def(py::init<Graph &, LabelPropagation &, EmbedderOptions>())
+        .def("calculateStep", &LayeredEmbedder::calculateStep)
+        .def("isFinished", &LayeredEmbedder::isFinished)
+        .def("calculateEmbedding", &LayeredEmbedder::calculateEmbedding)
+        .def("getCoordinates", &LayeredEmbedder::getCoordinates)
+        .def("getWeights", &LayeredEmbedder::getWeights)
+        .def("setCoordinates", &LayeredEmbedder::setCoordinates)
+        .def("setWeights", &LayeredEmbedder::setWeights);
 
-    // IO
-    m.def("readEdgeList", &GraphIO::readEdgeList);
+    // LablePropagation
+
+    py::class_<PartitionerOptions>(m, "PartitionerOptions").def(py::init<>());
+
+    py::class_<LabelPropagation>(m, "LabelPropagation")
+        .def(py::init<PartitionerOptions, Graph &, std::vector<double> &>())
+        .def("initialize", &LabelPropagation::coarsenAllLayers);
+
+    // Other functions
+    m.def("readEdgeList", &GraphIO::readEdgeList, py::arg("filePath"), py::arg("comment") = "#",
+          py::arg("delimiter") = " ");
     m.def("writeCoordinates",
           py::overload_cast<std::string, const std::vector<std::vector<double>> &, const std::vector<double> &>(
               &EmbeddingIO::writeCoordinates));
-
-    // Graph Algorithms
     m.def("isConnected", &GraphAlgo::isConnected);
+    m.def("setSeed", &Rand::setSeed);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);

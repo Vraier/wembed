@@ -84,15 +84,6 @@ int main(int argc, char* argv[]) {
         std::vector<double> weights = embedder->getWeights();
         EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
     }
-
-    // Output the SVG
-    if (opts.svgPath != "") {
-        std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
-        std::vector<double> weights = embedder->getWeights();
-        SVGOutputWriter svgWriter;
-        svgWriter.write(opts.svgPath, inputGraph, coordinates);
-    }
-
     return 0;
 }
 
@@ -104,7 +95,6 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
 
     // Visualization
-    app.add_option("--svg", opts.svgPath, "Path to the output svg file");
 #ifdef EMBEDDING_USE_ANIMATION
     app.add_flag("--animate", opts.animate, "Animate the embedding, only avaliable if compiled with SFML");
 #endif

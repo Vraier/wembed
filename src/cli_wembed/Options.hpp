@@ -14,7 +14,6 @@ struct Options {
     bool showTimings = false;
 
     // Visualization
-    std::string svgPath = "";
     bool animate = false;
 
     // Embedder Options

@@ -4,11 +4,14 @@ from ._core import (
     Graph,
     EmbedderOptions,
     EmbedderInterface,
-    AbstractSimpleEmbedder,
-    SimpleSamplingEmbedder,
+    Embedder,
+    LayeredEmbedder,
+    LabelPropagation,
+    PartitionerOptions,
     readEdgeList,
     writeCoordinates,
-    isConnected
+    isConnected,
+    setSeed,
 )
 
 def convert_from_networkx_graph(graph):

@@ -6,7 +6,7 @@ using SingleLayerNodePointer = std::vector<NodeId>;
 
 class LabelPropagation : public Partitioner {
    public:
-    LabelPropagation(PartitionerOptions ops, const Graph &g, const std::vector<double> &edgeWs);
+    LabelPropagation(PartitionerOptions ops, const Graph &g, const std::vector<double> &edgeWeights);
 
     /**
      * Does lable propagation and coarsening until the graph is small enough
@@ -24,14 +24,14 @@ class LabelPropagation : public Partitioner {
      * rounds. Chooses the order in which nodes are processed according to the
      * given options.
      */
-    SingleLayerNodePointer labelPropagation(const Graph &currG, const std::vector<double> &edgeWs);
+    SingleLayerNodePointer labelPropagation(const Graph &currG, const std::vector<double> &edgeWeights);
 
     /**
      * Will be executed when the graph does not get coarsened enough.
      * Ignores the cluster size limit but ensures that the hierarchy has
      * logarithmic hight.
      */
-    SingleLayerNodePointer aggressivePropagation(const Graph &currG, const std::vector<double> &edgeWs,
+    SingleLayerNodePointer aggressivePropagation(const Graph &currG, const std::vector<double> &edgeWeights,
                                                         const SingleLayerNodePointer &currParents);
 
     SingleLayerNodePointer calculateLabelPropagationOrder(const Graph &currG);
