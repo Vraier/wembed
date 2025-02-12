@@ -24,9 +24,18 @@ struct EdgeContent {
 class Graph {
    public:
     Graph() { setSize(0, 0); };
-    Graph(std::map<int, std::set<int>> &map) { constructFromMap(map); };
-    Graph(std::vector<std::pair<int, int>> &edges) { constructFromEdges(edges); };
+    Graph(std::map<int, std::set<int>> &map) {
+        constructFromMap(map);
+        setUniqueColors();
+    };
+    Graph(std::vector<std::pair<int, int>> &edges) {
+        constructFromEdges(edges);
+        setUniqueColors();
+    };
     ~Graph() {};
+
+    void setUniqueColors();
+    void setColors(std::vector<int> &colors);
 
     // global information
     NodeId getNumVertices() const;
@@ -38,9 +47,8 @@ class Graph {
     int getNumNeighbors(NodeId v) const;
     std::vector<EdgeContent> getEdgeContents(NodeId v) const;
     NodeId getEdgeTarget(EdgeId e) const;
-
-    // runtime linear in deg(v)
-    bool areNeighbors(NodeId v, NodeId u) const;
+    bool areNeighbors(NodeId v, NodeId u) const;  // runtime linear in deg(v)
+    bool areInSameColorClass(NodeId v, NodeId u) const;
 
     /**
      * returns a string representation of the graph
@@ -71,6 +79,7 @@ class Graph {
 
     std::vector<NodeContent> nodes;
     std::vector<EdgeContent> edges;
+    std::vector<int> colors;
     NodeId currentNodeBuildingId = 0;
     EdgeId currentEdgeBuildingId = 0;
 };

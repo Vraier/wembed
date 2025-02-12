@@ -9,6 +9,7 @@ struct Options {
 
     // Input / Output
     std::string graphPath = "";
+    bool bipartite = false;
     std::string embeddingPath = "";
     bool showTimings = false;
 

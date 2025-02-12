@@ -53,7 +53,7 @@ class WEmbedEmbedder : public EmbedderInterface {
     static std::vector<std::vector<double>> constructRandomCoordinates(int dimension, int numVertices);
     static std::vector<double> constructDegreeWeights(const Graph &g);
     static std::vector<double> constructUnitWeights(int N);
-    static std::vector<double> rescaleWeights(int dimensionHint, int embeddingDimension,
+    static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
                                               const std::vector<double> &weights);
 
    private:

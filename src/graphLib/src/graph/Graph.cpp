@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <numeric>
 
 #include "Macros.hpp"
 
@@ -81,6 +82,8 @@ bool Graph::areNeighbors(NodeId v, NodeId u) const {
     return false;
 }
 
+bool Graph::areInSameColorClass(NodeId v, NodeId u) const { return colors[v] == colors[u]; }
+
 void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
     LOG_DEBUG("Constructing graph from map");
     // make map symmetric
@@ -118,7 +121,7 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
             currentNode++;
         }
         for (NodeId u : iter->second) {
-            if(u == iter->first && firstWarning) {
+            if (u == iter->first && firstWarning) {
                 LOG_WARNING("Node " + std::to_string(u) + " is connected to itself. Self loops are ignored.");
                 firstWarning = false;
                 continue;
@@ -144,6 +147,17 @@ void Graph::constructFromEdges(const std::vector<std::pair<NodeId, NodeId>>& edg
     }
 
     constructFromMap(set);
+}
+
+void Graph::setUniqueColors() {
+    std::vector<int> colors(getNumVertices());  // colors from 0 to n-1
+    std::iota(colors.begin(), colors.end(), 0);
+    setColors(colors);
+}
+
+void Graph::setColors(std::vector<int>& colors) {
+    ASSERT(colors.size() == getNumVertices());
+    this->colors = colors;
 }
 
 NodeId Graph::getNumVertices() const { return nodes.size() - 1; }

@@ -117,9 +117,10 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     for (NodeId v : sortedNodeIds) {
         std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, rTreeBuffer);
         for (NodeId u : repellingCandidates) {
-            if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
-                repulstionForce(v, u, forceBuffer);
+            if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
+                continue;
             }
+            repulstionForce(v, u, forceBuffer);
         }
     }
 }
@@ -223,7 +224,7 @@ std::vector<double> WEmbedEmbedder::constructUnitWeights(int N) {
     return weights;
 }
 
-std::vector<double> WEmbedEmbedder::rescaleWeights(int dimensionHint, int embeddingDimension,
+std::vector<double> WEmbedEmbedder::rescaleWeights(double dimensionHint, double embeddingDimension,
                                                    const std::vector<double>& weights) {
     const int N = weights.size();
     std::vector<double> rescaledWeights(N);

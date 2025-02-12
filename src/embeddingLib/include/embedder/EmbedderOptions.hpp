@@ -46,7 +46,7 @@ struct EmbedderOptions {
     bool useOriginalCoords =
         false;  // if set, the original coordinates are used as initial positions (if they are provided in the input)
     bool useInfNorm = false;   // if set, the infinity norm will be used instead of euclidean norm
-    double dimensionHint = 4;  // hint for the dimension of the input graph
+    double dimensionHint = 4.0;  // hint for the dimension of the input graph
     int embeddingDimension = 4;
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
 

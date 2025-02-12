@@ -95,7 +95,7 @@ void SingleLayerEmbedder::calculateStep() {
     currentIteration++;
     const int N = hierarchy->getLayerSize(LAYER);
 
-    if(N > 1000000 && currentIteration % 10 == 0) {
+    if (N > 1000000 && currentIteration % 10 == 0) {
         std::cout << "(Iteration " << currentIteration << ")" << std::endl;
     }
 
@@ -190,7 +190,7 @@ void SingleLayerEmbedder::setWeights(const std::vector<double>& weights) {
 void SingleLayerEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
 #pragma omp parallel for firstprivate(buffer), schedule(runtime)
-    for (NodeId v: sortedNodeIds) {
+    for (NodeId v : sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
         }
@@ -202,12 +202,13 @@ void SingleLayerEmbedder::calculateAllRepellingForces() {
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
     VecBuffer<1> forceBuffer(options.embeddingDimension);
 #pragma omp parallel for firstprivate(rTreeBuffer, forceBuffer), schedule(runtime)
-    for (NodeId v: sortedNodeIds) {
+    for (NodeId v : sortedNodeIds) {
         std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, rTreeBuffer);
         for (NodeId u : repellingCandidates) {
-            if (options.neighborRepulsion || !graph.areNeighbors(v, u)) {
-                repulstionForce(v, u, forceBuffer);
+            if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
+                continue;
             }
+            repulstionForce(v, u, forceBuffer);
         }
     }
 }

@@ -303,9 +303,19 @@ class RTree: public SpatialIndex {
             point, number, out);
     }
 
-    size_t query_sphere(CVecRef minCorner, CVecRef maxCorner, CVecRef point, double radius, std::vector<int>& out) const override {
+    size_t query_sphere(CVecRef point, double radius, std::vector<int>& out) const override {
+        VecBuffer<2> buffer(dimension); // TODO(JP): maybe i want to avoid allocation this buffer every time
+        
+        TmpVec<0> min_corner(buffer);
+        TmpVec<1> max_corner(buffer);
+        min_corner = point;
+        max_corner = point;
+        for (int i = 0; i < dimension; i++) {
+            min_corner[i] -= radius;
+            max_corner[i] += radius;
+        }
         return query_impl<predicates::InRangePredicates, std::vector<int>, CVecRef, CVecRef, CVecRef, double>(
-            minCorner, maxCorner, point, radius, out);
+            min_corner.erase(), max_corner.erase(), point, radius, out);
     }
 
     size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<int>& out) const override {

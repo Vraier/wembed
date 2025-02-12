@@ -31,7 +31,12 @@ int main(int argc, char* argv[]) {
     }
 
     // Read the graph
-    Graph inputGraph = GraphIO::readEdgeList(opts.graphPath);
+    Graph inputGraph;
+    if (opts.bipartite) {
+        inputGraph = GraphIO::readBipartiteEdgeList(opts.graphPath);
+    } else {
+        inputGraph = GraphIO::readEdgeList(opts.graphPath);
+    }
     if (!GraphAlgo::isConnected(inputGraph)) {
         LOG_ERROR("Graph is not connected");
         return 0;
@@ -94,6 +99,7 @@ int main(int argc, char* argv[]) {
 void addOptions(CLI::App& app, Options& opts) {
     // Input / Output
     app.add_option("-i,--graph", opts.graphPath, "Path to the graph file")->required()->check(CLI::ExistingFile);
+    app.add_flag("--bipartite", opts.bipartite, "Treat the input graph as bipartite");
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
 
