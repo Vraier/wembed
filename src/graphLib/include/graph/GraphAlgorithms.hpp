@@ -5,15 +5,22 @@
 class GraphAlgo {
    public:
 
-    static int getNumberOfConnectedComponents(Graph &g);
-    static bool isConnected(Graph &g);
+    static int getNumberOfConnectedComponents(const Graph &g);
+    static bool isConnected(const Graph &g);
+
+    static Graph getLargestComponent(const Graph &g);
+
+    /**
+     * Mapping from the new node id to the old node ids
+     */
+    static std::pair<Graph, std::vector<NodeId>> getLargestComponentWithMapping(const Graph &g);
 
     /**
      * returns the connected components of a graph
      * the first array gives the id of the connected component of a node.
      * the second array gives the size of the connected component.
      */
-    static std::pair<std::vector<int>, std::vector<int>> calculateComponentId(Graph &g);
+    static std::pair<std::vector<int>, std::vector<int>> calculateComponentId(const Graph &g);
     /**
      * returns a new graph the only contains the larges connected component of the given graph.
      * The indices of the new graph are mapped to fit between 0..newSize
@@ -23,7 +30,7 @@ class GraphAlgo {
     /**
      * returns a new graph that contracts the nodes in g according to the mapping in clusterId
      */
-    static std::pair<Graph, std::vector<EdgeId>> coarsenGraph(Graph &g, const std::vector<NodeId> &clusterId);
+    static std::pair<Graph, std::vector<EdgeId>> coarsenGraph(const Graph &g, const std::vector<NodeId> &clusterId);
 
 
     /**

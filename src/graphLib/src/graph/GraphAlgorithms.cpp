@@ -9,14 +9,54 @@
 #include "Macros.hpp"
 #include "Toolkit.hpp"
 
-int GraphAlgo::getNumberOfConnectedComponents(Graph &g) {
+int GraphAlgo::getNumberOfConnectedComponents(const Graph &g) {
     auto idAndSize = calculateComponentId(g);
     return idAndSize.second.size();
 }
 
-bool GraphAlgo::isConnected(Graph &g) { return getNumberOfConnectedComponents(g) == 1; }
+bool GraphAlgo::isConnected(const Graph &g) { return getNumberOfConnectedComponents(g) == 1; }
 
-std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(Graph &g) {
+Graph GraphAlgo::getLargestComponent(const Graph &g) { return getLargestComponentWithMapping(g).first; }
+
+std::pair<Graph, std::vector<NodeId>> GraphAlgo::getLargestComponentWithMapping(const Graph &g) {
+    auto idAndSize = calculateComponentId(g);
+    int largestSize = 0;
+    int largestId = -1;
+    for (int i = 0; i < idAndSize.second.size(); i++) {
+        if (idAndSize.second[i] > largestSize) {
+            largestSize = idAndSize.second[i];
+            largestId = i;
+        }
+    }
+
+    ASSERT(largestId != -1);
+
+    std::vector<NodeId> newOldmapping(largestSize, -1);         // maps from new node id to old node id
+    std::vector<NodeId> oldNewMapping(g.getNumVertices(), -1);  // reverse
+    int currId = 0;
+    for (NodeId v = 0; v < g.getNumVertices(); v++) {
+        if (idAndSize.first[v] == largestId) {
+            newOldmapping[currId] = v;
+            oldNewMapping[v] = currId;
+            currId++;
+        }
+    }
+
+    std::vector<std::pair<NodeId, NodeId>> newEdges;
+    for (NodeId oldNode = 0; oldNode < g.getNumVertices(); oldNode++) {
+        if (idAndSize.first[oldNode] != largestId) continue;
+        for (EdgeId e : g.getEdges(oldNode)) {
+            NodeId target = g.getEdgeTarget(e);
+            newEdges.push_back(std::make_pair(oldNewMapping[oldNode], oldNewMapping[target]));
+        }
+    }
+
+    Graph newGraph(newEdges);
+    ASSERT(newGraph.getNumVertices() == largestSize);
+    return std::make_pair(newGraph, newOldmapping);
+}
+
+std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(const Graph &g) {
     int n = g.getNumVertices();
 
     std::vector<int> connectedComponent(n, -1);
@@ -64,14 +104,14 @@ std::pair<std::vector<int>, std::vector<int>> GraphAlgo::calculateComponentId(Gr
     return std::make_pair(connectedComponent, componentSize);
 }
 
-std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(Graph &g, const std::vector<NodeId> &clusterId) {
+std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(const Graph &g, const std::vector<NodeId> &clusterId) {
     ASSERT(Toolkit::noGapsInVector(clusterId));
 
     std::vector<EdgeId> resultEdgeMap(g.getNumEdges() * 2);
     std::map<NodeId, std::set<NodeId>> graphMap;
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
         // initialize the set for the node if it does not exist yet
-        if(graphMap.find(clusterId[v]) == graphMap.end()){
+        if (graphMap.find(clusterId[v]) == graphMap.end()) {
             graphMap[clusterId[v]] = std::set<NodeId>();
         }
         for (EdgeId e : g.getEdges(v)) {

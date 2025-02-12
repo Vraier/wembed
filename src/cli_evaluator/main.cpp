@@ -1,3 +1,4 @@
+#include <CLI/CLI.hpp>
 #include <algorithm>
 #include <vector>
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <CLI/CLI.hpp>
 #include "EmbedderOptions.hpp"
 #include "GraphIO.hpp"
 #include "EmbeddingIO.hpp"

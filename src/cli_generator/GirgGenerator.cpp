@@ -1,15 +1,15 @@
 #include "GirgGenerator.hpp"
 
-#include "GraphAlgorithms.hpp"
-#include "girgs/Generator.h"
 #include "EmbeddingIO.hpp"
+#include "GraphAlgorithms.hpp"
 #include "Macros.hpp"
 #include "Rand.hpp"
-#include "VecList.hpp"
 #include "Toolkit.hpp"
+#include "girgs/Generator.h"
 
-Graph GirgGenerator::generateRandomGraph(OptionValues options) {
-    LOG_INFO( "Constructing GIRG...");
+std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> GirgGenerator::generateRandomGraph(
+    Options options) {
+    LOG_INFO("Constructing GIRG...");
 
     const int N = options.numNodes;
     const double ple = options.ple;
@@ -43,36 +43,23 @@ Graph GirgGenerator::generateRandomGraph(OptionValues options) {
 
     auto edges = girgs::generateEdges(girgWeights, girgPositions, alpha, sSeed);
 
-    // convert the edgeList into a graph
-    std::set<std::pair<NodeId, NodeId>> edgeSet;
-    for (auto e : edges) {
-        std::pair<NodeId, NodeId> reverse = std::make_pair(e.second, e.first);
-        edgeSet.insert(e);
-        edgeSet.insert(reverse);
-    }
-    Graph unconnected;
-    unconnected.constructFromEdges(edgeSet);
+    Graph unconnected(edges);
     auto graphAndMap = GraphAlgo::getLargestComponentWithMapping(unconnected);
     Graph connected = graphAndMap.first;
-    std::map<NodeId, NodeId> connectedToUnconnected = graphAndMap.second;
+    std::vector<NodeId> connectedToUnconnected = graphAndMap.second;
 
-    // also output the coordinates (and weights of the girg)
-    if (options.girgCoords != "") {
-        const int conN = connected.getNumVertices();
-        VecList coords(options.genDimension);
-        coords.setSize(conN);
-        std::vector<double> weights(conN);
-        for (NodeId v = 0; v < conN; v++) {
-            for (int i = 0; i < options.genDimension; i++) {
-                coords[v][i] = girgPositions[connectedToUnconnected[v]][i];
-            }
-            weights[v] = girgWeights[connectedToUnconnected[v]];
+    // map coordinates and weights to connected graph
+    const int conN = connected.getNumVertices();
+    std::vector<std::vector<double>> coords(conN, std::vector<double>(dim));
+    std::vector<double> weights(conN);
+    for (NodeId v = 0; v < conN; v++) {
+        for (int i = 0; i < options.genDimension; i++) {
+            coords[v][i] = girgPositions[connectedToUnconnected[v]][i];
         }
-
-        EmbeddingIO::writeCoordinates(options.girgCoords, coords, weights, Toolkit::createIdentity(conN));
+        weights[v] = girgWeights[connectedToUnconnected[v]];
     }
 
-    LOG_INFO( "Finished construction");
+    LOG_INFO("Finished construction");
 
-    return connected;
+    return std::make_tuple(connected, coords, weights);
 }
