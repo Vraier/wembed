@@ -184,6 +184,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.wembed_env
 env/
 venv/
 ENV/
