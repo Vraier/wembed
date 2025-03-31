@@ -1,0 +1,133 @@
+{
+  "nodes": {
+    "cli11": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1672791143,
+        "narHash": "sha256-x3/kBlf5LdzkTO4NYOKanZBfcU4oK+fJw9L7cf88LsY=",
+        "owner": "CLIUtils",
+        "repo": "CLI11",
+        "rev": "291c58789c031208f08f4f261a858b5b7083e8e2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "CLIUtils",
+        "ref": "v2.3.2",
+        "repo": "CLI11",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "girgs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1698061854,
+        "narHash": "sha256-i1TQFrB5Ok7HNMWgMp8DRh4nJWkKepNY/0MB5TweEQc=",
+        "owner": "chistopher",
+        "repo": "girgs",
+        "rev": "d0e74e3f7ad714222a57d8cbea3e0f2fe5ec608b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "chistopher",
+        "ref": "master",
+        "repo": "girgs",
+        "type": "github"
+      }
+    },
+    "googletest": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1656350095,
+        "narHash": "sha256-W+OxRTVtemt2esw4P7IyGWXOonUN5ZuscjvzqkYvZbM=",
+        "owner": "google",
+        "repo": "googletest",
+        "rev": "58d77fa8070e8cec2dc1ed015d66b454c8d78850",
+        "type": "github"
+      },
+      "original": {
+        "owner": "google",
+        "ref": "release-1.12.1",
+        "repo": "googletest",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1739020877,
+        "narHash": "sha256-mIvECo/NNdJJ/bXjNqIh8yeoSjVLAuDuTUzAo7dzs8Y=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "a79cfe0ebd24952b580b1cf08cd906354996d547",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "pybind11": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1726273558,
+        "narHash": "sha256-SNLdtrOjaC3lGHN9MAqTf51U9EzNKQLyTMNPe0GcdrU=",
+        "owner": "pybind",
+        "repo": "pybind11",
+        "rev": "a2e59f0e7065404b44dfe92a28aca47ba1378dc4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pybind",
+        "ref": "v2.13.6",
+        "repo": "pybind11",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "cli11": "cli11",
+        "flake-utils": "flake-utils",
+        "girgs": "girgs",
+        "googletest": "googletest",
+        "nixpkgs": "nixpkgs",
+        "pybind11": "pybind11"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
