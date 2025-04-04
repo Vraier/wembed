@@ -24,15 +24,16 @@ SOFTWARE.
 */
 
 
-#include "eign.h"
 #include "snn.h"
-#include <omp.h>
+
 #include <cmath>
 #include <vector>
 #include <numeric>
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+
+#include "eign.h"
 
 using Matrix = Eigen::MatrixXd;
 using Vector = Eigen::VectorXd;
@@ -90,9 +91,6 @@ size_t binarySearch(const Vector& arr, double point){
         }
     }
     return lo;
-    // else if (arr[sortID[hi]] == point) {
-    //     return hi;
-    // }
 }
 
 
@@ -132,6 +130,7 @@ SnnModel::SnnModel(double *data, int r, int c): rows(r), cols(c) {
         temp_sortVals = tempNormData(all, 0);
     } else{
         std::cerr << "Error occured in input, please enter correct value for cols." << std::endl;
+        std::exit(1);
     }
 
     // order data by distance to center
@@ -145,76 +144,17 @@ SnnModel::SnnModel(double *data, int r, int c): rows(r), cols(c) {
     for (size_t i = 0; i < normData.rows(); ++i) {
         xxt[i] = normData(i, all).dot(normData(i, all));
     }
-
-    query_buffer.resize(cols);
-    distances_buffer.resize(rows);
 }
 
+void SnnModel::radius_single_query(double *query, double radius, std::vector<int>& knnID, Vector& query_buffer, Vector& distance_buffer) const {
+    radius_single_query(RawVec(query, cols), radius, knnID, [](int id){ return id; }, query_buffer, distance_buffer);
+}
 
-// query
-void SnnModel::radius_single_query(double *query, double radius, std::vector<int> *knnID, std::vector<double> *knnDist){
-    RawVec query_vec(query, cols);
-    query_buffer = query_vec - mu;
-
-    double sv_q = principal_axis.dot(query_buffer);
+std::pair<size_t, size_t> SnnModel::radius_single_query_impl(const Vector& normalized_query, double radius, Vector& distances) const {
+    double sv_q = principal_axis.dot(normalized_query);
     size_t left = binarySearch(sortVals, sv_q-radius);
     size_t right = binarySearch(sortVals, sv_q+radius);
-    calculate_skip_euclid_norm(xxt, normData, query_buffer, distances_buffer, left, right);
+    calculate_skip_euclid_norm(xxt, normData, normalized_query, distances, left, right);
 
-    radius = pow(radius, 2);
-
-    (*knnID).clear();
-    // (*knnDist).clear();
-
-    for (size_t i = left; i < right; i++){
-        if (distances_buffer[i] <= radius){
-            (*knnID).push_back(sortID[i]);
-            // (*knnDist).push_back(sqrt(distances_buffer[i]));
-        }
-    }
-}
-
-
-
-// batch helper functions
-void extract_sample(double *queries, double *query, const int num, const int *rows, const int *cols){ // columns major order
-    for (int i=0; i<*cols; i++){
-        *(query + i) = *(queries + *rows * i + num);
-    }
-}
-
-void insert_vector(std::vector<std::vector<int> > *knnID, std::vector<std::vector<double> > *knnDist, 
-                        std::vector<int> *knnID_unit, std::vector<double> *knnDist_unit, int i, int qcols){
-
-    for (int j=0; j<qcols; j++){
-        (*knnID)[i][j] = (*knnID_unit)[j];
-        (*knnDist)[i][j] = (*knnDist_unit)[j];
-    }
-}
-
-// query in batch
-void SnnModel::radius_batch_query(double *queries, double radius, std::vector<std::vector<int> > *knnID, 
-                                      std::vector<std::vector<double> > *knnDist, const int qrows){
-    double query[cols];
-    std::vector<int> knnID_unit;
-    std::vector<double> knnDist_unit;
-
-
-    (*knnID).clear();
-    (*knnDist).clear();
-
-    (*knnID).resize(qrows);
-    (*knnDist).resize(qrows);
-
-    // #pragma omp parallel for
-    // ---> keep it single-threaded for now
-    for (int i=0; i<qrows; i++){
-        extract_sample(queries, query, i, &qrows, &cols);
-        this->radius_single_query(query, radius, &knnID_unit, &knnDist_unit);
-
-        (*knnID)[i].resize(knnID_unit.size());
-        (*knnDist)[i].resize(knnDist_unit.size());
-        insert_vector(knnID, knnDist, &knnID_unit, &knnDist_unit, i, knnID_unit.size());
-    }
-        
+    return {left, right};
 }
