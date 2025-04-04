@@ -30,7 +30,7 @@ SOFTWARE.
 #include <eigen3/Eigen/SVD>
 
 void svd_eigen_sovler(const Matrix& mat, Matrix& vt) {
-    Eigen::BDCSVD svd_wrapper = mat.bdcSvd<Eigen::ComputeFullV>();
+    Eigen::BDCSVD<Eigen::MatrixXd> svd_wrapper = mat.bdcSvd(Eigen::ComputeFullV);
     assert(!svd_wrapper.computeU() && svd_wrapper.computeV());
     auto info = svd_wrapper.info();
     if (info == Eigen::ComputationInfo::Success) {
