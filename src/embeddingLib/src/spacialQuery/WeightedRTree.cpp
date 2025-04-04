@@ -1,5 +1,6 @@
 #include "WeightedRTree.hpp"
-#include "RTree.hpp"
+// #include "RTree.hpp"
+#include "SNNQueries.hpp"
 
 #include <iostream>
 
@@ -30,7 +31,7 @@ void WeightedRTree::updateRTree(const VecList& positions, const std::vector<doub
 
     spacialIndices.clear();
     for (int i = 0; i < weightBuckets.size() + 1; i++) {
-        std::unique_ptr<SpatialIndex> index = std::make_unique<RTree>(std::move(valuesPerBucket[i]), DIMENSION);
+        std::unique_ptr<SpatialIndex> index = std::make_unique<SNNQueries>(std::move(valuesPerBucket[i]), DIMENSION);
         spacialIndices.push_back(std::move(index));
     }
 }
