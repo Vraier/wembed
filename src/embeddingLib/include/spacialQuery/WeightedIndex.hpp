@@ -2,9 +2,9 @@
 
 #include <memory>
 
+#include "Graph.hpp"
 #include "SpacialIndex.hpp"
 #include "VecList.hpp"
-#include "Graph.hpp"
 
 class WeightedIndex {
    public:
@@ -16,7 +16,7 @@ class WeightedIndex {
      * Rebuilds all r trees by inserting the positions into the right r-tree according to the weight class.
      */
     void updateIndices(const VecList& positions, const std::vector<double>& weights,
-                     const std::vector<double>& weightBuckets);
+                       const std::vector<double>& weightBuckets);
 
     static std::vector<double> getDoublingWeightBuckets(const std::vector<double>& weights,
                                                         double doublingFactor = 2.0);
@@ -54,6 +54,6 @@ class WeightedIndex {
 
     // assume nodes to always have the highest possible weight in a weight class
     // this way, no node will be missed when searching for non neighbors
-    std::vector<std::unique_ptr<SpatialIndex>> spacialIndices;  // one R-Tree for each weight class
+    std::vector<std::shared_ptr<SpatialIndex>> spacialIndices;  // one R-Tree for each weight class
     std::vector<double> maxWeightOfClass;  // nodes in tree i will have weight at most weightClasses[i]
 };

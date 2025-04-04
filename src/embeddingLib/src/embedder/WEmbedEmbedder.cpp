@@ -2,31 +2,36 @@
 
 void WEmbedEmbedder::calculateStep() {
     currentIteration++;
-    const int N = graph.getNumVertices();
 
-    if (N > 1000000 && currentIteration % 10 == 0) {
+    if (N > 1'000'000 && currentIteration % 10 == 0) {
         std::cout << "(Iteration " << currentIteration << ")" << std::endl;
+    }
+
+    if (N <= 1) {
+        // this happens in the first hierarchy layer
+        insignificantPosChange = true;
+        return;
     }
 
     currentForce.setAll(0);
     oldPositions.setAll(0);
 
-    timer.startTiming("rTree", "Construct R-Tree");
+    timer->startTiming("rTree", "Construct R-Tree");
     updateRTree();  // sequential
-    timer.stopTiming("rTree");
+    timer->stopTiming("rTree");
 
     // attracting forces
-    timer.startTiming("attracting_forces", "Attracting Forces");
+    timer->startTiming("attracting_forces", "Attracting Forces");
     calculateAllAttractingForces();  // parallel
-    timer.stopTiming("attracting_forces");
+    timer->stopTiming("attracting_forces");
 
     // repelling forces
-    timer.startTiming("repelling_forces", "Repelling Forces");
+    timer->startTiming("repelling_forces", "Repelling Forces");
     calculateAllRepellingForces();  // parallel
-    timer.stopTiming("repelling_forces");
+    timer->stopTiming("repelling_forces");
 
     // applying gradient
-    timer.startTiming("apply_forces", "Applying Forces");
+    timer->startTiming("apply_forces", "Applying Forces");
     // save old positions to calculate change later
 #pragma omp parallel for schedule(static)
     for (int v = 0; v < N; v++) {
@@ -34,10 +39,10 @@ void WEmbedEmbedder::calculateStep() {
     }
     // update positions based on force vector
     optimizer.update(currentPositions, currentForce);  // parallel
-    timer.stopTiming("apply_forces");
+    timer->stopTiming("apply_forces");
 
     // calculate change in position
-    timer.startTiming("position_change", "Change in Positions");
+    timer->startTiming("position_change", "Change in Positions");
     VecBuffer<1> buffer(options.embeddingDimension);
     double sumNormSquared = 0;
     double sumNormDiffSquared = 0;
@@ -53,7 +58,7 @@ void WEmbedEmbedder::calculateStep() {
     if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
         insignificantPosChange = true;
     }
-    timer.stopTiming("position_change");
+    timer->stopTiming("position_change");
 }
 
 bool WEmbedEmbedder::isFinished() {
@@ -63,13 +68,13 @@ bool WEmbedEmbedder::isFinished() {
 
 void WEmbedEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
-    timer.startTiming("embedding_all", "Embedding");
+    timer->startTiming("embedding_all", "Embedding");
     currentIteration = 0;
     optimizer.reset();
     while (!isFinished()) {
         calculateStep();
     }
-    timer.stopTiming("embedding_all");
+    timer->stopTiming("embedding_all");
     LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
 }
 
@@ -80,22 +85,22 @@ std::vector<std::vector<double>> WEmbedEmbedder::getCoordinates() { return curre
 std::vector<double> WEmbedEmbedder::getWeights() { return currentWeights; }
 
 void WEmbedEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
-    ASSERT(graph.getNumVertices() == coordinates.size());
+    ASSERT(N == coordinates.size());
     currentPositions = VecList(coordinates);
 }
 
 void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
-    ASSERT(graph.getNumVertices() == weights.size());
+    ASSERT(N == weights.size());
     currentWeights = weights;
 
     // sort the node ids by weight
-    sortedNodeIds.resize(graph.getNumVertices());
+    sortedNodeIds.resize(N);
     std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
     std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
               [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
 }
 
-std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer.getHierarchicalTimingResults(); }
+std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
 
 void WEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(options.embeddingDimension);
@@ -260,7 +265,7 @@ std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int 
 }
 
 void WEmbedEmbedder::updateRTree() {
-    currentRTree = WeightedIndex(options.embeddingDimension);
+    currentRTree = std::move(WeightedIndex(options.embeddingDimension));
     std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
     currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
 }
@@ -268,18 +273,12 @@ void WEmbedEmbedder::updateRTree() {
 std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
     std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
-        std::vector<NodeId> tmp;
         if (options.useInfNorm) {
             currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
-                                                                       options.sigmoidLength, w_class, tmp, buffer);
+                                                                options.sigmoidLength, w_class, candidates, buffer);
         }
-        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
-                                                            options.sigmoidLength, w_class, tmp, buffer);
-        for (NodeId u : tmp) {
-            if (v != u) {
-                candidates.push_back(u);
-            }
-        }
+        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v], options.sigmoidLength,
+                                                     w_class, candidates, buffer);
     }
     return candidates;
 }

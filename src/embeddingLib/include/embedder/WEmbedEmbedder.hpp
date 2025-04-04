@@ -12,27 +12,29 @@ class WEmbedEmbedder : public EmbedderInterface {
     using Timer = util::Timer;
 
    public:
-    WEmbedEmbedder(Graph &g, EmbedderOptions opts)
-        : options(opts),
+    WEmbedEmbedder(Graph &g, EmbedderOptions opts, std::shared_ptr<Timer> timer_ptr = std::make_shared<Timer>())
+        : timer(timer_ptr),
+          options(opts),
           graph(g),
-          optimizer(opts.embeddingDimension, g.getNumVertices(), opts.speed, opts.coolingFactor, 0.9, 0.999, 10e-8),
+          N(g.getNumVertices()),
+          optimizer(opts.embeddingDimension, N, opts.speed, opts.coolingFactor, 0.9, 0.999, 1e-8),
           currentRTree(opts.embeddingDimension),
-          sortedNodeIds(g.getNumVertices()),
-          currentForce(opts.embeddingDimension, g.getNumVertices()),
-          currentPositions(opts.embeddingDimension, g.getNumVertices()),
-          oldPositions(opts.embeddingDimension, g.getNumVertices()),
-          currentWeights(g.getNumVertices()) {
+          sortedNodeIds(N),
+          currentForce(opts.embeddingDimension, N),
+          currentPositions(opts.embeddingDimension, N),
+          oldPositions(opts.embeddingDimension, N),
+          currentWeights(N) {
         // Initialize coordinates randomly and weights based on degree
-        setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, g.getNumVertices()));
+        setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, N));
         if (opts.weightType == WeightType::Degree) {
             setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
                                                       WEmbedEmbedder::constructDegreeWeights(g)));
         } else if (opts.weightType == WeightType::Unit) {
-            setWeights(WEmbedEmbedder::constructUnitWeights(g.getNumVertices()));
+            setWeights(WEmbedEmbedder::constructUnitWeights(N));
         } else {
             LOG_ERROR("Weight type not supported");
         }
-        optimizer.reset();        
+        optimizer.reset();
     };
 
     virtual ~WEmbedEmbedder() {};
@@ -71,9 +73,10 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void updateRTree();
     virtual std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
 
-    Timer timer;
+    std::shared_ptr<Timer> timer;
     EmbedderOptions options;
     Graph graph;
+    int N;  // size of the graph
 
     // additional data structures
     AdamOptimizer optimizer;
