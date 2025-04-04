@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include <string>
 #include <map>
+#include <string>
 
 enum OptimizerType { Simple = 0, Adam = 1 };
 
@@ -45,19 +45,20 @@ struct EmbedderOptions {
     EmbedderType embedderType = slowSampling;
     bool useOriginalCoords =
         false;  // if set, the original coordinates are used as initial positions (if they are provided in the input)
-    bool useInfNorm = false;   // if set, the infinity norm will be used instead of euclidean norm
+    bool useInfNorm = false;     // if set, the infinity norm will be used instead of euclidean norm
     double dimensionHint = 4.0;  // hint for the dimension of the input graph
     int embeddingDimension = 4;
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
 
     // Gradient descent parameters
-    double coolingFactor = 0.99; // strong influence for runtime
+    double coolingFactor = 0.99;  // strong influence for runtime
     double speed = 10;
     int maxIterations = 2000;
 
     // approximation
+    int numSpacialIndices = 1;  // number of spatial indices used for the approximation. higher number means more speed but less accuracy
     int maxApproxComparisons = 50;
-    int approxSelectionType = 0;         // what method is used to traverse the tree
+    int approxSelectionType = 0;  // what method is used to traverse the tree
     SamplingHeuristicType samplingType =
         SamplingHeuristicType::RTree;  // how does a subset of negative samples for repelling forces get selected
     int numNegativeSamples = -1;       // determins the number of negative samples.

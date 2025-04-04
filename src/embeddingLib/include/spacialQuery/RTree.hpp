@@ -295,7 +295,8 @@ class RTree: public SpatialIndex {
     RTree(Range&& r, size_t dimension):
         erased_tree(impl::contructErasedTree(std::move(r), dimension)),
         dimension(dimension) {
-            ASSERT(dimension >= 1 && dimension <= impl::MAX_DIMENSION);
+            ASSERT(dimension >= 1 && dimension <= impl::MAX_DIMENSION, 
+                "Dimension " << dimension << " is out of range [1, " << impl::MAX_DIMENSION << "]");
         }
 
     size_t query_nearest(CVecRef point, unsigned int number, std::vector<int>& out) const override {

@@ -1,11 +1,11 @@
-#include "WeightedRTree.hpp"
+#include "WeightedIndex.hpp"
 #include "RTree.hpp"
 
 #include <iostream>
 
 using rTreeValue = std::pair<CVecRef, NodeId>;
 
-void WeightedRTree::updateRTree(const VecList& positions, const std::vector<double>& weights,
+void WeightedIndex::updateIndices(const VecList& positions, const std::vector<double>& weights,
                                 const std::vector<double>& weightBuckets) {
     ASSERT(positions.size() == weights.size(), "Positions and weights must have the same size");
     ASSERT(std::is_sorted(weightBuckets.begin(), weightBuckets.end()), "Weight buckets must be sorted");
@@ -35,7 +35,7 @@ void WeightedRTree::updateRTree(const VecList& positions, const std::vector<doub
     }
 }
 
-std::vector<double> WeightedRTree::getDoublingWeightBuckets(const std::vector<double>& weights, double doublingFactor) {
+std::vector<double> WeightedIndex::getDoublingWeightBuckets(const std::vector<double>& weights, double doublingFactor) {
     double minWeight = *std::min_element(weights.begin(), weights.end());
     double maxWeight = *std::max_element(weights.begin(), weights.end());
 
@@ -49,7 +49,7 @@ std::vector<double> WeightedRTree::getDoublingWeightBuckets(const std::vector<do
     return buckets;
 }
 
-void WeightedRTree::getNodesWithinWeightedDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output,
+void WeightedIndex::getNodesWithinWeightedDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output,
                                                    VecBuffer<2>& buffer) const {
     ASSERT(output.empty());
     for (int i = 0; i < maxWeightOfClass.size(); i++) {
@@ -57,7 +57,7 @@ void WeightedRTree::getNodesWithinWeightedDistance(CVecRef p, double weight, dou
     }
 }
 
-void WeightedRTree::getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
+void WeightedIndex::getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
                                                            std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
     ASSERT(weight_class < maxWeightOfClass.size());
@@ -67,7 +67,7 @@ void WeightedRTree::getNodesWithinWeightedDistanceForClass(CVecRef p, double wei
     getWithinRadius(weight_class, p, queryRadius, output, buffer);
 }
 
-void WeightedRTree::getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius,
+void WeightedIndex::getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius,
                                                           std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
     ASSERT(output.empty());
     for (int i = 0; i < maxWeightOfClass.size(); i++) {
@@ -75,7 +75,7 @@ void WeightedRTree::getNodesWithinWeightedInfNormDistance(CVecRef p, double weig
     }
 }
 
-void WeightedRTree::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius,
+void WeightedIndex::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius,
                                                                   size_t weight_class, std::vector<NodeId>& output,
                                                                   VecBuffer<2>& buffer) const {
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
@@ -86,14 +86,14 @@ void WeightedRTree::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, dou
     getWithinBox(weight_class, p, queryRadius, output, buffer);
 }
 
-int WeightedRTree::getNumWeightClasses() const { return maxWeightOfClass.size(); }
+int WeightedIndex::getNumWeightClasses() const { return maxWeightOfClass.size(); }
 
-void WeightedRTree::getKNNNeighbors(int indexId, CVecRef p, int k, std::vector<NodeId>& output) const {
+void WeightedIndex::getKNNNeighbors(int indexId, CVecRef p, int k, std::vector<NodeId>& output) const {
     ASSERT(p.dimension() == DIMENSION);
     spacialIndices[indexId]->query_nearest(p, k, output);
 }
 
-void WeightedRTree::getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
+void WeightedIndex::getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
                                     VecBuffer<2>& buffer) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);
@@ -109,7 +109,7 @@ void WeightedRTree::getWithinRadius(int indexId, CVecRef p, double radius, std::
     spacialIndices[indexId]->query_sphere(p, radius, output);
 }
 
-void WeightedRTree::getWithinBox(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
+void WeightedIndex::getWithinBox(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
                                  VecBuffer<2>& buffer) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);

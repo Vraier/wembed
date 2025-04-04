@@ -260,9 +260,9 @@ std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int 
 }
 
 void WEmbedEmbedder::updateRTree() {
-    currentRTree = WeightedRTree(options.embeddingDimension);
-    std::vector<double> weightBuckets = WeightedRTree::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
-    currentRTree.updateRTree(currentPositions, currentWeights, weightBuckets);
+    currentRTree = WeightedIndex(options.embeddingDimension);
+    std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
+    currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
 }
 
 std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {

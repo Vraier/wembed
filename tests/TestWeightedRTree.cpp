@@ -2,12 +2,12 @@
 
 #include "Macros.hpp"
 #include "Rand.hpp"
-#include "WeightedRTree.hpp"
+#include "WeightedIndex.hpp"
 
-TEST(WeightedRTree, uniformWeightsGrid) {
+TEST(WeightedIndex, uniformWeightsGrid) {
     const int dimension = 2;
     const int gridSize = 10;
-    WeightedRTree rtree(dimension);
+    WeightedIndex rtree(dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;
@@ -22,7 +22,7 @@ TEST(WeightedRTree, uniformWeightsGrid) {
         }
     }
 
-    rtree.updateRTree(positions, weights, weightBuckets);
+    rtree.updateIndices(positions, weights, weightBuckets);
 
     const double epsilon = 10e-6;
     CVecRef p = positions[3 * gridSize + 3];
@@ -51,14 +51,14 @@ TEST(WeightedRTree, uniformWeightsGrid) {
     EXPECT_EQ(result.size(), 29);
 }
 
-TEST(WeightedRTree, uniformWeightsRandom) {
+TEST(WeightedIndex, uniformWeightsRandom) {
     const int dimension = 16;
     const int numPoints = 1000;
     const int numQueries = 100;
     VecBuffer<1> buffer(dimension);
     TmpVec<0> tmpVec(buffer, 0.0);
 
-    WeightedRTree rtree(dimension);
+    WeightedIndex rtree(dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;
@@ -72,7 +72,7 @@ TEST(WeightedRTree, uniformWeightsRandom) {
         weights.push_back(1);
     }
 
-    rtree.updateRTree(positions, weights, weightBuckets);
+    rtree.updateIndices(positions, weights, weightBuckets);
 
     const double radius = 0.3;
     VecBuffer<2> rTreeBuffer(dimension);
@@ -95,7 +95,7 @@ TEST(WeightedRTree, uniformWeightsRandom) {
     }
 }
 
-TEST(WeightedRTree, Random) {
+TEST(WeightedIndex, Random) {
     const int dimension = 16;
     const int numPoints = 1000;
     const int numQueries = 200;
@@ -103,7 +103,7 @@ TEST(WeightedRTree, Random) {
     VecBuffer<1> buffer(dimension);
     TmpVec<0> tmpVec(buffer, 0.0);
 
-    WeightedRTree rtree(dimension);
+    WeightedIndex rtree(dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;
@@ -116,7 +116,7 @@ TEST(WeightedRTree, Random) {
         weights.push_back(std::pow(10, Rand::randomDouble(1e-5, 10.0)));
     }
 
-    std::vector<double> weightBuckets = WeightedRTree::getDoublingWeightBuckets(weights, doubleFactor);
+    std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, doubleFactor);
     const double minWeight = *std::min_element(weights.begin(), weights.end());
     const double maxWeight = *std::max_element(weights.begin(), weights.end());
     for (double w : weightBuckets) {
@@ -125,7 +125,7 @@ TEST(WeightedRTree, Random) {
         EXPECT_LE(w, maxWeight);
     }
 
-    rtree.updateRTree(positions, weights, weightBuckets);
+    rtree.updateIndices(positions, weights, weightBuckets);
 
     const double radius = 0.3;
     VecBuffer<2> rTreeBuffer(dimension);

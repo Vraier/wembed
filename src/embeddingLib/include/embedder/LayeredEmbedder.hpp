@@ -9,22 +9,19 @@
 #include "LabelPropagation.hpp"
 #include "Timings.hpp"
 #include "WEmbedEmbedder.hpp"
-#include "WeightedRTree.hpp"
+#include "WeightedIndex.hpp"
 
 class SingleLayerEmbedder {
     using Timer = util::Timer;
 
    public:
-    SingleLayerEmbedder(std::shared_ptr<GraphHierarchy> hierarchy, int layer, EmbedderOptions opts,
-                        std::shared_ptr<Timer> timer_ptr)
+    SingleLayerEmbedder(Graph &g, EmbedderOptions opts, std::shared_ptr<Timer> timer_ptr)
         : timer(timer_ptr),
           options(opts),
-          LAYER(layer),
-          graph(hierarchy->graphs[LAYER]),
-          N(hierarchy->getLayerSize(LAYER)),
+          graph(g),
+          N(g.getNumVertices()),
           optimizer(opts.embeddingDimension, N, opts.speed, opts.coolingFactor, 0.9, 0.999, 10e-8),
-          currentRTree(opts.embeddingDimension),
-          hierarchy(hierarchy),
+          rTree(opts.embeddingDimension),
           currentForce(opts.embeddingDimension, N),
           currentPositions(opts.embeddingDimension, N),
           oldPositions(opts.embeddingDimension, N),
@@ -59,20 +56,19 @@ class SingleLayerEmbedder {
 
     std::shared_ptr<Timer> timer;
     EmbedderOptions options;
-    int LAYER;  // layer in the hierachy
     Graph graph;
     int N;  // size of the graph
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedRTree currentRTree;      // changes every iteration
-    std::vector<int> sortedNodeIds;  // node ids sorted by weight
+
+    WeightedIndex rTree;
+    std::vector<int> sortedNodeIds;           // node ids sorted by weight
 
     bool insignificantPosChange = false;
     int currentIteration = 0;
 
     // current state of gradient calculation
-    std::shared_ptr<GraphHierarchy> hierarchy;
     VecList currentForce;
     VecList currentPositions;
     VecList oldPositions;
@@ -89,7 +85,7 @@ class LayeredEmbedder : public EmbedderInterface {
           originalGraph(g),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
           currentLayer(hierarchy->getNumLayers() - 1),
-          currentEmbedder(hierarchy, currentLayer, opts, timer) {};
+          currentEmbedder(hierarchy->graphs[currentLayer], opts, timer) {};
 
     virtual void calculateStep();
     virtual bool isFinished();

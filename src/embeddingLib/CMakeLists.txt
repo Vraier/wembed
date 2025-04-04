@@ -13,8 +13,6 @@ set(HEADERS
         include/embeddingSpace/Cosine.hpp
         include/embeddingSpace/MercatorEmbedding.hpp
 
-        include/embeddedGraph/EmbeddedGraph.hpp
-
         include/embeddingIO/EmbeddingIO.hpp
 
         include/partition/LabelPropagation.hpp
@@ -22,13 +20,13 @@ set(HEADERS
 
         include/spacialQuery/SpacialIndex.hpp
         include/spacialQuery/RTree.hpp
-        include/spacialQuery/WeightedRTree.hpp
+        include/spacialQuery/WeightedIndex.hpp
 
         # Embedder
         #include/embedder/EmbedderFactory.hpp
         include/embedder/EmbedderOptions.hpp
 
-        include/embedder/AbstractSimpleEmbedder.hpp
+        #include/embedder/AbstractSimpleEmbedder.hpp
         #include/embedder/AbstractLayerEmbedder.hpp
         #include/embedder/HierarchyEmbedder.hpp
         #include/embedder/KHierarchyEmbedder.hpp
@@ -40,8 +38,8 @@ set(HEADERS
         #include/embedder/LocalEmbedder.hpp
         #include/embedder/SigmoidEmbedder.hpp
         #include/embedder/FruchtermannWeightEmbedder.hpp
-        include/embedder/SimpleEmbedders.hpp
-        include/embedder/SimpleSamplingEmbedder.hpp
+        #include/embedder/SimpleEmbedders.hpp
+        #include/embedder/SimpleSamplingEmbedder.hpp
         include/embedder/WEmbedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
@@ -59,20 +57,18 @@ set(SOURCES
         src/embeddingSpace/Poincare.cpp
         src/embeddingSpace/MercatorEmbedding.cpp
         
-        src/embeddedGraph/EmbeddedGraph.cpp
-
         src/embeddingIO/EmbeddingIO.cpp
 
         src/partition/LabelPropagation.cpp
         src/partition/GraphHierarchy.cpp
 
-        src/spacialQuery/WeightedRTree.cpp
+        src/spacialQuery/WeightedIndex.cpp
 
         # Embedder
         #src/embedder/EmbedderFactory.cpp
         src/embedder/EmbedderOptions.cpp
 
-        src/embedder/AbstractSimpleEmbedder.cpp
+        #src/embedder/AbstractSimpleEmbedder.cpp
         #src/embedder/AbstractLayerEmbedder.cpp
         #src/embedder/HierarchyEmbedder.cpp
         #src/embedder/KHierarchyEmbedder.cpp
@@ -88,11 +84,11 @@ set(SOURCES
         #src/embedder/SigmoidEmbedder.cpp
         #src/embedder/FruchtermannWeightEmbedder.cpp
 
-        src/embedder/SimpleEmbedders.cpp
-        src/embedder/SimpleSamplingEmbedder.cpp
+        #src/embedder/SimpleEmbedders.cpp
+        #src/embedder/SimpleSamplingEmbedder.cpp
         src/embedder/WEmbedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
-
+        
         src/gradientOptimizer/AdamOptimizer.cpp
         src/gradientOptimizer/SimpleOptimizer.cpp
 )

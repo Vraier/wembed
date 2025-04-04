@@ -6,7 +6,7 @@
 #include "Graph.hpp"
 #include "Timings.hpp"
 #include "VecList.hpp"
-#include "WeightedRTree.hpp"
+#include "WeightedIndex.hpp"
 
 class WEmbedEmbedder : public EmbedderInterface {
     using Timer = util::Timer;
@@ -77,7 +77,7 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedRTree currentRTree;      // changes every iteration
+    WeightedIndex currentRTree;      // changes every iteration
     std::vector<int> sortedNodeIds;  // node ids sorted by weight
 
     int currentIteration = 0;

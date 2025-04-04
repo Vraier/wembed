@@ -6,16 +6,16 @@
 #include "VecList.hpp"
 #include "Graph.hpp"
 
-class WeightedRTree {
+class WeightedIndex {
    public:
     using CandidateList = std::vector<std::pair<NodeId, NodeId>>;
 
-    WeightedRTree(int dimension) : DIMENSION(dimension) {}
+    WeightedIndex(int dimension) : DIMENSION(dimension) {}
 
     /**
      * Rebuilds all r trees by inserting the positions into the right r-tree according to the weight class.
      */
-    void updateRTree(const VecList& positions, const std::vector<double>& weights,
+    void updateIndices(const VecList& positions, const std::vector<double>& weights,
                      const std::vector<double>& weightBuckets);
 
     static std::vector<double> getDoublingWeightBuckets(const std::vector<double>& weights,

@@ -83,7 +83,7 @@ void LayeredEmbedder::expandPositions() {
     }
 
     currentLayer--;
-    SingleLayerEmbedder newEmbedder(hierarchy, currentLayer, options, timer);
+    SingleLayerEmbedder newEmbedder(hierarchy->graphs[currentLayer], options, timer);
     currentEmbedder = std::move(newEmbedder);
     currentEmbedder.setCoordinates(newPositions);
     currentEmbedder.setWeights(newWeights);
@@ -93,7 +93,6 @@ void LayeredEmbedder::expandPositions() {
 
 void SingleLayerEmbedder::calculateStep() {
     currentIteration++;
-    const int N = hierarchy->getLayerSize(LAYER);
 
     if (N > 1000000 && currentIteration % 10 == 0) {
         std::cout << "(Iteration " << currentIteration << ")" << std::endl;
@@ -297,20 +296,19 @@ void SingleLayerEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
 }
 
 void SingleLayerEmbedder::updateRTree() {
-    currentRTree = WeightedRTree(options.embeddingDimension);
-    std::vector<double> weightBuckets = WeightedRTree::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
-    currentRTree.updateRTree(currentPositions, currentWeights, weightBuckets);
+    std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
+    rTree.updateIndices(currentPositions, currentWeights, weightBuckets);
 }
 
 std::vector<NodeId> SingleLayerEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
     std::vector<NodeId> candidates;
-    for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
+    for (size_t w_class = 0; w_class < rTree.getNumWeightClasses(); w_class++) {
         if (options.useInfNorm) {
-            currentRTree.getNodesWithinWeightedDistanceInfNormForClass(
-                currentPositions[v], currentWeights[v], options.sigmoidLength, w_class, candidates, buffer);
+            rTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
+                                                                options.sigmoidLength, w_class, candidates, buffer);
         }
-        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
-                                                            options.sigmoidLength, w_class, candidates, buffer);
+        rTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v], options.sigmoidLength,
+                                                     w_class, candidates, buffer);
     }
     return candidates;
 }
