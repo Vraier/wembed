@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "RTree.hpp"
 #include "SpacialIndex.hpp"
 #include "VecList.hpp"
+#include "Graph.hpp"
 
 class WeightedRTree {
    public:

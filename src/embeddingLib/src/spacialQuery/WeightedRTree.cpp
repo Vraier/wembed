@@ -1,4 +1,5 @@
 #include "WeightedRTree.hpp"
+#include "RTree.hpp"
 
 #include <iostream>
 
