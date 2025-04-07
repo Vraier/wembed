@@ -114,7 +114,6 @@ void WEmbedEmbedder::calculateAllAttractingForces() {
 
 void WEmbedEmbedder::calculateAllRepellingForces() {
     // find nodes that are too close to each other
-    std::vector<std::vector<NodeId>> repellingCandidates(graph.getNumVertices());
     VecBuffer<2> rTreeBuffer(options.embeddingDimension);
     VecBuffer<1> forceBuffer(options.embeddingDimension);
 
@@ -265,12 +264,21 @@ std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int 
 }
 
 void WEmbedEmbedder::updateRTree() {
+    if(options.numNegativeSamples >= 0){
+        return; // we are not using a geometric index 
+    }
+
     currentRTree = std::move(WeightedIndex(options.embeddingDimension));
     std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
     currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
 }
 
 std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
+    if (options.numNegativeSamples >= 0) {
+        std::vector<NodeId> candidates = Rand::randomSample(N, std::min(N, options.numNegativeSamples));
+        return candidates;
+    }
+
     std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
         if (options.useInfNorm) {

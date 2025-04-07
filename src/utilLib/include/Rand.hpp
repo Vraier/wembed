@@ -33,6 +33,10 @@ class Rand {
      * Random permutation of the numbers 0 to n-1
      */
     static std::vector<int> randomPermutation(int n);
+    /**
+     * Get k random numbers from the range [0, n-1] without replacement
+     */
+    static std::vector<int> randomSample(int n, int k);
 
     /**
      * positive random integer

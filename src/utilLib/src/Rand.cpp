@@ -1,4 +1,7 @@
 #include "Rand.hpp"
+#include "Macros.hpp"
+
+#include <unordered_set>
 
 Rand* Rand::instance = nullptr;  // or NULL, or nullptr in c++11
 
@@ -46,6 +49,23 @@ std::vector<int> Rand::randomPermutation(int n) {
         result[j] = tmp;
     }
 
+    return result;
+}
+
+std::vector<int> Rand::randomSample(int n, int k) {
+    ASSERT(n >= k, "Sample size k cannot be larger than population size n");
+    ASSERT(k >= 0, "Sample size k must be positive");
+    
+    // https://www.nowherenearithaca.com/2013/05/robert-floyds-tiny-and-beautiful.html
+    std::unordered_set<int> selected;
+    for(int r = n-k; r < n; r++){
+        int v = randomInt(0, r);
+        if(!selected.insert(v).second){
+            selected.insert(r);
+        }
+    }
+
+    std::vector<int> result(selected.begin(), selected.end());
     return result;
 }
 

@@ -56,12 +56,11 @@ struct EmbedderOptions {
     int maxIterations = 2000;
 
     // approximation
-    int numSpacialIndices = 1;  // number of spatial indices used for the approximation. higher number means more speed but less accuracy
     int maxApproxComparisons = 50;
     int approxSelectionType = 0;  // what method is used to traverse the tree
     SamplingHeuristicType samplingType =
         SamplingHeuristicType::RTree;  // how does a subset of negative samples for repelling forces get selected
-    int numNegativeSamples = -1;       // determins the number of negative samples.
+    int numNegativeSamples = -1;       // determines the number of negative samples.
     bool uniformSampling = false;      // determines if every nodes gets the same amount of samples
     double doublingFactor = 2.0;       // determines how the weight buckets are calculated
 

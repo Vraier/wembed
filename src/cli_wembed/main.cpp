@@ -114,7 +114,7 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--speed", opts.embedderOptions.speed, "Speed of the embedding process")->capture_default_str();
     app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
                  "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
-    app.add_option("--num-indices", opts.embedderOptions.numSpacialIndices,
-                    "Number of spatial indices used for the approximation. Higher number means more speed but less accuracy.")
+    app.add_option("--neg-samples", opts.embedderOptions.numNegativeSamples,
+                    "Number of negative samples used for the approximation. Higher number means more speed but less accuracy. -1 uses geometric index")
         ->capture_default_str();
 }
