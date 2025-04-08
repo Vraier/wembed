@@ -98,6 +98,13 @@ void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
     std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
     std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
               [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
+
+    // calculate prefixSum
+    weightPrefixSum.resize(N);
+    weightPrefixSum[0] = currentWeights[0];
+    for (int i = 1; i < N; i++) {
+        weightPrefixSum[i] = weightPrefixSum[i - 1] + currentWeights[i];
+    }
 }
 
 std::vector<util::TimingResult> WEmbedEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
@@ -161,10 +168,10 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     double wu = currentWeights[u];
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
-    if (weightDist <= options.sigmoidLength) {
+    if (weightDist <= options.edgeLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.attractionScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
     }
 
     currentForce[v] += result;
@@ -203,10 +210,15 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     double wu = currentWeights[u];
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
 
-    if (weightDist > options.sigmoidLength) {
+    if (weightDist > options.edgeLength) {
         result *= 0;
     } else {
-        result *= options.sigmoidScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.repulsionScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
+    }
+
+    // increase repulsion force when we use less negative samples
+    if (options.numNegativeSamples > 0) {
+        result *= (double)N / (double)options.numNegativeSamples;
     }
 
     currentForce[v] += result;
@@ -264,8 +276,8 @@ std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int 
 }
 
 void WEmbedEmbedder::updateRTree() {
-    if(options.numNegativeSamples >= 0){
-        return; // we are not using a geometric index 
+    if (options.numNegativeSamples >= 0) {
+        return;  // we are not using a geometric index
     }
 
     currentRTree = std::move(WeightedIndex(options.embeddingDimension));
@@ -275,7 +287,7 @@ void WEmbedEmbedder::updateRTree() {
 
 std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
     if (options.numNegativeSamples >= 0) {
-        std::vector<NodeId> candidates = Rand::randomSample(N, std::min(N, options.numNegativeSamples));
+        std::vector<NodeId> candidates = sampleRandomNodes(std::min(N, options.numNegativeSamples));
         return candidates;
     }
 
@@ -283,10 +295,24 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
         if (options.useInfNorm) {
             currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
-                                                                options.sigmoidLength, w_class, candidates, buffer);
+                                                                       options.edgeLength, w_class, candidates, buffer);
         }
-        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v], options.sigmoidLength,
-                                                     w_class, candidates, buffer);
+        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v], options.edgeLength,
+                                                            w_class, candidates, buffer);
     }
     return candidates;
+}
+
+std::vector<NodeId> WEmbedEmbedder::sampleRandomNodes(int numNodes) const {
+    std::vector<NodeId> result;
+
+    // sample node with probability proportional to the weight
+    for (int i = 0; i < numNodes; i++) {
+        double weightSample = Rand::randomDouble(0.0, weightPrefixSum.back());
+        auto it = std::lower_bound(weightPrefixSum.begin(), weightPrefixSum.end(), weightSample);
+        int index = std::distance(weightPrefixSum.begin(), it);
+        ASSERT(index < N && index >= 0, "Index out of bounds: " << index << " for N = " << N);
+        result.push_back(index);
+    }
+    return result;
 }

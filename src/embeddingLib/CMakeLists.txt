@@ -23,23 +23,7 @@ set(HEADERS
         include/spacialQuery/WeightedIndex.hpp
 
         # Embedder
-        #include/embedder/EmbedderFactory.hpp
         include/embedder/EmbedderOptions.hpp
-
-        #include/embedder/AbstractSimpleEmbedder.hpp
-        #include/embedder/AbstractLayerEmbedder.hpp
-        #include/embedder/HierarchyEmbedder.hpp
-        #include/embedder/KHierarchyEmbedder.hpp
-        #include/embedder/WeightedSpringEmbedder.hpp
-        #include/embedder/WeightedStressEmbedder.hpp
-        #include/embedder/FruchtermannLayerEmbedder.hpp
-        #include/embedder/LinearLayerEmbedder.hpp
-        #include/embedder/SigmoidLayerEmbedder.hpp
-        #include/embedder/LocalEmbedder.hpp
-        #include/embedder/SigmoidEmbedder.hpp
-        #include/embedder/FruchtermannWeightEmbedder.hpp
-        #include/embedder/SimpleEmbedders.hpp
-        #include/embedder/SimpleSamplingEmbedder.hpp
         include/embedder/WEmbedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
@@ -65,27 +49,6 @@ set(SOURCES
         src/spacialQuery/WeightedIndex.cpp
 
         # Embedder
-        #src/embedder/EmbedderFactory.cpp
-        src/embedder/EmbedderOptions.cpp
-
-        #src/embedder/AbstractSimpleEmbedder.cpp
-        #src/embedder/AbstractLayerEmbedder.cpp
-        #src/embedder/HierarchyEmbedder.cpp
-        #src/embedder/KHierarchyEmbedder.cpp
-
-        #src/embedder/WeightedSpringEmbedder.cpp
-        #src/embedder/WeightedStressEmbedder.cpp
-
-        #src/embedder/FruchtermannLayerEmbedder.cpp
-        #src/embedder/LinearLayerEmbedder.cpp
-        #src/embedder/SigmoidLayerEmbedder.cpp
-
-        #src/embedder/LocalEmbedder.cpp
-        #src/embedder/SigmoidEmbedder.cpp
-        #src/embedder/FruchtermannWeightEmbedder.cpp
-
-        #src/embedder/SimpleEmbedders.cpp
-        #src/embedder/SimpleSamplingEmbedder.cpp
         src/embedder/WEmbedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
         

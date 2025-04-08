@@ -102,11 +102,23 @@ void addOptions(CLI::App& app, Options& opts) {
     // Embedder Options
     app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")->capture_default_str();
     app.add_flag("--layered", opts.layeredEmbedding, "Use layered embedding");
-    app.add_option("--dim-hint", opts.embedderOptions.dimensionHint, "Dimension hint")->capture_default_str();
     app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")->capture_default_str();
+    app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
+                   "Dimension hint. Negative values use dim as dimension hint.")
+        ->capture_default_str();
+
     app.add_option("--weight-type", opts.embedderOptions.weightType,
                    "Affects the initial weights: " + util::mapToString(weightTypeMap))
         ->capture_default_str();
+    app.add_option("--neg-samples", opts.embedderOptions.numNegativeSamples,
+                   "Number of negative samples used for the approximation. Higher number means more speed but less "
+                   "accuracy. -1 uses geometric index")
+        ->capture_default_str();
+    app.add_option("--attraction", opts.embedderOptions.attractionScale, "Changes magnitude of attracting forces")
+        ->capture_default_str();
+    app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
+        ->capture_default_str();
+
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();
     app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")
@@ -114,7 +126,4 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--speed", opts.embedderOptions.speed, "Speed of the embedding process")->capture_default_str();
     app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
                  "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
-    app.add_option("--neg-samples", opts.embedderOptions.numNegativeSamples,
-                    "Number of negative samples used for the approximation. Higher number means more speed but less accuracy. -1 uses geometric index")
-        ->capture_default_str();
 }

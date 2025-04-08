@@ -246,7 +246,7 @@ TmpCVec<2> SimpleSigmoidEuclideanEmbedder::repulsionForce(int v, int u) {
 
     result /= norm;
     result *= options.sigmoidScale;
-    result *= sigmoid(options.sigmoidScale * (options.sigmoidLength - norm));
+    result *= sigmoid(options.sigmoidScale * (options.edgeLength - norm));
     return result;
 }
 
@@ -269,7 +269,7 @@ TmpCVec<3> SimpleSigmoidEuclideanEmbedder::attractionForce(int v, int u) {
 
     result /= norm;
     result *= options.sigmoidScale;
-    result *= sigmoid(options.sigmoidScale * (norm - options.sigmoidLength));
+    result *= sigmoid(options.sigmoidScale * (norm - options.edgeLength));
     return result;
 }
 
@@ -400,7 +400,7 @@ TmpCVec<2> SimpleSigmoidWeightedEmbedder::repulsionForce(int v, int u) {
     }
 
     double weightFactor = idealEdgeLength(graph.getNodeWeight(v), graph.getNodeWeight(u));
-    result *= sigmoid(options.sigmoidScale * (options.sigmoidLength - norm / weightFactor));
+    result *= sigmoid(options.sigmoidScale * (options.edgeLength - norm / weightFactor));
     result /= weightFactor;
     result /= norm;
     result *= options.sigmoidScale;
@@ -425,7 +425,7 @@ TmpCVec<3> SimpleSigmoidWeightedEmbedder::attractionForce(int v, int u) {
     }
 
     double weightFactor = idealEdgeLength(graph.getNodeWeight(v), graph.getNodeWeight(u));
-    result *= sigmoid(options.sigmoidScale * ((norm / weightFactor) - options.sigmoidLength));
+    result *= sigmoid(options.sigmoidScale * ((norm / weightFactor) - options.edgeLength));
     result /= weightFactor;
     result *= options.sigmoidScale;
     result /= norm;
@@ -516,7 +516,7 @@ TmpCVec<2> SimpleLinearEmbedder::repulsionForce(int v, int u) {
     double wu = graph.getNodeWeight(u);
     double similarity = getSimilarity(norm, wu, wv);
 
-    if (similarity > options.sigmoidLength) {
+    if (similarity > options.edgeLength) {
         result *= 0;
     } else {
         result *= options.sigmoidScale / (norm * std::pow(wu * wv, 1.0 / options.embeddingDimension));
@@ -546,7 +546,7 @@ TmpCVec<3> SimpleLinearEmbedder::attractionForce(int v, int u) {
     double wu = graph.getNodeWeight(u);
     double similarity = getSimilarity(norm, wu, wv);
 
-    if (similarity <= options.sigmoidLength) {
+    if (similarity <= options.edgeLength) {
         result *= 0;
     } else {
         result *= options.sigmoidScale / (norm * std::pow(wu * wv, 1.0 / options.embeddingDimension));

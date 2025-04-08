@@ -66,6 +66,8 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void calculateAllRepellingForces();
     virtual void repulstionForce(int v, int u, VecBuffer<1> &buffer);
     virtual void attractionForce(int v, int u, VecBuffer<1> &buffer);
+    virtual std::vector<NodeId> sampleRandomNodes(
+        int numNodes) const;  // NOTE(JP) has race conditions because of randomness
 
     /**
      * R-Tree queries
@@ -90,5 +92,6 @@ class WEmbedEmbedder : public EmbedderInterface {
     VecList currentForce;
     VecList currentPositions;
     VecList oldPositions;
-    std::vector<double> currentWeights;  // currently not changed during gradient descent
+    std::vector<double> currentWeights;   // currently not changed during gradient descent
+    std::vector<double> weightPrefixSum;  // starts at the weight of the first node and ends with the sum of all weights
 };
