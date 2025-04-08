@@ -107,17 +107,5 @@ double NodeSampler::getAveragePrecision(NodeId v, const EdgeLengthToNode& distan
             neighborPrecisions.push_back(precisions[i]);
         }
     }
-    return averageFromVector(neighborPrecisions);
-}
-
-double NodeSampler::averageFromVector(const std::vector<double>& values) {
-    double sum = 0;
-    for (double v : values) {
-        sum += v;
-    }
-    if (values.size() == 0) {
-        return -1;
-    } else {
-        return sum / (double)values.size();
-    }
+    return Toolkit::averageFromVector(neighborPrecisions);
 }

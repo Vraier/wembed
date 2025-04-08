@@ -11,7 +11,7 @@ Cosine::Cosine(const std::vector<std::vector<double>> &coords) : DIMENSION(coord
     }
 }
 
-double Cosine::getSimilarity(NodeId a, NodeId b) {
+double Cosine::getSimilarity(NodeId a, NodeId b) const {
     double aDotb = 0.0;
     double aNorm = coordinates[a].norm();
     double bNorm = coordinates[b].norm();
@@ -24,6 +24,6 @@ double Cosine::getSimilarity(NodeId a, NodeId b) {
     return -1.0 * aDotb / (aNorm * bNorm);
 }
 
-int Cosine::getDimension() {
+int Cosine::getDimension() const {
     return DIMENSION;
 }

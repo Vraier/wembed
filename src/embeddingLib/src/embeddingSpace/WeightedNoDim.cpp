@@ -1,10 +1,7 @@
 #include "WeightedNoDim.hpp"
 
-WeightedNoDim::WeightedNoDim(const std::vector<std::vector<double>> &coords,
-                                     const std::vector<double> &w) : DIMENSION(coords[0].size()),
-                                                                     coordinates(DIMENSION),
-                                                                     weights(w),
-                                                                     buffer(DIMENSION) {
+WeightedNoDim::WeightedNoDim(const std::vector<std::vector<double>> &coords, const std::vector<double> &w)
+    : DIMENSION(coords[0].size()), coordinates(DIMENSION), weights(w) {
     ASSERT(coords.size() == weights.size());
 
     coordinates.setSize(coords.size(), 0);
@@ -16,22 +13,20 @@ WeightedNoDim::WeightedNoDim(const std::vector<std::vector<double>> &coords,
     }
 }
 
-double WeightedNoDim::getSimilarity(NodeId a, NodeId b) {
+double WeightedNoDim::getSimilarity(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.norm() / (weights[a] * weights[b]);
 }
 
-int WeightedNoDim::getDimension() {
-    return DIMENSION;
-}
+int WeightedNoDim::getDimension() const { return DIMENSION; }
 
-double WeightedNoDim::getDistance(NodeId a, NodeId b) {
+double WeightedNoDim::getDistance(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.norm();
 }
 
-double WeightedNoDim::getNodeWeight(NodeId a) const {
-    return weights[a];
-}
+double WeightedNoDim::getNodeWeight(NodeId a) const { return weights[a]; }

@@ -1,7 +1,7 @@
 #include "Poincare.hpp"
 
 Poincare::Poincare(const std::vector<std::vector<double>> &coords)
-    : DIMENSION(coords[0].size()), coordinates(DIMENSION), buffer(DIMENSION) {
+    : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
     coordinates.setSize(coords.size(), 0);
 
     for (int i = 0; i < coords.size(); i++) {
@@ -13,7 +13,8 @@ Poincare::Poincare(const std::vector<std::vector<double>> &coords)
     }
 }
 
-double Poincare::getSimilarity(NodeId a, NodeId b) {
+double Poincare::getSimilarity(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     double eps = 1e-5;
@@ -28,4 +29,4 @@ double Poincare::getSimilarity(NodeId a, NodeId b) {
     return std::log(x + z);
 }
 
-int Poincare::getDimension() { return DIMENSION; }
+int Poincare::getDimension() const { return DIMENSION; }

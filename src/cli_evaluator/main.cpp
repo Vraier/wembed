@@ -51,8 +51,6 @@ int main(int argc, char* argv[]) {
     std::vector<std::unique_ptr<Metric>> metrics;
     metrics.push_back(std::make_unique<GeneralGraphInfo>(inputGraph));
     metrics.push_back(std::make_unique<TimeParser>(options.timePath));
-    // metrics.push_back(std::make_unique<ConfigParser>(options.logPath, options.logType)); // TODO check if we need
-    // this
     metrics.push_back(std::make_unique<Reconstruction>(inputGraph, embedding, options.nodeSamplePercent));
     metrics.push_back(std::make_unique<EdgeDetection>(inputGraph, embedding, options.edgeSampleScale));
 
@@ -116,4 +114,7 @@ void addOptions(CLI::App& app, Options& options) {
     app.add_option("--seed", options.seed, "Seed for the random number generator");
     app.add_option("--edge-sample-factor", options.edgeSampleScale,
                    "Factor for how many more non edges get sampled than edges");
+    app.add_option("--node-sample-percent", options.nodeSamplePercent,
+                   "Percent of nodes that get sampled during reconstruction metric (each node has linear runtime!)")
+        ->capture_default_str();
 }

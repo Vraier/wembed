@@ -10,8 +10,8 @@
 
 /**
  * Calculate reconstruction.
- * For every node, calculate the average precision or precision at dregree. The mean of these values is reported
- * Only a fraction of the nodes are sampled (and at most 1000), because the runtime for every node is in O(n)
+ * For every node, calculate the average precision or precision at dregree. The mean of these values is reported.
+ * Only a fraction of the nodes are sampled (and at most 5000), because the runtime for every node is in O(n)
  */
 class Reconstruction : public Metric {
    public:

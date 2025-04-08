@@ -1,11 +1,7 @@
 #include "WeightedGeometric.hpp"
 
-WeightedGeometric::WeightedGeometric(const std::vector<std::vector<double>> &coords,
-                                     const std::vector<double> &w) : DIMENSION(coords[0].size()),
-                                                                     DINVERSE(1.0 / (double)DIMENSION),
-                                                                     coordinates(DIMENSION),
-                                                                     weights(w),
-                                                                     buffer(DIMENSION) {
+WeightedGeometric::WeightedGeometric(const std::vector<std::vector<double>> &coords, const std::vector<double> &w)
+    : DIMENSION(coords[0].size()), DINVERSE(1.0 / (double)DIMENSION), coordinates(DIMENSION), weights(w) {
     ASSERT(coords.size() == weights.size());
 
     coordinates.setSize(coords.size(), 0);
@@ -17,22 +13,20 @@ WeightedGeometric::WeightedGeometric(const std::vector<std::vector<double>> &coo
     }
 }
 
-double WeightedGeometric::getSimilarity(NodeId a, NodeId b) {
+double WeightedGeometric::getSimilarity(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION); // i allocate the buffer locally to avoid race conditions
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.norm() / std::pow((weights[a] * weights[b]), DINVERSE);
 }
 
-int WeightedGeometric::getDimension() {
-    return DIMENSION;
-}
+int WeightedGeometric::getDimension() const { return DIMENSION; }
 
-double WeightedGeometric::getDistance(NodeId a, NodeId b) {
+double WeightedGeometric::getDistance(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.norm();
 }
 
-double WeightedGeometric::getNodeWeight(NodeId a) const {
-    return weights[a];
-}
+double WeightedGeometric::getNodeWeight(NodeId a) const { return weights[a]; }

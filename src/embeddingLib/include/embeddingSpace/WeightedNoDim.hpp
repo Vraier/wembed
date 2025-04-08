@@ -12,14 +12,13 @@ class WeightedNoDim : public Embedding {
     WeightedNoDim(const std::vector<std::vector<double>> &coords, const std::vector<double> &weights);
     virtual ~WeightedNoDim(){};
 
-    virtual double getSimilarity(NodeId a, NodeId b);
-    virtual int getDimension();
-    double getDistance(NodeId a, NodeId b);
+    virtual double getSimilarity(NodeId a, NodeId b) const;
+    virtual int getDimension() const;
+    double getDistance(NodeId a, NodeId b) const;
     double getNodeWeight(NodeId a) const;
 
    private:
     const int DIMENSION;
     VecList coordinates;
     std::vector<double> weights;
-    VecBuffer<1> buffer;
 };

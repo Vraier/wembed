@@ -4,8 +4,7 @@ WeightedGeometricInf::WeightedGeometricInf(const std::vector<std::vector<double>
                                      const std::vector<double> &w) : DIMENSION(coords[0].size()),
                                                                      DINVERSE(1.0 / (double)DIMENSION),
                                                                      coordinates(DIMENSION),
-                                                                     weights(w),
-                                                                     buffer(DIMENSION) {
+                                                                     weights(w){
     ASSERT(coords.size() == weights.size());
 
     coordinates.setSize(coords.size(), 0);
@@ -17,17 +16,19 @@ WeightedGeometricInf::WeightedGeometricInf(const std::vector<std::vector<double>
     }
 }
 
-double WeightedGeometricInf::getSimilarity(NodeId a, NodeId b) {
+double WeightedGeometricInf::getSimilarity(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.infNorm() / std::pow((weights[a] * weights[b]), DINVERSE);
 }
 
-int WeightedGeometricInf::getDimension() {
+int WeightedGeometricInf::getDimension() const {
     return DIMENSION;
 }
 
-double WeightedGeometricInf::getDistance(NodeId a, NodeId b) {
+double WeightedGeometricInf::getDistance(NodeId a, NodeId b) const {
+    VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];
     return tmpVec.infNorm();

@@ -6,8 +6,8 @@
 class Cosine : public Embedding {
    public:
     Cosine(const std::vector<std::vector<double>> &coords);
-    virtual double getSimilarity(NodeId a, NodeId b);
-    virtual int getDimension();
+    virtual double getSimilarity(NodeId a, NodeId b) const;
+    virtual int getDimension() const;
 
    private:
     const int DIMENSION;

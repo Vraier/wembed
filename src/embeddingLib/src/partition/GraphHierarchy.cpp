@@ -13,7 +13,7 @@ GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) 
     std::vector<std::vector<EdgeId>> edgeParentPointers;
     Graph currGraph = graph;
     for (int i = 0; i < NUMLAYERS; i++) {
-        LOG_INFO("... in layer " << i);
+        LOG_INFO("... in layer " << i << " with " << parentPointer[i].size() << " nodes");
         graphs.push_back(currGraph);
         if (i < NUMLAYERS - 1) {
             auto coarsened = GraphAlgo::coarsenGraph(currGraph, parentPointer[i]);
@@ -36,10 +36,8 @@ GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) 
     }
 
     // assign parent and child nodes
-    LOG_INFO("Setting pointers between layers");
     for (int l = 0; l < NUMLAYERS-1; l++)  // only do it for #layer -1
     {
-        LOG_INFO("... in layer " << l);
         // assign pointers for nodes
         int nodeLayerSize = parentPointer[l].size();
         for (int i = 0; i < nodeLayerSize; i++) {

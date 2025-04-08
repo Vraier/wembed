@@ -19,6 +19,8 @@ std::pair<int, int> findMinMax(const std::vector<int>& numbers);
  */
 bool noGapsInVector(std::vector<int> numbers);
 
+double averageFromVector(const std::vector<double>& values);
+
 /**
  * The pow operation takes a lot of computing time. 
  * We could try to improve this by allowing for less precision

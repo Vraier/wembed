@@ -20,7 +20,7 @@ struct EmbedderOptions {
     double doublingFactor = 2.0;                       // determines how the weight buckets are calculated
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
     double attractionScale = 1.0;
-    double repulsionScale = 1.0;
+    double repulsionScale = 0.1;
     double edgeLength = 1.0;
 
     // Gradient descent parameters

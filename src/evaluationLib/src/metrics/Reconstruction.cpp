@@ -1,4 +1,5 @@
 #include "Reconstruction.hpp"
+#include "Toolkit.hpp"
 
 #include <fstream>
 
@@ -13,8 +14,10 @@ std::vector<std::string> Reconstruction::getMetricValues() {
     }
 
     std::vector<std::string> result;
-    result.push_back(std::to_string(NodeSampler::averageFromVector(constructAtDegVals)));  // using deg as k
-    result.push_back(std::to_string(NodeSampler::averageFromVector(averagePrecisions)));   // mean average precision
+    result.push_back(std::to_string(Toolkit::averageFromVector(constructAtDegVals)));  // using deg as k
+    result.push_back(std::to_string(Toolkit::averageFromVector(averagePrecisions)));   // mean average precision
+
+    //writeHistogram(hist);
     
     return result;
 }
@@ -28,7 +31,7 @@ std::vector<std::string> Reconstruction::getMetricNames() {
 
 void Reconstruction::writeHistogram(const std::vector<nodeEntry>& entries) {
     std::ofstream output;
-    output.open("dummy_file.csv");
+    output.open("node_histogram.csv");
 
     std::string firstLine = "NodeV,degV,degPrecision,avgPrecision";
 
