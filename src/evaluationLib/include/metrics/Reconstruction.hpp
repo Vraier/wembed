@@ -15,8 +15,8 @@
  */
 class Reconstruction : public Metric {
    public:
-    Reconstruction(const Graph &g, std::shared_ptr<Embedding> embedding, double nodeSampleFraction)
-        : graph(g), embedding(embedding), nodeSampleFraction(nodeSampleFraction), buffer(embedding->getDimension()) {};
+    Reconstruction(const Graph &g, std::shared_ptr<Embedding> embedding, int numNodeSamples)
+        : graph(g), embedding(embedding), numNodeSamples(numNodeSamples), buffer(embedding->getDimension()) {};
 
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
@@ -27,6 +27,6 @@ class Reconstruction : public Metric {
 
     const Graph &graph;
     std::shared_ptr<Embedding> embedding;
-    double nodeSampleFraction;
+    int numNodeSamples;
     VecBuffer<1> buffer;
 };

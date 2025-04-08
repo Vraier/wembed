@@ -7,7 +7,7 @@ std::vector<std::string> Reconstruction::getMetricValues() {
     std::vector<double> constructAtDegVals;
     std::vector<double> averagePrecisions;
 
-    std::vector<nodeEntry> hist = NodeSampler::sampleHistEntries(graph, embedding, nodeSampleFraction);
+    std::vector<nodeEntry> hist = NodeSampler::sampleHistEntries(graph, embedding, numNodeSamples);
     for (auto e : hist) {
         constructAtDegVals.push_back(e.deg_precision);
         averagePrecisions.push_back(e.average_precision);

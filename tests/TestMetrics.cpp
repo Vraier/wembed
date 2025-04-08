@@ -32,10 +32,10 @@ TEST(Metric, Reconstruction) {
 
     // construct embedding
     std::vector<std::vector<double>> coords = {{0, 0}, {1, 0}, {2, 0}};
-    double nodeSampleFraction = 1.0;
+    double numNodeSamples = 1.0;
     std::shared_ptr<Embedding> embedding = std::make_unique<Euclidean>(coords);
 
-    Reconstruction metric(g, embedding, nodeSampleFraction);
+    Reconstruction metric(g, embedding, numNodeSamples);
 
     std::vector<std::string> names = metric.getMetricNames();
     std::vector<std::string> values = metric.getMetricValues();
@@ -51,7 +51,7 @@ TEST(Metric, Reconstruction) {
     std::vector<std::vector<double>> badCoords = {{0, 0}, {3, 0}, {1, 0}};
     std::shared_ptr<Embedding> badEmbedding = std::make_unique<Euclidean>(badCoords);
 
-    Reconstruction badMetric(g, badEmbedding, nodeSampleFraction);
+    Reconstruction badMetric(g, badEmbedding, numNodeSamples);
 
     std::vector<std::string> badValues = badMetric.getMetricValues();
     EXPECT_NEAR(std::stod(badValues[0]), 1.0/3.0, EPSILON);

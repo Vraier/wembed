@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::unique_ptr<Metric>> metrics;
     metrics.push_back(std::make_unique<GeneralGraphInfo>(inputGraph));
     metrics.push_back(std::make_unique<TimeParser>(options.timePath));
-    metrics.push_back(std::make_unique<Reconstruction>(inputGraph, embedding, options.nodeSamplePercent));
+    metrics.push_back(std::make_unique<Reconstruction>(inputGraph, embedding, options.nodeSampleScale));
     metrics.push_back(std::make_unique<EdgeDetection>(inputGraph, embedding, options.edgeSampleScale));
 
     // print the header for an svg file
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     valueMetrics.push_back(std::to_string(options.embType));
     valueMetrics.push_back(std::to_string(options.seed));
     valueMetrics.push_back(std::to_string(options.edgeSampleScale));
-    valueMetrics.push_back(std::to_string(options.nodeSamplePercent));
+    valueMetrics.push_back(std::to_string(options.nodeSampleScale));
 
     for (auto& m : metrics) {
         tmpNames = m->getMetricNames();
@@ -112,9 +112,9 @@ void addOptions(CLI::App& app, Options& options) {
     app.add_option("-t,--time", options.timePath, "Path to the time file");
 
     app.add_option("--seed", options.seed, "Seed for the random number generator");
-    app.add_option("--edge-sample-factor", options.edgeSampleScale,
+    app.add_option("--edge-samples", options.edgeSampleScale,
                    "Factor for how many more non edges get sampled than edges");
-    app.add_option("--node-sample-percent", options.nodeSamplePercent,
-                   "Percent of nodes that get sampled during reconstruction metric (each node has linear runtime!)")
+    app.add_option("--node-samples", options.nodeSampleScale,
+                   "How many nodes are sampled (each node has linear runtime!)")
         ->capture_default_str();
 }

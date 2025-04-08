@@ -2,14 +2,14 @@
 
 #include "Macros.hpp"
 
-bool histComparator(const histEntry& a, const histEntry& b) {
-    return a.similarity < b.similarity;
-}
+bool histComparator(const histEntry& a, const histEntry& b) { return a.similarity < b.similarity; }
 
-histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding, double sampleingScale) {
+histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding,
+                                        double sampleingScale) {
     const ll N = graph.getNumVertices();
     const ll M = graph.getNumEdges();
-    const ll noM = (N * (N - 1) / 2) - M;
+    const ll maxM = (N * (N - 1) / 2);
+    const ll noM = maxM - M;
 
     std::vector<histEntry> histogram;
     int numSampledNonEdges = 0;
@@ -21,7 +21,7 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     for (int v = 0; v < N; v++) {
         for (int w : graph.getNeighbors(v)) {
             if (w <= v) continue;
-            histEntry tmp{embedding->getSimilarity(v, w), v, w, true}; 
+            histEntry tmp{embedding->getSimilarity(v, w), v, w, true};
             histogram.push_back(tmp);
             numSampledEdges++;
         }
@@ -51,12 +51,13 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
             continue;
         }
 
-        histEntry tmp{embedding->getSimilarity(v, w), v, w, false}; 
+        histEntry tmp{embedding->getSimilarity(v, w), v, w, false};
         histogram.push_back(tmp);
         numSampledNonEdges++;
     }
 
     std::sort(histogram.begin(), histogram.end(), histComparator);
-    LOG_INFO( "Choose " << numSampledEdges << " edges and " << numSampledNonEdges << " non edges for a total of " << histogram.size() << " node pairs");
+    LOG_INFO("Choose " << numSampledEdges << " edges and " << numSampledNonEdges << " non edges for a total of "
+                       << histogram.size() << " node pairs");
     return histInfo{histogram, numSampledEdges, numSampledNonEdges};
 }

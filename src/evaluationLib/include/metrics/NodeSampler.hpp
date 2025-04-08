@@ -25,7 +25,7 @@ using EdgeLengthToNode = std::vector<std::pair<double, NodeId>>;
  */
 class NodeSampler {
    public:
-    static std::vector<nodeEntry> sampleHistEntries(const Graph &graph, std::shared_ptr<Embedding> embedding, double nodeSampleFraction);
+    static std::vector<nodeEntry> sampleHistEntries(const Graph &graph, std::shared_ptr<Embedding> embedding, int numNodeSamples);
 
    private:
     static std::vector<double> getPrecisionsForNode(NodeId v, const EdgeLengthToNode &distances, const std::vector<bool> &isNeighbor);

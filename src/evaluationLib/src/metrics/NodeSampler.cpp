@@ -3,18 +3,18 @@
 #include "Macros.hpp"
 
 std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding,
-                                                      double nodeSampleFraction) {
+                                                      int numNodeSamples) {
     int N = graph.getNumVertices();
-    std::vector<int> nodePermutation = Rand::randomPermutation(N);                   // used to sample random nodes
-    const int numSampledNodes = std::min({(int)(N * nodeSampleFraction), N, 5000});  // sample at most 5000 nodes
-    std::vector<bool> isNeighbor(N, false);                                          // reused for every node
+    numNodeSamples = std::min(numNodeSamples, N);                   // sample at most N nodes
+    std::vector<int> nodePermutation = Rand::randomPermutation(N);  // used to sample random nodes
+    std::vector<bool> isNeighbor(N, false);                         // reused for every node
 
-    std::vector<nodeEntry> result(numSampledNodes);
+    std::vector<nodeEntry> result(numNodeSamples);
 
-    LOG_INFO("Sampling " << numSampledNodes << " nodes");
+    LOG_INFO("Sampling " << numNodeSamples << " nodes");
 
 #pragma omp parallel for firstprivate(isNeighbor), schedule(runtime)
-    for (int i = 0; i < numSampledNodes; i++) {
+    for (int i = 0; i < numNodeSamples; i++) {
         nodeEntry newEntry;
 
         const NodeId v = nodePermutation[i];
