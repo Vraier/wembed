@@ -315,14 +315,12 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
         return candidates;
     }
 
-    for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
-        if (options.useInfNorm) {
-            currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
-                                                                       options.edgeLength, w_class, candidates, buffer);
-        } else {
-            currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
-                                                                options.edgeLength, w_class, candidates, buffer);
-        }
+    if (options.useInfNorm) {
+        currentRTree.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v], options.edgeLength,
+                                                           candidates, buffer);
+    } else {
+        currentRTree.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
+                                                    candidates, buffer);
     }
 
     // remap the candidates to the original graph indices

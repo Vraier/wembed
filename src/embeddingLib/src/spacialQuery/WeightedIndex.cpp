@@ -1,12 +1,13 @@
 #include "WeightedIndex.hpp"
-#include "RTree.hpp"
 
 #include <iostream>
+
+#include "RTree.hpp"
 
 using rTreeValue = std::pair<CVecRef, NodeId>;
 
 void WeightedIndex::updateIndices(const VecList& positions, const std::vector<double>& weights,
-                                const std::vector<double>& weightBuckets) {
+                                  const std::vector<double>& weightBuckets) {
     ASSERT(positions.size() == weights.size(), "Positions and weights must have the same size");
     ASSERT(positions.dimension() == DIMENSION, "Positions must have the same dimension as the index");
     ASSERT(std::is_sorted(weightBuckets.begin(), weightBuckets.end()), "Weight buckets must be sorted");
@@ -88,6 +89,10 @@ void WeightedIndex::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, dou
 }
 
 int WeightedIndex::getNumWeightClasses() const { return maxWeightOfClass.size(); }
+
+int WeightedIndex::getIndexDimension() const { return DIMENSION; }
+
+std::vector<double> WeightedIndex::getWeightClasses() const { return maxWeightOfClass; }
 
 void WeightedIndex::getKNNNeighbors(int indexId, CVecRef p, int k, std::vector<NodeId>& output) const {
     ASSERT(p.dimension() == DIMENSION);

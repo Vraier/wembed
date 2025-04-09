@@ -18,6 +18,10 @@ class WeightedIndex {
     void updateIndices(const VecList& positions, const std::vector<double>& weights,
                        const std::vector<double>& weightBuckets);
 
+    /**
+     * Returns the weight buckets used for index construction. The smalles weight has the sice doublingFactor*minWeight.
+     * Afterwards the weights are increased by the factor doublingFactor until the maximum weight is surpassed.
+     */
     static std::vector<double> getDoublingWeightBuckets(const std::vector<double>& weights,
                                                         double doublingFactor = 2.0);
 
@@ -30,25 +34,27 @@ class WeightedIndex {
     void getNodesWithinWeightedDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output,
                                         VecBuffer<2>& buffer) const;
 
-    void getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
-                                                std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
-
     /**
      * Same as other method but uses infNorm/box as distance metric.
      */
     void getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output,
                                                VecBuffer<2>& buffer) const;
 
-    void getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius, size_t weight_class,
-                                                       std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
-
     int getNumWeightClasses() const;
+    int getIndexDimension() const;
+    std::vector<double> getWeightClasses() const;
 
    private:
     void getKNNNeighbors(int indexId, CVecRef p, int k, std::vector<NodeId>& output) const;
     void getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
                          VecBuffer<2>& buffer) const;
     void getWithinBox(int indexId, CVecRef p, double radius, std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
+
+    // Helper methods for the corresponding getNodesWithinWeightedDistance methods
+    void getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
+                                                std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
+    void getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius, size_t weight_class,
+                                                       std::vector<NodeId>& output, VecBuffer<2>& buffer) const;
 
     int DIMENSION;
 
