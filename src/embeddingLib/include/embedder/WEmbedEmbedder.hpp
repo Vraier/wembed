@@ -66,8 +66,8 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void calculateAllRepellingForces();
     virtual void repulstionForce(int v, int u, VecBuffer<1> &buffer);
     virtual void attractionForce(int v, int u, VecBuffer<1> &buffer);
-    virtual std::vector<NodeId> sampleRandomNodes(
-        int numNodes) const;  // NOTE(JP) has race conditions because of randomness
+    // NOTE(JP) has race conditions because of randomness. Can also contain duplicates
+    virtual std::vector<NodeId> sampleRandomNodes(int numNodes) const;
 
     /**
      * R-Tree queries
@@ -82,8 +82,9 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedIndex currentRTree;      // changes every iteration
-    std::vector<int> sortedNodeIds;  // node ids sorted by weight
+    WeightedIndex currentRTree;             // changes every iteration
+    std::vector<NodeId> RTreeToGraphIndex;  // maps RTree indices to graph indices
+    std::vector<int> sortedNodeIds;         // node ids sorted by weight
 
     int currentIteration = 0;
     bool insignificantPosChange = false;

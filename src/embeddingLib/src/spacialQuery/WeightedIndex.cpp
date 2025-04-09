@@ -8,6 +8,7 @@ using rTreeValue = std::pair<CVecRef, NodeId>;
 void WeightedIndex::updateIndices(const VecList& positions, const std::vector<double>& weights,
                                 const std::vector<double>& weightBuckets) {
     ASSERT(positions.size() == weights.size(), "Positions and weights must have the same size");
+    ASSERT(positions.dimension() == DIMENSION, "Positions must have the same dimension as the index");
     ASSERT(std::is_sorted(weightBuckets.begin(), weightBuckets.end()), "Weight buckets must be sorted");
 
     double maxWeight = 0;
@@ -97,15 +98,6 @@ void WeightedIndex::getWithinRadius(int indexId, CVecRef p, double radius, std::
                                     VecBuffer<2>& buffer) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);
-
-    // TmpVec<0> min_corner(buffer);
-    // TmpVec<1> max_corner(buffer);
-    // min_corner = p;
-    // max_corner = p;
-    // for (int i = 0; i < DIMENSION; i++) {
-    //     min_corner[i] -= radius;
-    //     max_corner[i] += radius;
-    // }
     spacialIndices[indexId]->query_sphere(p, radius, output);
 }
 

@@ -280,25 +280,55 @@ void WEmbedEmbedder::updateRTree() {
         return;  // we are not using a geometric index
     }
 
-    currentRTree = std::move(WeightedIndex(options.embeddingDimension));
-    std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
-    currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
+    // currentRTree = std::move(WeightedIndex(options.embeddingDimension));
+
+    // calculate new indices
+    if (options.RTreeSize >= 1.0) {
+        RTreeToGraphIndex.resize(N);
+        std::iota(RTreeToGraphIndex.begin(), RTreeToGraphIndex.end(), 0);  // identity vector
+        std::vector<double> weightBuckets =
+            WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
+        currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
+    } else {
+        int numNodes = std::max(1, (int)(N * options.RTreeSize));
+        RTreeToGraphIndex = Rand::randomSample(N, numNodes);
+
+        VecList positions(options.embeddingDimension, numNodes);
+        std::vector<double> weights(numNodes);
+
+        for (int i = 0; i < numNodes; i++) {
+            positions[i] = currentPositions[RTreeToGraphIndex[i]];
+            weights[i] = currentWeights[RTreeToGraphIndex[i]];
+        }
+
+        std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, options.doublingFactor);
+
+        currentRTree.updateIndices(positions, weights, weightBuckets);
+    }
 }
 
 std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2>& buffer) const {
+    std::vector<NodeId> candidates;
+
     if (options.numNegativeSamples >= 0) {
-        std::vector<NodeId> candidates = sampleRandomNodes(std::min(N, options.numNegativeSamples));
+        candidates = sampleRandomNodes(std::min(N, options.numNegativeSamples));
         return candidates;
     }
 
-    std::vector<NodeId> candidates;
     for (size_t w_class = 0; w_class < currentRTree.getNumWeightClasses(); w_class++) {
         if (options.useInfNorm) {
             currentRTree.getNodesWithinWeightedDistanceInfNormForClass(currentPositions[v], currentWeights[v],
                                                                        options.edgeLength, w_class, candidates, buffer);
+        } else {
+            currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v],
+                                                                options.edgeLength, w_class, candidates, buffer);
         }
-        currentRTree.getNodesWithinWeightedDistanceForClass(currentPositions[v], currentWeights[v], options.edgeLength,
-                                                            w_class, candidates, buffer);
+    }
+
+    // remap the candidates to the original graph indices
+    for (NodeId& candidate : candidates) {
+        candidate = RTreeToGraphIndex[candidate];
+        ASSERT(candidate < N && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << N);
     }
     return candidates;
 }

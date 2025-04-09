@@ -114,6 +114,8 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Number of negative samples used for the approximation. Higher number means more speed but less "
                    "accuracy. -1 uses geometric index")
         ->capture_default_str();
+    app.add_option("--rtree-size", opts.embedderOptions.RTreeSize,
+                   "Fraction of nodes that get inserted into the RTree. 1.0 means all nodes are inserted");
     app.add_option("--attraction", opts.embedderOptions.attractionScale, "Changes magnitude of attracting forces")
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")

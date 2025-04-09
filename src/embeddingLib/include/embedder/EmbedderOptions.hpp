@@ -17,6 +17,7 @@ struct EmbedderOptions {
     // Force parameters
     WeightType weightType = Degree;                    // determines how the weights are initially set
     int numNegativeSamples = -1;                       // determines the number of negative samples.
+    double RTreeSize = 1.0;                            // fraction of nodes that get inserted into the RTree
     double doublingFactor = 2.0;                       // determines how the weight buckets are calculated
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
     double attractionScale = 1.0;
