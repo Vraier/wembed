@@ -71,6 +71,11 @@ class VecList {
         return result;
     }
 
+    VecList copy() const {
+        VecList result(*this);
+        return result;
+    }
+
    private:
     size_t num_elements;
     unsigned int dim;

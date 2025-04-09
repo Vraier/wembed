@@ -180,7 +180,7 @@ namespace impl {
 
       public:
         template<typename Range>
-        RTreeWrapper(Range&& r): rtree(std::move(r)) { }
+        RTreeWrapper(const Range& r): rtree(r) { }
 
         template <template<size_t DIM> class PredicateMapper, typename OutIter, typename ValueType, typename... Args>
         ALWAYS_INLINE size_t query(Args... args, OutIter out_it) const {
@@ -216,9 +216,9 @@ namespace impl {
     };
 
     template <size_t D, typename Range>
-    ALWAYS_INLINE static std::unique_ptr<ErasedRTree> constructHelper(Range&& r) {
+    ALWAYS_INLINE static std::unique_ptr<ErasedRTree> constructHelper(const Range& r) {
         std::vector<std::pair<PointType<D>, NodeId>> values;
-        for (std::pair<CVecRef, NodeId>& input: r) {
+        for (const std::pair<CVecRef, NodeId>& input: r) {
             values.push_back(std::make_pair(PointType<D>{input.first}, input.second));
         }
         return std::make_unique<RTreeWrapper<D>>(std::move(values));
@@ -226,26 +226,26 @@ namespace impl {
 
     template <size_t D, typename Range>
     struct ConstructionDispatch {
-        ALWAYS_INLINE static std::unique_ptr<ErasedRTree> construct(Range&& r, size_t dimension) {
+        ALWAYS_INLINE static std::unique_ptr<ErasedRTree> construct(const Range& r, size_t dimension) {
             if (dimension == D) {
-                return constructHelper<D>(std::move(r));
+                return constructHelper<D>(r);
             } else {
-                return ConstructionDispatch<D+1, Range>::construct(std::move(r), dimension);
+                return ConstructionDispatch<D+1, Range>::construct(r, dimension);
             }
         }
     };
 
     template<typename Range>
     struct ConstructionDispatch<MAX_DIMENSION, Range> {
-        ALWAYS_INLINE static std::unique_ptr<ErasedRTree> construct(Range&& r, size_t dimension) {
+        ALWAYS_INLINE static std::unique_ptr<ErasedRTree> construct(const Range& r, size_t dimension) {
             OPTIMIZATION_HINT(MAX_DIMENSION == dimension);
-            return constructHelper<MAX_DIMENSION>(std::move(r));
+            return constructHelper<MAX_DIMENSION>(r);
         }
     };
 
     template <typename Range>
-    ALWAYS_INLINE std::unique_ptr<ErasedRTree> contructErasedTree(Range&& r, size_t dimension) {
-        return ConstructionDispatch<1, Range>::construct(std::move(r), dimension);
+    ALWAYS_INLINE std::unique_ptr<ErasedRTree> contructErasedTree(const Range& r, size_t dimension) {
+        return ConstructionDispatch<1, Range>::construct(r, dimension);
     }
 }
 
@@ -292,8 +292,18 @@ namespace predicates {
 class RTree: public SpatialIndex {
   public:
     template <typename Range>
-    RTree(Range&& r, size_t dimension):
-        erased_tree(impl::contructErasedTree(std::move(r), dimension)),
+    RTree(const Range& r, size_t dimension):
+        erased_tree(impl::contructErasedTree(r, dimension)),
+        data(dimension),
+        dimension(dimension) {
+            ASSERT(dimension >= 1 && dimension <= impl::MAX_DIMENSION, 
+                "Dimension " << dimension << " is out of range [1, " << impl::MAX_DIMENSION << "]");
+        }
+
+    template <typename Range>
+    RTree(const Range& r, VecList&& data, size_t dimension):
+        erased_tree(impl::contructErasedTree(r, dimension)),
+        data(std::move(data)),
         dimension(dimension) {
             ASSERT(dimension >= 1 && dimension <= impl::MAX_DIMENSION, 
                 "Dimension " << dimension << " is out of range [1, " << impl::MAX_DIMENSION << "]");
@@ -332,6 +342,7 @@ class RTree: public SpatialIndex {
     }
 
     std::unique_ptr<impl::ErasedRTree> erased_tree;
+    VecList data;
     size_t dimension;
 };
 
