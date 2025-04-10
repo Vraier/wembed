@@ -7,7 +7,7 @@
 TEST(WeightedIndex, uniformWeightsGrid) {
     const int dimension = 2;
     const int gridSize = 10;
-    WeightedIndex rtree(dimension);
+    WeightedIndex rtree(IndexType::RTree, dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;
@@ -58,7 +58,7 @@ TEST(WeightedIndex, uniformWeightsRandom) {
     VecBuffer<1> buffer(dimension);
     TmpVec<0> tmpVec(buffer, 0.0);
 
-    WeightedIndex rtree(dimension);
+    WeightedIndex rtree(IndexType::RTree, dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;
@@ -103,7 +103,7 @@ TEST(WeightedIndex, Random) {
     VecBuffer<1> buffer(dimension);
     TmpVec<0> tmpVec(buffer, 0.0);
 
-    WeightedIndex rtree(dimension);
+    WeightedIndex rtree(IndexType::RTree, dimension);
 
     VecList positions(dimension);
     std::vector<double> weights;

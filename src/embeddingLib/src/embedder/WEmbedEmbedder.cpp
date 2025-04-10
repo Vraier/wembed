@@ -16,9 +16,9 @@ void WEmbedEmbedder::calculateStep() {
     currentForce.setAll(0);
     oldPositions.setAll(0);
 
-    timer->startTiming("rTree", "Construct R-Tree");
-    updateRTree();  // sequential
-    timer->stopTiming("rTree");
+    timer->startTiming("index", "Construct spacial index");
+    updateIndex();  // sequential
+    timer->stopTiming("index");
 
     // attracting forces
     timer->startTiming("attracting_forces", "Attracting Forces");
@@ -121,12 +121,12 @@ void WEmbedEmbedder::calculateAllAttractingForces() {
 
 void WEmbedEmbedder::calculateAllRepellingForces() {
     // find nodes that are too close to each other
-    VecBuffer<2> rTreeBuffer(options.embeddingDimension);
+    VecBuffer<2> indexBuffer(options.embeddingDimension);
     VecBuffer<1> forceBuffer(options.embeddingDimension);
 
-#pragma omp parallel for firstprivate(rTreeBuffer, forceBuffer), schedule(runtime)
+#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), schedule(runtime)
     for (NodeId v : sortedNodeIds) {
-        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, rTreeBuffer);
+        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
@@ -275,35 +275,33 @@ std::vector<std::vector<double>> WEmbedEmbedder::constructRandomCoordinates(int 
     return coords;
 }
 
-void WEmbedEmbedder::updateRTree() {
+void WEmbedEmbedder::updateIndex() {
     if (options.numNegativeSamples >= 0) {
         return;  // we are not using a geometric index
     }
 
-    // currentRTree = std::move(WeightedIndex(options.embeddingDimension));
-
     // calculate new indices
-    if (options.RTreeSize >= 1.0) {
-        RTreeToGraphIndex.resize(N);
-        std::iota(RTreeToGraphIndex.begin(), RTreeToGraphIndex.end(), 0);  // identity vector
+    if (options.IndexSize >= 1.0) {
+        // insert all nodes into the index
+        IndexToGraphMap.resize(N);
+        std::iota(IndexToGraphMap.begin(), IndexToGraphMap.end(), 0);  // identity vector
         std::vector<double> weightBuckets =
             WeightedIndex::getDoublingWeightBuckets(currentWeights, options.doublingFactor);
-        currentRTree.updateIndices(currentPositions, currentWeights, weightBuckets);
+        currentweightedIndex.updateIndices(currentPositions, currentWeights, weightBuckets);
     } else {
-        int numNodes = std::max(1, (int)(N * options.RTreeSize));
-        RTreeToGraphIndex = Rand::randomSample(N, numNodes);
+        // only insert a fraction of nodes into the index
+        int numNodes = std::max(1, (int)(N * options.IndexSize));
+        IndexToGraphMap = Rand::randomSample(N, numNodes);
 
         VecList positions(options.embeddingDimension, numNodes);
         std::vector<double> weights(numNodes);
-
         for (int i = 0; i < numNodes; i++) {
-            positions[i] = currentPositions[RTreeToGraphIndex[i]];
-            weights[i] = currentWeights[RTreeToGraphIndex[i]];
+            positions[i] = currentPositions[IndexToGraphMap[i]];
+            weights[i] = currentWeights[IndexToGraphMap[i]];
         }
 
         std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, options.doublingFactor);
-
-        currentRTree.updateIndices(positions, weights, weightBuckets);
+        currentweightedIndex.updateIndices(positions, weights, weightBuckets);
     }
 }
 
@@ -316,16 +314,16 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
     }
 
     if (options.useInfNorm) {
-        currentRTree.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v], options.edgeLength,
+        currentweightedIndex.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v], options.edgeLength,
                                                            candidates, buffer);
     } else {
-        currentRTree.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
+        currentweightedIndex.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
                                                     candidates, buffer);
     }
 
     // remap the candidates to the original graph indices
     for (NodeId& candidate : candidates) {
-        candidate = RTreeToGraphIndex[candidate];
+        candidate = IndexToGraphMap[candidate];
         ASSERT(candidate < N && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << N);
     }
     return candidates;

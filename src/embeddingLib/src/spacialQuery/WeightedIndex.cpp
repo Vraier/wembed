@@ -5,7 +5,7 @@
 #include "RTree.hpp"
 #include "SNNQueries.hpp"
 
-using rTreeValue = std::pair<CVecRef, NodeId>;
+using indexEntries = std::pair<CVecRef, NodeId>;
 
 void WeightedIndex::updateIndices(const VecList& positions, const std::vector<double>& weights,
                                   const std::vector<double>& weightBuckets) {
@@ -18,14 +18,14 @@ void WeightedIndex::updateIndices(const VecList& positions, const std::vector<do
         maxWeight = weightBuckets.back();
     }
 
-    std::vector<std::vector<rTreeValue>> valuesPerBucket(weightBuckets.size() + 1);
+    std::vector<std::vector<indexEntries>> bucketContent(weightBuckets.size() + 1);
     for (NodeId v = 0; v < positions.size(); v++) {
         double weight = weights[v];
         if (weight > maxWeight) {
             maxWeight = weight;
         }
         auto it = std::upper_bound(weightBuckets.begin(), weightBuckets.end(), weight) - weightBuckets.begin();
-        valuesPerBucket[it].push_back(std::make_pair(positions[v], v));
+        bucketContent[it].push_back(std::make_pair(positions[v], v));
     }
 
     maxWeightOfClass = weightBuckets;
@@ -33,8 +33,18 @@ void WeightedIndex::updateIndices(const VecList& positions, const std::vector<do
 
     spacialIndices.clear();
     for (int i = 0; i < weightBuckets.size() + 1; i++) {
-        std::unique_ptr<SpatialIndex> index = std::make_unique<SNNQueries>(std::move(valuesPerBucket[i]), DIMENSION);
-        spacialIndices.push_back(std::move(index));
+        switch (indexType)
+        {
+        case IndexType::RTree:
+            spacialIndices.push_back(std::make_unique<RTree>(std::move(bucketContent[i]), positions.copy(), DIMENSION));
+            break;
+        case IndexType::SNN:
+            spacialIndices.push_back(std::make_unique<SNNQueries>(std::move(bucketContent[i]), DIMENSION));
+            break;
+        default:
+        LOG_ERROR("Unknown index type");
+            break;
+        }
     }
 }
 

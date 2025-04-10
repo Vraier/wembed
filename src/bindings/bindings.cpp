@@ -128,7 +128,7 @@ PYBIND11_MODULE(_core, m) {
         .def("__repr__", [](const EmbedderOptions &a) {
             return "EmbedderOptions(dimensionHint=" + std::to_string(a.dimensionHint) +
                    ", embeddingDimension=" + std::to_string(a.embeddingDimension) +
-                   ", weightType=" + std::to_string(a.weightType) +
+                   ", weightType=" + std::to_string(static_cast<int>(a.weightType)) +
                    ", maxIterations=" + std::to_string(a.maxIterations) + ", speed=" + std::to_string(a.speed) +
                    ", cooling=" + std::to_string(a.coolingFactor) + ", useInfNorm=" + std::to_string(a.useInfNorm) +
                    ")";

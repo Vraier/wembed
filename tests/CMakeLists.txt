@@ -5,7 +5,7 @@ set(TEST_FILES
     TestGeometricGraphSampler.cpp
     #TestHierarchy.cpp
     TestMetrics.cpp
-    TestWeightedRTree.cpp
+    TestWeightedIndex.cpp
     TestTimings.cpp
     TestSNNQueries.cpp
 )

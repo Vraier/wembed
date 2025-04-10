@@ -18,7 +18,7 @@ class WEmbedEmbedder : public EmbedderInterface {
           graph(g),
           N(g.getNumVertices()),
           optimizer(opts.embeddingDimension, N, opts.speed, opts.coolingFactor, 0.9, 0.999, 1e-8),
-          currentRTree(opts.embeddingDimension),
+          currentweightedIndex(opts.indexType, opts.embeddingDimension),
           sortedNodeIds(N),
           currentForce(opts.embeddingDimension, N),
           currentPositions(opts.embeddingDimension, N),
@@ -26,13 +26,17 @@ class WEmbedEmbedder : public EmbedderInterface {
           currentWeights(N) {
         // Initialize coordinates randomly and weights based on degree
         setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, N));
-        if (opts.weightType == WeightType::Degree) {
-            setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
-                                                      WEmbedEmbedder::constructDegreeWeights(g)));
-        } else if (opts.weightType == WeightType::Unit) {
-            setWeights(WEmbedEmbedder::constructUnitWeights(N));
-        } else {
-            LOG_ERROR("Weight type not supported");
+
+        switch (options.weightType) {
+            case WeightType::Degree:
+                setWeights(WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
+                                                          WEmbedEmbedder::constructDegreeWeights(g)));
+                break;
+            case WeightType::Unit:
+                setWeights(WEmbedEmbedder::constructUnitWeights(N));
+                break;
+            default:
+                LOG_ERROR("Weight type not supported");
         }
         optimizer.reset();
     };
@@ -70,9 +74,9 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual std::vector<NodeId> sampleRandomNodes(int numNodes) const;
 
     /**
-     * R-Tree queries
+     * Index queries
      */
-    virtual void updateRTree();
+    virtual void updateIndex();
     virtual std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
 
     std::shared_ptr<Timer> timer;
@@ -82,8 +86,8 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     // additional data structures
     AdamOptimizer optimizer;
-    WeightedIndex currentRTree;             // changes every iteration
-    std::vector<NodeId> RTreeToGraphIndex;  // maps RTree indices to graph indices
+    WeightedIndex currentweightedIndex;             // changes every iteration
+    std::vector<NodeId> IndexToGraphMap;  // maps spacial indices to graph indices
     std::vector<int> sortedNodeIds;         // node ids sorted by weight
 
     int currentIteration = 0;
