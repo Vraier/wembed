@@ -18,9 +18,10 @@ set(HEADERS
         include/partition/LabelPropagation.hpp
         include/partition/GraphHierarchy.hpp
 
+        include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
         include/spacialQuery/RTree.hpp
-        include/spacialQuery/WeightedIndex.hpp
+        include/spacialQuery/SNNQueries.hpp
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
@@ -47,6 +48,7 @@ set(SOURCES
         src/partition/GraphHierarchy.cpp
 
         src/spacialQuery/WeightedIndex.cpp
+        src/spacialQuery/SNNQueries.cpp
 
         # Embedder
         src/embedder/WEmbedEmbedder.cpp
@@ -68,5 +70,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/embeddingIO
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
-target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX)
+target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX snn)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

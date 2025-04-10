@@ -7,6 +7,7 @@ set(TEST_FILES
     TestMetrics.cpp
     TestWeightedRTree.cpp
     TestTimings.cpp
+    TestSNNQueries.cpp
 )
 
 add_executable(UnitTests ${TEST_FILES})
