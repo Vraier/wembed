@@ -124,12 +124,17 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
         ->capture_default_str();
+    //app.add_option("--weight", opts.embedderOptions.weightScale, "Changes magnitude of weight forces")
+    //    ->capture_default_str();
 
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();
     app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")
         ->capture_default_str();
-    app.add_option("--speed", opts.embedderOptions.speed, "Speed of the embedding process")->capture_default_str();
+    app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
+        ->capture_default_str();
+    //app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
+    //    ->capture_default_str();
     app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
                  "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
 }

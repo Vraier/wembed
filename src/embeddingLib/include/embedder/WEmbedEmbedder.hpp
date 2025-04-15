@@ -17,13 +17,16 @@ class WEmbedEmbedder : public EmbedderInterface {
           options(opts),
           graph(g),
           N(g.getNumVertices()),
-          optimizer(opts.embeddingDimension, N, opts.speed, opts.coolingFactor, 0.9, 0.999, 1e-8),
+          optimizer(opts.embeddingDimension, N, opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
+          // weightOptimizer(1, N, opts.weightLearningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
           currentweightedIndex(opts.indexType, opts.embeddingDimension),
           sortedNodeIds(N),
           currentForce(opts.embeddingDimension, N),
           currentPositions(opts.embeddingDimension, N),
           oldPositions(opts.embeddingDimension, N),
-          currentWeights(N) {
+          currentWeights(N),
+          // weightForce(N),
+          weightPrefixSum(N) {
         // Initialize coordinates randomly and weights based on degree
         setCoordinates(WEmbedEmbedder::constructRandomCoordinates(opts.embeddingDimension, N));
 
@@ -38,7 +41,6 @@ class WEmbedEmbedder : public EmbedderInterface {
             default:
                 LOG_ERROR("Weight type not supported");
         }
-        optimizer.reset();
     };
 
     virtual ~WEmbedEmbedder() {};
@@ -70,6 +72,13 @@ class WEmbedEmbedder : public EmbedderInterface {
     virtual void calculateAllRepellingForces();
     virtual void repulstionForce(int v, int u, VecBuffer<1> &buffer);
     virtual void attractionForce(int v, int u, VecBuffer<1> &buffer);
+
+    /**
+     * Updates the weightForce vector
+     */
+    virtual void repulsionWeightForce(int v, int u, VecBuffer<1> &buffer);
+    virtual void attractionWeightForce(int v, int u, VecBuffer<1> &buffer);
+
     // NOTE(JP) has race conditions because of randomness. Can also contain duplicates
     virtual std::vector<NodeId> sampleRandomNodes(int numNodes) const;
 
@@ -85,10 +94,11 @@ class WEmbedEmbedder : public EmbedderInterface {
     int N;  // size of the graph
 
     // additional data structures
-    AdamOptimizer optimizer;
-    WeightedIndex currentweightedIndex;             // changes every iteration
+    AdamOptimizer optimizer;  // for positions
+    // AdamOptimizer weightOptimizer;        // for weights
+    WeightedIndex currentweightedIndex;   // changes every iteration
     std::vector<NodeId> IndexToGraphMap;  // maps spacial indices to graph indices
-    std::vector<int> sortedNodeIds;         // node ids sorted by weight
+    std::vector<int> sortedNodeIds;       // node ids sorted by weight
 
     int currentIteration = 0;
     bool insignificantPosChange = false;
@@ -97,6 +107,7 @@ class WEmbedEmbedder : public EmbedderInterface {
     VecList currentForce;
     VecList currentPositions;
     VecList oldPositions;
-    std::vector<double> currentWeights;   // currently not changed during gradient descent
+    std::vector<double> currentWeights;
+    // std::vector<double> weightForce;
     std::vector<double> weightPrefixSum;  // starts at the weight of the first node and ends with the sum of all weights
 };

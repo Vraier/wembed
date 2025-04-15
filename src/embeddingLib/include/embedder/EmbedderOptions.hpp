@@ -24,19 +24,21 @@ struct EmbedderOptions {
 
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
-    int numNegativeSamples = -1;  // determines the number of negative samples. -1 means spacial index is used.
-    IndexType indexType = IndexType::SNN;            // determines the type of index used for the embedding
-    double IndexSize = 1.0;                            // fraction of nodes that get inserted into the spacial index
-    double doublingFactor = 2.0;                       // determines how the weight buckets are calculated
+    int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
+    IndexType indexType = IndexType::SNN;  // determines the type of index used for the embedding
+    double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
+    double doublingFactor = 2.0;           // determines how the weight buckets are calculated
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
     double attractionScale = 1.0;                      // factor by which attracting forces are scaled
     double repulsionScale = 0.1;                       // factor by which repulsion forces are scaled
+    //double weightScale = 1.0;                          // factor by which weight forces are scaled
     double edgeLength = 1.0;
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerType::Adam;
-    double coolingFactor = 0.99;  // strong influence on runtime but increases quality
-    double speed = 10;            // learning rate
+    double coolingFactor = 0.99;     // strong influence on runtime but increases quality
+    double learningRate = 10;        // learning rate
+    //double weightLearningRate = 0.01;  // learning rate for weights
     int maxIterations = 2000;
     bool useInfNorm = false;  // if set, the infinity norm will be used instead of euclidean norm
 };

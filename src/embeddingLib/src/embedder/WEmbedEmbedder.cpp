@@ -15,6 +15,7 @@ void WEmbedEmbedder::calculateStep() {
 
     currentForce.setAll(0);
     oldPositions.setAll(0);
+    //std::fill(weightForce.begin(), weightForce.end(), 0);
 
     timer->startTiming("index", "Construct spacial index");
     updateIndex();  // sequential
@@ -39,6 +40,7 @@ void WEmbedEmbedder::calculateStep() {
     }
     // update positions based on force vector
     optimizer.update(currentPositions, currentForce);  // parallel
+    //weightOptimizer.update(currentWeights, weightForce);
     timer->stopTiming("apply_forces");
 
     // calculate change in position
@@ -71,6 +73,7 @@ void WEmbedEmbedder::calculateEmbedding() {
     timer->startTiming("embedding_all", "Embedding");
     currentIteration = 0;
     optimizer.reset();
+    //weightOptimizer.reset();
     while (!isFinished()) {
         calculateStep();
     }
@@ -115,6 +118,7 @@ void WEmbedEmbedder::calculateAllAttractingForces() {
     for (NodeId v : sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
+            //attractionWeightForce(v, u, buffer);
         }
     }
 }
@@ -132,6 +136,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
                 continue;
             }
             repulstionForce(v, u, forceBuffer);
+            //repulsionWeightForce(v, u, forceBuffer);
         }
     }
 }
@@ -224,6 +229,62 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     currentForce[v] += result;
 }
 
+void WEmbedEmbedder::attractionWeightForce(int v, int u, VecBuffer<1>& buffer) {
+    if (v == u) return;
+
+    CVecRef posV = currentPositions[v];
+    CVecRef posU = currentPositions[u];
+    double wv = currentWeights[v];
+    double wu = currentWeights[u];
+    TmpVec<0> tmp(buffer, 0.0);
+    double dist = 0;
+    double result = 0;
+    tmp = posV - posU;
+
+    if (options.useInfNorm) {
+        dist = tmp.infNorm();
+    } else {
+        dist = tmp.norm();
+    }
+
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    if (weightDist > options.edgeLength) {
+        result = 0;
+    } else {
+        result = weightDist / (wu * options.embeddingDimension);
+    }
+
+    //weightForce[v] += options.weightScale * result;
+}
+
+void WEmbedEmbedder::repulsionWeightForce(int v, int u, VecBuffer<1>& buffer) {
+    if (v == u) return;
+
+    CVecRef posV = currentPositions[v];
+    CVecRef posU = currentPositions[u];
+    double wv = currentWeights[v];
+    double wu = currentWeights[u];
+    TmpVec<0> tmp(buffer, 0.0);
+    double dist = 0;
+    double result = 0;
+    tmp = posV - posU;
+
+    if (options.useInfNorm) {
+        dist = tmp.infNorm();
+    } else {
+        dist = tmp.norm();
+    }
+
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    if (weightDist > options.edgeLength) {
+        result = 0;
+    } else {
+        result = weightDist / (wu * options.embeddingDimension);
+    }
+
+    //weightForce[v] -= options.weightScale * result;
+}
+
 std::vector<double> WEmbedEmbedder::constructDegreeWeights(const Graph& g) {
     std::vector<double> weights(g.getNumVertices());
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
@@ -314,11 +375,11 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
     }
 
     if (options.useInfNorm) {
-        currentweightedIndex.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v], options.edgeLength,
-                                                           candidates, buffer);
+        currentweightedIndex.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v],
+                                                                   options.edgeLength, candidates, buffer);
     } else {
         currentweightedIndex.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
-                                                    candidates, buffer);
+                                                            candidates, buffer);
     }
 
     // remap the candidates to the original graph indices
@@ -331,6 +392,8 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
 
 std::vector<NodeId> WEmbedEmbedder::sampleRandomNodes(int numNodes) const {
     std::vector<NodeId> result;
+
+    return Rand::randomSample(N, numNodes);
 
     // sample node with probability proportional to the weight
     for (int i = 0; i < numNodes; i++) {

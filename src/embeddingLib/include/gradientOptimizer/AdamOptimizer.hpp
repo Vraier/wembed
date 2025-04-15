@@ -8,6 +8,7 @@ class AdamOptimizer : public Optimizer {
     ~AdamOptimizer();
 
     void update(VecList& parameters, const VecList& gradients) override;
+    void update(std::vector<double>& parameters, const std::vector<double>& gradients);
     void reset() override;
 
    private:
