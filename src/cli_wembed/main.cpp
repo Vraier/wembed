@@ -61,7 +61,16 @@ int main(int argc, char* argv[]) {
             embedder->calculateStep();
             Graph currentGraph = embedder->getCurrentGraph();
             std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
-            std::vector<std::vector<double>> projection = Common::projectOntoPlane(coordinates);
+            std::vector<double> weights = embedder->getWeights();
+            std::vector<std::vector<double>> projection;
+            if (opts.embedderOptions.embeddingDimension >= 2) {
+                projection = Common::projectOntoPlane(coordinates);
+            } else {
+                // We can use weight as y coordinate
+                for (int i = 0; i < coordinates.size(); i++) {
+                    projection.push_back({coordinates[i][0], -weights[i]});
+                }
+            }
             drawer.processFrame(currentGraph, projection);
         }
     } else {
@@ -89,7 +98,7 @@ int main(int argc, char* argv[]) {
 
 void addOptions(CLI::App& app, Options& opts) {
     // Input / Output
-    app.add_option("-i,--graph", opts.graphPath, "Path to the graph file")->required()->check(CLI::ExistingFile);
+    app.add_option("-i,--graph", opts.graphPath, "Path to an edge list")->required()->check(CLI::ExistingFile);
     app.add_flag("--bipartite", opts.bipartite, "Treat the input graph as bipartite");
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
@@ -124,8 +133,13 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
         ->capture_default_str();
-    //app.add_option("--weight", opts.embedderOptions.weightScale, "Changes magnitude of weight forces")
-    //    ->capture_default_str();
+
+    app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
+        ->capture_default_str();
+    app.add_option("--weight-penalty", opts.embedderOptions.weightPenatly,
+                   "Determines how strong unit weights are enforces")
+        ->capture_default_str();
+    app.add_flag("--dump-weights", opts.embedderOptions.dumpWeights, "Dump weights to file");
 
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();
@@ -133,8 +147,6 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
         ->capture_default_str();
-    //app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
-    //    ->capture_default_str();
     app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
                  "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
 }

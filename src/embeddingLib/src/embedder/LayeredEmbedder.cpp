@@ -53,7 +53,7 @@ void LayeredEmbedder::expandPositions() {
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
     int oldN = hierarchy->graphs[currentLayer].getNumVertices();
     std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
-    std::vector<std::vector<double>> newPositions(newN);
+    std::vector<std::vector<double>> newPositions(newN, std::vector<double>(options.embeddingDimension, 0.0));
 
     // calculate new weights
     std::vector<double> newWeights;
@@ -68,17 +68,19 @@ void LayeredEmbedder::expandPositions() {
     }
 
     // calculate new positions
-    double stretch = Toolkit::myPow((double)newN / (double)oldN, 1.0 / (double)options.embeddingDimension);
+    double growth = (double)newN / (double)oldN;
+    double geometricStretch = Toolkit::myPow(growth, 1.0 / (double)options.embeddingDimension);
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldPostions.size(), "Parent node " << parent << " is out of bounds " << oldPostions.size());
+        ASSERT(parent < hierarchy->nodeLayers[currentLayer].size(),
+               "Parent node " << parent << " is out of bounds " << hierarchy->nodeLayers[currentLayer].size());
+        double numSiblings = hierarchy->nodeLayers[currentLayer][parent].totalContainedNodes;
 
-        tmpVec.setToRandomUnitVector();
-        tmpVec *= 0.1;
-        newPositions[v] = oldPostions[parent];
+        tmpVec.setToRandomVectorInSphere();
+        tmpVec *= Toolkit::myPow(numSiblings / growth, 1.0 / (double)options.embeddingDimension);
         for (int d = 0; d < options.embeddingDimension; d++) {
-            newPositions[v][d] += tmpVec[d];
-            newPositions[v][d] *= stretch;
+            newPositions[v][d] = geometricStretch * (oldPostions[parent][d] + tmpVec[d]);
         }
     }
 

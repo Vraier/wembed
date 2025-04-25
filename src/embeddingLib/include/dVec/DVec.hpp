@@ -406,13 +406,23 @@ class VecRefImpl {
     }
 
     ALWAYS_INLINE void setToRandomUnitVector() {
+        double norm = 0;
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] = Rand::gaussDistribution(0.0, 1.0);
+            norm += coord.get()[i] * coord.get()[i];
         }
-        double length = norm();
-        double radius = Toolkit::myPow(Rand::randomDouble(0.0, 1.0), 1.0 / (double)dimension());
+        norm = std::sqrt(norm);
         for (int i = 0; i < dimension(); i++) {
-            coord.get()[i] *= radius / length;
+            coord.get()[i] /= norm;
+        }
+    }
+
+    ALWAYS_INLINE void setToRandomVectorInSphere() {
+        setToRandomUnitVector();
+
+        double radius = Toolkit::myPow(Rand::randomDouble(0.0, 1.0), 1.0 / dimension());
+        for (int i = 0; i < dimension(); i++) {
+            coord.get()[i] *= radius;
         }
     }
 

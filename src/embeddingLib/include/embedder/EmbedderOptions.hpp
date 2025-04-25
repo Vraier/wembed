@@ -31,14 +31,17 @@ struct EmbedderOptions {
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
     double attractionScale = 1.0;                      // factor by which attracting forces are scaled
     double repulsionScale = 0.1;                       // factor by which repulsion forces are scaled
-    //double weightScale = 1.0;                          // factor by which weight forces are scaled
     double edgeLength = 1.0;
+
+    // regarding weights
+    double weightLearningRate = 0.0;  // learning rate for weights
+    double weightPenatly = 1.0;       // how strong too large weights are penalized
+    bool dumpWeights = false;         // if set, the weights will be dumped to a file
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerType::Adam;
-    double coolingFactor = 0.99;     // strong influence on runtime but increases quality
-    double learningRate = 10;        // learning rate
-    //double weightLearningRate = 0.01;  // learning rate for weights
+    double coolingFactor = 0.99;  // strong influence on runtime but increases quality
+    double learningRate = 10;     // learning rate
     int maxIterations = 2000;
     bool useInfNorm = false;  // if set, the infinity norm will be used instead of euclidean norm
 };

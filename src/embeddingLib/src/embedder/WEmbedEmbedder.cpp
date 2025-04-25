@@ -1,7 +1,13 @@
 #include "WEmbedEmbedder.hpp"
 
+#include <fstream>
+
 void WEmbedEmbedder::calculateStep() {
     currentIteration++;
+
+    if (options.dumpWeights) {
+        debug_dump_weights();
+    }
 
     if (N > 1'000'000 && currentIteration % 10 == 0) {
         std::cout << "(Iteration " << currentIteration << ")" << std::endl;
@@ -15,7 +21,7 @@ void WEmbedEmbedder::calculateStep() {
 
     currentForce.setAll(0);
     oldPositions.setAll(0);
-    //std::fill(weightForce.begin(), weightForce.end(), 0);
+    std::fill(weightParameterForce.begin(), weightParameterForce.end(), 0);
 
     timer->startTiming("index", "Construct spacial index");
     updateIndex();  // sequential
@@ -31,6 +37,11 @@ void WEmbedEmbedder::calculateStep() {
     calculateAllRepellingForces();  // parallel
     timer->stopTiming("repelling_forces");
 
+    // weight penalties
+    timer->startTiming("weight_penalties", "Weight Penalties");
+    calculateAllWeightPenalties();  // parallel
+    timer->stopTiming("weight_penalties");
+
     // applying gradient
     timer->startTiming("apply_forces", "Applying Forces");
     // save old positions to calculate change later
@@ -40,7 +51,15 @@ void WEmbedEmbedder::calculateStep() {
     }
     // update positions based on force vector
     optimizer.update(currentPositions, currentForce);  // parallel
-    //weightOptimizer.update(currentWeights, weightForce);
+
+    // update weights
+    if (options.weightLearningRate > 0.0) {
+        weightOptimizer.update(currentWeightParameters, weightParameterForce);
+        for (NodeId i = 0; i < N; i++) {
+            currentWeights[i] = std::log(1 + std::exp(currentWeightParameters[i]));
+        }
+    }
+
     timer->stopTiming("apply_forces");
 
     // calculate change in position
@@ -73,7 +92,7 @@ void WEmbedEmbedder::calculateEmbedding() {
     timer->startTiming("embedding_all", "Embedding");
     currentIteration = 0;
     optimizer.reset();
-    //weightOptimizer.reset();
+    // weightOptimizer.reset();
     while (!isFinished()) {
         calculateStep();
     }
@@ -97,16 +116,19 @@ void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
     currentWeights = weights;
 
     // sort the node ids by weight
-    sortedNodeIds.resize(N);
     std::iota(sortedNodeIds.begin(), sortedNodeIds.end(), 0);
     std::sort(sortedNodeIds.begin(), sortedNodeIds.end(),
               [this](int a, int b) { return currentWeights[a] > currentWeights[b]; });
 
     // calculate prefixSum
-    weightPrefixSum.resize(N);
     weightPrefixSum[0] = currentWeights[0];
     for (int i = 1; i < N; i++) {
         weightPrefixSum[i] = weightPrefixSum[i - 1] + currentWeights[i];
+    }
+
+    // update the hidden parameters
+    for (int i = 0; i < N; i++) {
+        currentWeightParameters[i] = std::log(std::exp(currentWeights[i]) - 1.0);
     }
 }
 
@@ -118,7 +140,7 @@ void WEmbedEmbedder::calculateAllAttractingForces() {
     for (NodeId v : sortedNodeIds) {
         for (NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
-            //attractionWeightForce(v, u, buffer);
+            attractionWeightForce(v, u, buffer);
         }
     }
 }
@@ -136,7 +158,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
                 continue;
             }
             repulstionForce(v, u, forceBuffer);
-            //repulsionWeightForce(v, u, forceBuffer);
+            repulsionWeightForce(v, u, forceBuffer);
         }
     }
 }
@@ -230,15 +252,15 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
 }
 
 void WEmbedEmbedder::attractionWeightForce(int v, int u, VecBuffer<1>& buffer) {
-    if (v == u) return;
+    if (options.weightLearningRate <= 0.0 || v == u) return;
 
     CVecRef posV = currentPositions[v];
     CVecRef posU = currentPositions[u];
     double wv = currentWeights[v];
     double wu = currentWeights[u];
+    double hiddenParameter = currentWeightParameters[v];
     TmpVec<0> tmp(buffer, 0.0);
     double dist = 0;
-    double result = 0;
     tmp = posV - posU;
 
     if (options.useInfNorm) {
@@ -248,25 +270,29 @@ void WEmbedEmbedder::attractionWeightForce(int v, int u, VecBuffer<1>& buffer) {
     }
 
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
-    if (weightDist > options.edgeLength) {
-        result = 0;
-    } else {
-        result = weightDist / (wu * options.embeddingDimension);
+    if (weightDist <= options.edgeLength) {
+        return;
     }
 
-    //weightForce[v] += options.weightScale * result;
+    double exPlus1 = std::exp(hiddenParameter) + 1;
+    double result = dist * wu * std::exp(hiddenParameter);
+    result /= (double)options.embeddingDimension * exPlus1 *
+              Toolkit::myPow(wu * std::log(exPlus1),
+                             (double)(options.embeddingDimension + 1.0) / (double)options.embeddingDimension);
+
+    weightParameterForce[v] += result;
 }
 
 void WEmbedEmbedder::repulsionWeightForce(int v, int u, VecBuffer<1>& buffer) {
-    if (v == u) return;
+    if (options.weightLearningRate <= 0.0 || v == u) return;
 
     CVecRef posV = currentPositions[v];
     CVecRef posU = currentPositions[u];
     double wv = currentWeights[v];
     double wu = currentWeights[u];
+    double hiddenParameter = currentWeightParameters[v];
     TmpVec<0> tmp(buffer, 0.0);
     double dist = 0;
-    double result = 0;
     tmp = posV - posU;
 
     if (options.useInfNorm) {
@@ -277,12 +303,34 @@ void WEmbedEmbedder::repulsionWeightForce(int v, int u, VecBuffer<1>& buffer) {
 
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
     if (weightDist > options.edgeLength) {
-        result = 0;
-    } else {
-        result = weightDist / (wu * options.embeddingDimension);
+        return;
     }
 
-    //weightForce[v] -= options.weightScale * result;
+    double exPlus1 = std::exp(hiddenParameter) + 1;
+    double result = dist * wu * std::exp(hiddenParameter);
+    result /= (double)options.embeddingDimension * exPlus1 *
+              Toolkit::myPow(wu * std::log(exPlus1),
+                             (double)(options.embeddingDimension + 1.0) / (double)options.embeddingDimension);
+
+    weightParameterForce[v] -= result;
+}
+
+void WEmbedEmbedder::calculateAllWeightPenalties() {
+#pragma omp parallel for schedule(runtime)
+    for (NodeId v = 0; v < N; v++) {
+        weightPenaltyForce(v);
+    }
+}
+
+void WEmbedEmbedder::weightPenaltyForce(int v) {
+    if (options.weightLearningRate <= 0.0) return;
+
+    double hiddenParameter = currentWeightParameters[v];
+    double squareLog = std::log(1 + std::exp(hiddenParameter)) * std::log(1 + std::exp(hiddenParameter));
+    double a = std::exp(hiddenParameter) * (squareLog - 1.0);
+    double b = (1.0 + std::exp(hiddenParameter)) * squareLog;
+
+    weightParameterForce[v] -= options.weightPenatly * (a / b);
 }
 
 std::vector<double> WEmbedEmbedder::constructDegreeWeights(const Graph& g) {
@@ -404,4 +452,22 @@ std::vector<NodeId> WEmbedEmbedder::sampleRandomNodes(int numNodes) const {
         result.push_back(index);
     }
     return result;
+}
+
+void WEmbedEmbedder::debug_dump_weights() const {
+    std::string output_file = "weight_dump.txt";
+
+    // clear the file
+    if (currentIteration <= 1) {
+        std::ofstream ofs(output_file, std::ofstream::out | std::ofstream::trunc);
+        ofs.close();
+    }
+
+    // append the current weights as a one liner
+    std::ofstream ofs(output_file, std::ofstream::out | std::ofstream::app);
+    for (int i = 0; i < N; i++) {
+        ofs << currentWeights[i] << " ";
+    }
+    ofs << std::endl;
+    ofs.close();
 }
