@@ -29,13 +29,14 @@ struct EmbedderOptions {
     double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
     double doublingFactor = 2.0;           // determines how the weight buckets are calculated
     double relativePosMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
-    double attractionScale = 1.0;                      // factor by which attracting forces are scaled
-    double repulsionScale = 0.1;                       // factor by which repulsion forces are scaled
+    double attractionScale = 10.0;                     // factor by which attracting forces are scaled
+    double repulsionScale = 10.0;                      // factor by which repulsion forces are scaled
+                                                       //(usually best to set to same as attraction)
     double edgeLength = 1.0;
 
     // regarding weights
     double weightLearningRate = 0.0;  // learning rate for weights
-    double weightPenatly = 1.0;       // how strong too large weights are penalized
+    double weightPenatly = 0.0;       // how strong too large weights are penalized
     bool dumpWeights = false;         // if set, the weights will be dumped to a file
 
     // Gradient descent parameters
