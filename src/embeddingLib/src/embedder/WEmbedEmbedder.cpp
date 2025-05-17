@@ -42,6 +42,10 @@ void WEmbedEmbedder::calculateStep() {
     calculateAllWeightPenalties();  // parallel
     timer->stopTiming("weight_penalties");
 
+    if (currentIteration == 1 || currentIteration == 20) {
+        LOG_INFO("Number of repulsion forces calculated in step " << currentIteration << ": " << numRepForceCalculations);
+    }
+
     // applying gradient
     timer->startTiming("apply_forces", "Applying Forces");
     // save old positions to calculate change later
@@ -149,8 +153,9 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     // find nodes that are too close to each other
     VecBuffer<2> indexBuffer(options.embeddingDimension);
     VecBuffer<1> forceBuffer(options.embeddingDimension);
+    numRepForceCalculations = 0;
 
-#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), schedule(runtime)
+#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), reduction(+ : numRepForceCalculations), schedule(runtime)
     for (NodeId v : sortedNodeIds) {
         std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (NodeId u : repellingCandidates) {
@@ -159,6 +164,7 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
             }
             repulstionForce(v, u, forceBuffer);
             repulsionWeightForce(v, u, forceBuffer);
+            numRepForceCalculations++;
         }
     }
 }

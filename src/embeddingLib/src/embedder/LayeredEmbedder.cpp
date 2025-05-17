@@ -54,6 +54,7 @@ void LayeredEmbedder::expandPositions() {
     int oldN = hierarchy->graphs[currentLayer].getNumVertices();
     std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
     std::vector<std::vector<double>> newPositions(newN, std::vector<double>(options.embeddingDimension, 0.0));
+    ASSERT(oldN == oldPostions.size(), "Old positions size mismatch: " << oldN << " vs " << oldPostions.size());
 
     // calculate new weights
     std::vector<double> newWeights;
@@ -72,13 +73,13 @@ void LayeredEmbedder::expandPositions() {
     double geometricStretch = Toolkit::myPow(growth, 1.0 / (double)options.embeddingDimension);
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
-        ASSERT(parent < oldPostions.size(), "Parent node " << parent << " is out of bounds " << oldPostions.size());
-        ASSERT(parent < hierarchy->nodeLayers[currentLayer].size(),
-               "Parent node " << parent << " is out of bounds " << hierarchy->nodeLayers[currentLayer].size());
+        ASSERT(parent < oldN, "Parent node " << parent << " is out of bounds " << oldN);
         double numSiblings = hierarchy->nodeLayers[currentLayer][parent].totalContainedNodes;
 
-        tmpVec.setToRandomVectorInSphere();
-        tmpVec *= Toolkit::myPow(numSiblings / growth, 1.0 / (double)options.embeddingDimension);
+        //tmpVec.setToRandomVectorInSphere();
+        tmpVec.setToRandomUnitVector();
+        // tmpVec *= Toolkit::myPow(numSiblings / growth, 1.0 / (double)options.embeddingDimension);
+        tmpVec *= 0.1; // NOTE(JP): i think i need this to avoid too many repelling forces after expanding
         for (int d = 0; d < options.embeddingDimension; d++) {
             newPositions[v][d] = geometricStretch * (oldPostions[parent][d] + tmpVec[d]);
         }
