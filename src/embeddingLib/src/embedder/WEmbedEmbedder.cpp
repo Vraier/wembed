@@ -10,7 +10,7 @@ void WEmbedEmbedder::calculateStep() {
     }
 
     if (N > 1'000'000 && currentIteration % 10 == 0) {
-        std::cout << "(Iteration " << currentIteration << ")" << std::endl;
+        std::cout << "(Iteration " << currentIteration << ": #rep forces " << numRepForceCalculations << ")" << std::endl;
     }
 
     if (N <= 1) {

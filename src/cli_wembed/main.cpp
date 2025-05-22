@@ -133,6 +133,7 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
         ->capture_default_str();
+    app.add_option("--expansion", opts.embedderOptions.expansionStretch, "Determines how much the embedding is stretched during layer expansion.");
 
     app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
         ->capture_default_str();

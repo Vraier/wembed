@@ -69,19 +69,18 @@ void LayeredEmbedder::expandPositions() {
     }
 
     // calculate new positions
-    double growth = (double)newN / (double)oldN;
-    double geometricStretch = Toolkit::myPow(growth, 1.0 / (double)options.embeddingDimension);
+    double geometricStretch = Toolkit::myPow((double)newN / (double)oldN, 1.0 / (double)options.embeddingDimension);
+    geometricStretch *= options.expansionStretch;
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldN, "Parent node " << parent << " is out of bounds " << oldN);
         double numSiblings = hierarchy->nodeLayers[currentLayer][parent].totalContainedNodes;
 
-        //tmpVec.setToRandomVectorInSphere();
         tmpVec.setToRandomUnitVector();
-        // tmpVec *= Toolkit::myPow(numSiblings / growth, 1.0 / (double)options.embeddingDimension);
-        tmpVec *= 0.1; // NOTE(JP): i think i need this to avoid too many repelling forces after expanding
+        double sphere_size = Toolkit::myPow(numSiblings, 1.0 / (double)options.embeddingDimension);
+        tmpVec *= sphere_size; 
         for (int d = 0; d < options.embeddingDimension; d++) {
-            newPositions[v][d] = geometricStretch * (oldPostions[parent][d] + tmpVec[d]);
+            newPositions[v][d] = geometricStretch * oldPostions[parent][d] + tmpVec[d];
         }
     }
 
