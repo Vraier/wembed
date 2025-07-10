@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.15...3.27)
+cmake_minimum_required(VERSION 3.26)
 
-project(WEmbed VERSION 0.0.2 LANGUAGES CXX)
+project(WEmbed VERSION 0.0.3 LANGUAGES CXX)
 
 # define compiler flags for project
 # use interface library to not force the flags on the user
@@ -25,13 +25,13 @@ include(FetchContent)
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.12.1
+    GIT_TAG        v1.17.0
 )
 # CLI11
 FetchContent_Declare(
     cli11
     GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
-    GIT_TAG v2.3.2
+    GIT_TAG v2.5.0
 )
 # Girg generator
 FetchContent_Declare(
@@ -39,13 +39,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/chistopher/girgs.git
 )
 
-# Fetch pybind11
-FetchContent_Declare(
-    pybind11
-    GIT_REPOSITORY https://github.com/pybind/pybind11.git
-    GIT_TAG        v2.13.6
-)
-FetchContent_MakeAvailable(googletest cli11 girgs pybind11)
+FetchContent_MakeAvailable(googletest cli11 girgs)
 
 # try to find sfml, if it is not avaliable we will not build the drawLib
 find_package(SFML 2.5 COMPONENTS window graphics system audio QUIET)
@@ -72,4 +66,5 @@ enable_testing()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
+add_subdirectory(python)
 add_subdirectory(tests)

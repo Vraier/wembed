@@ -98,7 +98,7 @@ class PyLayeredEmbedder : public LayeredEmbedder {
     }
 };
 
-PYBIND11_MODULE(_core, m) {
+PYBIND11_MODULE(wembed, m) {
     m.doc() = "WEmbed module for calculating weighted node embeddings";
 
     // Graphs

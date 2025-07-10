@@ -107,7 +107,7 @@ class WEmbedEmbedder : public EmbedderInterface {
 
     int currentIteration = 0;
     bool insignificantPosChange = false;
-    int numRepForceCalculations = 0;  // number of repulsion force calculations in one step
+    long long numRepForceCalculations = 0;  // number of repulsion force calculations in one step
 
     // current state of gradient calculation
     VecList currentForce;

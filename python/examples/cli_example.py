@@ -57,5 +57,20 @@ def main():
         wembed.writeCoordinates(embedding_file_path, embedder.getCoordinates(), embedder.getWeights())
         
 
+def convert_from_networkx_graph(graph):
+    edges = list(graph.edges)
+    edge_ids = set()
+
+    for edge in edges:
+        if not isinstance(edge[0], int) or not isinstance(edge[1], int):
+            raise ValueError("Edge ids must be integers")
+        edge_ids.add(edge[0])
+        edge_ids.add(edge[1])
+
+    if edge_ids != set(range(len(edge_ids))):
+        raise ValueError("Edge ids must be consecutive and start from 0")
+
+    return wembed.Graph(edges)
+
 if __name__ == "__main__":
     main()

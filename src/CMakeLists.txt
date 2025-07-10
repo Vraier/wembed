@@ -10,6 +10,3 @@ add_subdirectory(SNN)
 add_subdirectory(cli_wembed)
 add_subdirectory(cli_evaluator)
 add_subdirectory(cli_generator)
-
-# Python Bindings
-add_subdirectory(bindings)

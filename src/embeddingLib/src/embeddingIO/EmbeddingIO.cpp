@@ -6,6 +6,7 @@
 #include "Cosine.hpp"
 #include "DotProduct.hpp"
 #include "Euclidean.hpp"
+#include "InfNorm.hpp"
 #include "GraphIO.hpp"
 #include "MercatorEmbedding.hpp"
 #include "Poincare.hpp"
@@ -89,6 +90,10 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
         case PoincareEmb: {
             LOG_INFO("Constructing poincare embedding");
             return std::make_unique<Poincare>(coordinates);
+        }
+        case InfNormEmb: {
+            LOG_INFO("Constructing inf norm embedding");
+            return std::make_unique<InfNorm>(coordinates);
         }
         default:
             LOG_ERROR("Unknown embedding type");

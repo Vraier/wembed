@@ -6,6 +6,7 @@ set(HEADERS
 
         include/embeddingSpace/Embedding.hpp
         include/embeddingSpace/Euclidean.hpp
+        include/embeddingSpace/InfNorm.hpp
         include/embeddingSpace/DotProduct.hpp
         include/embeddingSpace/WeightedGeometric.hpp
         include/embeddingSpace/WeightedGeometricInf.hpp
@@ -34,6 +35,7 @@ set(HEADERS
 
 set(SOURCES
         src/embeddingSpace/Euclidean.cpp
+        src/embeddingSpace/InfNorm.cpp
         src/embeddingSpace/DotProduct.cpp
         src/embeddingSpace/WeightedGeometric.cpp
         src/embeddingSpace/WeightedGeometricInf.cpp
