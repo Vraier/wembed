@@ -61,23 +61,23 @@ void WEmbedEmbedder::calculateStep() {
     // calculate change in position
     timer->startTiming("position_change", "Change in Positions");
     VecBuffer<1> buffer(options.embeddingDimension);
-    double sumNormSquared = 0;
     double sumNormDiffSquared = 0;
 
-#pragma omp parallel for reduction(+ : sumNormSquared, sumNormDiffSquared), firstprivate(buffer), schedule(static)
+#pragma omp parallel for reduction(+ : sumNormDiffSquared), firstprivate(buffer), schedule(static)
     for (int v = 0; v < N; v++) {
         TmpVec<0> tmpVec(buffer);
         tmpVec = oldPositions[v] - currentPositions[v];
-        sumNormSquared += oldPositions[v].sqNorm();
         sumNormDiffSquared += tmpVec.sqNorm();
     }
 
+    double averageNormDiff = sumNormDiffSquared / N;
+
     if (currentIteration == 1 || currentIteration == 10 || (N > 1'000'000 && currentIteration % 10 == 0)) {
         std::cout << "(Iteration " << currentIteration << ": #rep forces " << numRepForceCalculations
-                  << " relative pos change: " << (sumNormDiffSquared / sumNormSquared) << ")" << std::endl;
+                  << ", relative pos change: " << averageNormDiff << ")" << std::endl;
     }
 
-    if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
+    if (averageNormDiff < options.positionMinChange) {
         insignificantPosChange = true;
     }
     timer->stopTiming("position_change");

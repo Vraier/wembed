@@ -120,8 +120,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
-    app.add_option("--init-weights", opts.inputEmbeddingPath,
-                   "Path to a file containing initial weights. If empty, weights are initialized randomly.");
+    app.add_option("--init-coordinates", opts.inputEmbeddingPath,
+                   "Path to a file containing initial coordinates. If empty, coordinates are initialized randomly.");
 
     app.add_option("--weight-type", opts.embedderOptions.weightType,
                    "Affects the initial weights: " + util::mapToString(weightTypeMap))
@@ -134,7 +134,10 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Type of index used for the embedding: " + util::mapToString(indexTypeMap))
         ->capture_default_str();
     app.add_option("--index-size", opts.embedderOptions.IndexSize,
-                   "Fraction of nodes that get inserted into the spacial index. 1.0 means all nodes are inserted")
+                   "Fraction of nodes that get inserted into the spatial index. 1.0 means all nodes are inserted")
+        ->capture_default_str();
+    app.add_option("--min-change", opts.embedderOptions.positionMinChange,
+                   "Minimum change in position to stop the embedding.")
         ->capture_default_str();
     app.add_option("--attraction", opts.embedderOptions.attractionScale, "Changes magnitude of attracting forces")
         ->capture_default_str();
