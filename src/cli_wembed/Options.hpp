@@ -10,7 +10,11 @@ struct Options {
     // Input / Output
     std::string graphPath = "";
     bool bipartite = false;
+
     std::string embeddingPath = "";
+    std::string embeddingComment = "%";
+    std::string embeddingDelimiter = ",";
+
     bool showTimings = false;
 
     // Visualization

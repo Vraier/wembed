@@ -5,11 +5,11 @@ The library is written in C++ and includes Python bindings.
 Below is an example of a two-dimensional embedding calculated by WEmbed.
 
 ![](https://raw.githubusercontent.com/Vraier/wembed/refs/heads/main/assets/internet_graph.jpg)
-<sub> WEmbed embedding of the internet graph by obtained from Boguñá, M., Papadopoulos, F. & Krioukov, D. Sustaining the Internet with hyperbolic mapping . Nat Commun 1, 62 (2010). https://doi.org/10.1038/ncomms1063 </sub>
+<sub> WEmbed embedding of the internet graph obtained from Boguñá, M., Papadopoulos, F. & Krioukov, D. Sustaining the Internet with hyperbolic mapping . Nat Commun 1, 62 (2010). https://doi.org/10.1038/ncomms1063 </sub>
 
-This network represents the connection between internet routers.
-Vertex size represents weight calculated by WEmbed and
-colors indicate the country of the IP-Address of the respective router.
+The network represents the connections between internet routers.
+Vertex size represents a weight, calculated by WEmbed, and
+colors indicate the country of the respective routers IP-Address.
 Note that WEmbed had no knowledge of the countries during the embedding process and still managed to assign vertices from the same countries similar spacial coordinates.
 
 

@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    // Embed the graph
+    // Construct embedder
     std::unique_ptr<EmbedderInterface> embedder;
     if (opts.layeredEmbedding) {
         LabelPropagation coarsener(PartitionerOptions{}, inputGraph,
@@ -52,7 +52,12 @@ int main(int argc, char* argv[]) {
         embedder = std::make_unique<WEmbedEmbedder>(inputGraph, opts.embedderOptions);
     }
 
-    // SimpleSamplingEmbedder embedder(inputGraph, opts.embedderOptions);
+    // Read embedding 
+    if (opts.embeddingPath != "") {
+        std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(
+            opts.embeddingPath, opts.embeddingComment, opts.embeddingDelimiter);
+        embedder->setCoordinates(coords);
+    }
 
 #ifdef EMBEDDING_USE_ANIMATION
     if (opts.animate) {
@@ -115,6 +120,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
+    app.add_option("--init-weights", opts.embeddingPath,
+                   "Path to a file containing initial weights. If empty, weights are initialized randomly.");
 
     app.add_option("--weight-type", opts.embedderOptions.weightType,
                    "Affects the initial weights: " + util::mapToString(weightTypeMap))
@@ -133,7 +140,7 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
         ->capture_default_str();
-    app.add_option("--expansion", opts.embedderOptions.expansionStretch, "Determines how much the embedding is stretched during layer expansion.");
+    app.add_option("--expansion", opts.embedderOptions.expansionStretch, "Determines how much the embedding is stretched during layer expansion.")->capture_default_str();
 
     app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
         ->capture_default_str();

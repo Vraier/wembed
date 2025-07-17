@@ -25,7 +25,7 @@ struct Options {
 
     // evaluation parameters
     int seed = -1;
-    double edgeSampleScale = 1000.0; // how many more non edges get sampled than edges
+    double edgeSampleScale = 10.0; // how many more non edges get sampled than edges
     int nodeSampleScale = 1000; // how many nodes are sampled during reconstruction metric
 };
 

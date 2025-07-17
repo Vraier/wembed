@@ -97,13 +97,17 @@ void addOptions(CLI::App& app, Options& options) {
     app.add_option("-g,--edge-list", options.edgeListPath, "Path to the edge list file")
         ->required()
         ->check(CLI::ExistingFile);
-    app.add_option("--edge-list-comment", options.edgeListComment, "Comment symbol for the edge list file");
-    app.add_option("--edge-list-delimiter", options.edgeListDelimiter, "Delimiter for the edge list file");
+    app.add_option("--edge-list-comment", options.edgeListComment, "Comment symbol for the edge list file")
+        ->capture_default_str();
+    app.add_option("--edge-list-delimiter", options.edgeListDelimiter, "Delimiter for the edge list file")
+        ->capture_default_str();
     app.add_option("-e,--embedding", options.embeddingPath, "Path to the embedding file")
         ->required()
         ->check(CLI::ExistingFile);
-    app.add_option("--embedding-comment", options.embeddingComment, "Comment symbol for the embedding file");
-    app.add_option("--embedding-delimiter", options.embeddingDelimiter, "Delimiter for the embedding file");
+    app.add_option("--embedding-comment", options.embeddingComment, "Comment symbol for the embedding file")
+        ->capture_default_str();
+    app.add_option("--embedding-delimiter", options.embeddingDelimiter, "Delimiter for the embedding file")
+        ->capture_default_str();
     app.add_option("--emb-type", options.embType, "Type of the embedding. " + util::mapToString(embeddingTypeMap))
         ->capture_default_str();
     app.add_option("-l,--log", options.logPath, "Path to the log file");
@@ -113,7 +117,8 @@ void addOptions(CLI::App& app, Options& options) {
 
     app.add_option("--seed", options.seed, "Seed for the random number generator");
     app.add_option("--edge-samples", options.edgeSampleScale,
-                   "Factor for how many more non edges get sampled than edges");
+                   "Factor for how many more non edges get sampled than edges")
+        ->capture_default_str();
     app.add_option("--node-samples", options.nodeSampleScale,
                    "How many nodes are sampled (each node has linear runtime!)")
         ->capture_default_str();
