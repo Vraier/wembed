@@ -9,10 +9,6 @@ void WEmbedEmbedder::calculateStep() {
         debug_dump_weights();
     }
 
-    if (N > 1'000'000 && (currentIteration == 1 || currentIteration % 10 == 0)) {
-        std::cout << "(Iteration " << currentIteration << ": #rep forces " << numRepForceCalculations << ")" << std::endl;
-    }
-
     if (N <= 1) {
         // this happens in the first hierarchy layer
         insignificantPosChange = true;
@@ -41,10 +37,6 @@ void WEmbedEmbedder::calculateStep() {
     timer->startTiming("weight_penalties", "Weight Penalties");
     calculateAllWeightPenalties();  // parallel
     timer->stopTiming("weight_penalties");
-
-    if (currentIteration == 1 || currentIteration == 20) {
-        LOG_INFO("Number of repulsion forces calculated in step " << currentIteration << ": " << numRepForceCalculations);
-    }
 
     // applying gradient
     timer->startTiming("apply_forces", "Applying Forces");
@@ -78,6 +70,11 @@ void WEmbedEmbedder::calculateStep() {
         tmpVec = oldPositions[v] - currentPositions[v];
         sumNormSquared += oldPositions[v].sqNorm();
         sumNormDiffSquared += tmpVec.sqNorm();
+    }
+
+    if (currentIteration == 1 || currentIteration == 10 || (N > 1'000'000 && currentIteration % 10 == 0)) {
+        std::cout << "(Iteration " << currentIteration << ": #rep forces " << numRepForceCalculations
+                  << " relative pos change: " << (sumNormDiffSquared / sumNormSquared) << ")" << std::endl;
     }
 
     if ((sumNormDiffSquared / sumNormSquared) < options.relativePosMinChange) {
@@ -155,7 +152,8 @@ void WEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(options.embeddingDimension);
     numRepForceCalculations = 0;
 
-#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), reduction(+ : numRepForceCalculations), schedule(runtime)
+#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), reduction(+ : numRepForceCalculations), \
+    schedule(runtime)
     for (NodeId v : sortedNodeIds) {
         std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (NodeId u : repellingCandidates) {
