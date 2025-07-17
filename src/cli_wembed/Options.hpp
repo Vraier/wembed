@@ -12,6 +12,8 @@ struct Options {
     bool bipartite = false;
 
     std::string embeddingPath = "";
+
+    std::string inputEmbeddingPath = "";
     std::string embeddingComment = "%";
     std::string embeddingDelimiter = ",";
 

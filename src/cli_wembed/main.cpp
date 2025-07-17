@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Read embedding 
-    if (opts.embeddingPath != "") {
+    if (opts.inputEmbeddingPath != "") {
         std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(
-            opts.embeddingPath, opts.embeddingComment, opts.embeddingDelimiter);
+            opts.inputEmbeddingPath, opts.embeddingComment, opts.embeddingDelimiter);
         embedder->setCoordinates(coords);
     }
 
@@ -120,7 +120,7 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
-    app.add_option("--init-weights", opts.embeddingPath,
+    app.add_option("--init-weights", opts.inputEmbeddingPath,
                    "Path to a file containing initial weights. If empty, weights are initialized randomly.");
 
     app.add_option("--weight-type", opts.embedderOptions.weightType,
