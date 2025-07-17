@@ -108,8 +108,21 @@ std::vector<std::vector<double>> WEmbedEmbedder::getCoordinates() { return curre
 std::vector<double> WEmbedEmbedder::getWeights() { return currentWeights; }
 
 void WEmbedEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
+    int coordDim = coordinates.empty() ? 0 : coordinates[0].size();
     ASSERT(N == coordinates.size());
-    currentPositions = VecList(coordinates);
+
+    if (coordDim != options.embeddingDimension) {
+        LOG_WARNING("Dimension of coordinates (" << coordDim << ") does not match embedding dimension ("
+                                                 << options.embeddingDimension << ")");
+    }
+
+    for (int i = 0; i < N; i++) {
+        ASSERT(coordinates[i].size() == coordDim,
+               "coordinates[" << i << "].size()=" << coordinates[i].size() << ", dim=" << coordDim);
+        for (int d = 0; d < std::min(options.embeddingDimension, coordDim); d++) {
+            currentPositions[i][d] = coordinates[i][d];
+        }
+    }
 }
 
 void WEmbedEmbedder::setWeights(const std::vector<double>& weights) {
