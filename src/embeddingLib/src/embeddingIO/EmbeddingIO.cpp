@@ -15,14 +15,14 @@
 #include "WeightedGeometricInf.hpp"
 #include "WeightedNoDim.hpp"
 
-std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates) {
+std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates, int lpNorm) {
     switch (type) {
         case WeightedEmb:
             // weighted
             {
                 LOG_INFO("Constructing weighted geometric embedding");
                 auto pair = splitLastColumn(coordinates);
-                return std::make_unique<WeightedGeometric>(pair.first, pair.second);
+                return std::make_unique<WeightedGeometric>(pair.first, pair.second, lpNorm);
             }
 
         case EuclideanEmb:

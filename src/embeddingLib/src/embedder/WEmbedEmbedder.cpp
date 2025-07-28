@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "VectorOperations.hpp"
+
 void WEmbedEmbedder::calculateStep() {
     currentIteration++;
 
@@ -185,15 +187,10 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
 
     CVecRef posV = currentPositions[v];
     CVecRef posU = currentPositions[u];
-    TmpVec<0> result(buffer, 0.0);
-    result = posU - posV;
 
-    double dist;
-    if (options.useInfNorm) {
-        dist = result.infNorm();
-    } else {
-        dist = result.norm();
-    }
+    TmpVec<0> result(buffer, 0.0);
+    double dist = vectorOperations::calculateLPNorm(posU, posV, options.lpNorm);
+
     // displace in random direction if positions are identical
     if (dist <= 0) {
         result.setToRandomUnitVector();
@@ -201,11 +198,7 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    if (options.useInfNorm) {
-        result.infNormed();
-    } else {
-        result.normed();
-    }
+    vectorOperations::differentiatePNormDifference(posU, posV, result, options.lpNorm);
 
     // calculate weighted distance
     double wv = currentWeights[v];
@@ -227,14 +220,7 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     CVecRef posV = currentPositions[v];
     CVecRef posU = currentPositions[u];
     TmpVec<0> result(buffer, 0.0);
-    result = posV - posU;
-
-    double dist;
-    if (options.useInfNorm) {
-        dist = result.infNorm();
-    } else {
-        dist = result.norm();
-    }
+    double dist = vectorOperations::calculateLPNorm(posV, posU, options.lpNorm);
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
@@ -243,11 +229,7 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    if (options.useInfNorm) {
-        result.infNormed();
-    } else {
-        result.normed();
-    }
+    vectorOperations::differentiatePNormDifference(posV, posU, result, options.lpNorm);
 
     // calculate weighted distance
     double wv = currentWeights[v];
@@ -280,11 +262,7 @@ void WEmbedEmbedder::attractionWeightForce(int v, int u, VecBuffer<1>& buffer) {
     double dist = 0;
     tmp = posV - posU;
 
-    if (options.useInfNorm) {
-        dist = tmp.infNorm();
-    } else {
-        dist = tmp.norm();
-    }
+    dist = tmp.norm();
 
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
     if (weightDist <= options.edgeLength) {
@@ -312,11 +290,7 @@ void WEmbedEmbedder::repulsionWeightForce(int v, int u, VecBuffer<1>& buffer) {
     double dist = 0;
     tmp = posV - posU;
 
-    if (options.useInfNorm) {
-        dist = tmp.infNorm();
-    } else {
-        dist = tmp.norm();
-    }
+    dist = tmp.norm();
 
     double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
     if (weightDist > options.edgeLength) {
@@ -439,13 +413,11 @@ std::vector<NodeId> WEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
         return candidates;
     }
 
-    if (options.useInfNorm) {
-        currentweightedIndex.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v],
-                                                                   options.edgeLength, candidates, buffer);
-    } else {
-        currentweightedIndex.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
-                                                            candidates, buffer);
-    }
+    // currentweightedIndex.getNodesWithinWeightedInfNormDistance(currentPositions[v], currentWeights[v],
+    //                                                               options.edgeLength, candidates, buffer);
+
+    currentweightedIndex.getNodesWithinWeightedDistance(currentPositions[v], currentWeights[v], options.edgeLength,
+                                                        candidates, buffer);
 
     // remap the candidates to the original graph indices
     for (NodeId& candidate : candidates) {

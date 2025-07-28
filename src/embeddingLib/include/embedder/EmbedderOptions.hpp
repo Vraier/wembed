@@ -21,6 +21,7 @@ inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::RTree, "RTre
 struct EmbedderOptions {
     int embeddingDimension = 4;
     double dimensionHint = -1.0;  // hint for the dimension of the input graph
+    int lpNorm = 2;               // p-norm used for distance calculations
 
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
@@ -28,12 +29,12 @@ struct EmbedderOptions {
     IndexType indexType = IndexType::SNN;  // determines the type of index used for the embedding
     double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
     double doublingFactor = 2.0;           // determines how the weight buckets are calculated
-    double positionMinChange = std::pow(10.0, -8);  // used to determine when the embedding can be halted
-    double attractionScale = 1.0;                      // factor by which attracting forces are scaled
-    double repulsionScale = 1.0;                       // factor by which repulsion forces are scaled
-                                                       //(usually best to set to same as attraction)
+    double positionMinChange = std::pow(10.0, -4);  // used to determine when the embedding can be halted
+    double attractionScale = 1.0;                   // factor by which attracting forces are scaled
+    double repulsionScale = 1.0;                    // factor by which repulsion forces are scaled
+                                                    //(usually best to set to same as attraction)
     double edgeLength = 1.0;
-    double expansionStretch = 1.0; // relative amount by which the embeddings is stretched during layer expansion
+    double expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 
     // regarding weights
     double weightLearningRate = 0.0;  // learning rate for weights
@@ -45,5 +46,4 @@ struct EmbedderOptions {
     double coolingFactor = 0.99;  // strong influence on runtime but increases quality
     double learningRate = 10;     // learning rate
     int maxIterations = 1000;
-    bool useInfNorm = false;  // if set, the infinity norm will be used instead of euclidean norm
 };

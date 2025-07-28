@@ -3,6 +3,7 @@ set(target embeddingLib)
 set(HEADERS
         include/dVec/DVec.hpp
         include/dVec/VecList.hpp
+        include/dVec/VectorOperations.hpp
 
         include/embeddingSpace/Embedding.hpp
         include/embeddingSpace/Euclidean.hpp

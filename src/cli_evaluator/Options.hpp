@@ -17,6 +17,7 @@ struct Options {
     std::string embeddingComment = "%";
     std::string embeddingDelimiter = ",";
     EmbeddingType embType = EmbeddingType::WeightedEmb;
+    int lPNorm = 2;
     
     std::string logPath = "";
     LogType logType = LogType::None;

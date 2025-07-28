@@ -120,6 +120,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
+    app.add_option("--lp-norm", opts.embedderOptions.lpNorm, "p-norm used for distance calculations")
+        ->capture_default_str();
     app.add_option("--init-coordinates", opts.inputEmbeddingPath,
                    "Path to a file containing initial coordinates. If empty, coordinates are initialized randomly.");
 
@@ -158,6 +160,4 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
         ->capture_default_str();
-    app.add_flag("--use-inf-norm", opts.embedderOptions.useInfNorm,
-                 "Uses L_inf norm instead of L_2 to calculate distance between vertices.");
 }

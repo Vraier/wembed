@@ -5,7 +5,7 @@
 
 class WeightedGeometric : public Embedding {
    public:
-    WeightedGeometric(const std::vector<std::vector<double>> &coords, const std::vector<double> &weights);
+    WeightedGeometric(const std::vector<std::vector<double>> &coords, const std::vector<double> &weights, int p);
     virtual ~WeightedGeometric(){};
 
     virtual double getSimilarity(NodeId a, NodeId b) const;
@@ -16,6 +16,7 @@ class WeightedGeometric : public Embedding {
    private:
     const int DIMENSION;
     const double DINVERSE;
+    const int P;
     VecList coordinates;
     std::vector<double> weights;
 };

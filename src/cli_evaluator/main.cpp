@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     // read in embedding
     std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(
         options.embeddingPath, options.embeddingComment, options.embeddingDelimiter);
-    std::shared_ptr<Embedding> embedding = EmbeddingIO::parseEmbedding(options.embType, coords);
+    std::shared_ptr<Embedding> embedding = EmbeddingIO::parseEmbedding(options.embType, coords, options.lPNorm);
     if (embedding == nullptr) {
         LOG_ERROR("Embedding could not be parsed");
         return 0;
@@ -109,6 +109,8 @@ void addOptions(CLI::App& app, Options& options) {
     app.add_option("--embedding-delimiter", options.embeddingDelimiter, "Delimiter for the embedding file")
         ->capture_default_str();
     app.add_option("--emb-type", options.embType, "Type of the embedding. " + util::mapToString(embeddingTypeMap))
+        ->capture_default_str();
+    app.add_option("--lp-norm", options.lPNorm, "L^p norm to use for distance calculations")
         ->capture_default_str();
     app.add_option("-l,--log", options.logPath, "Path to the log file");
     app.add_option("--log-type", options.logType, "Type of log file. " + util::mapToString(logTypeMap))
