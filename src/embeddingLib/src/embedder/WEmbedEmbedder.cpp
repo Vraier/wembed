@@ -198,17 +198,20 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    vectorOperations::differentiatePNormDifference(posU, posV, result, options.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posU, posV, result, options.lpNorm);
 
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightScaling = options.additiveWeights ? (Toolkit::myPow(wv, 1.0 / options.embeddingDimension) +
+                                                      Toolkit::myPow(wu, 1.0 / options.embeddingDimension))
+                                                   : Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / weightScaling;
 
     if (weightDist <= options.edgeLength) {
         result *= 0;
     } else {
-        result *= options.attractionScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.attractionScale / weightScaling;
     }
 
     currentForce[v] += result;
@@ -229,17 +232,20 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    vectorOperations::differentiatePNormDifference(posV, posU, result, options.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posV, posU, result, options.lpNorm);
 
     // calculate weighted distance
     double wv = currentWeights[v];
     double wu = currentWeights[u];
-    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightScaling = options.additiveWeights ? (Toolkit::myPow(wv, 1.0 / options.embeddingDimension) +
+                                                      Toolkit::myPow(wu, 1.0 / options.embeddingDimension))
+                                                   : Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension);
+    double weightDist = dist / weightScaling;
 
     if (weightDist > options.edgeLength) {
         result *= 0;
     } else {
-        result *= options.repulsionScale / (Toolkit::myPow(wu * wv, 1.0 / options.embeddingDimension));
+        result *= options.repulsionScale / weightScaling;
     }
 
     // increase repulsion force when we use less negative samples
@@ -321,7 +327,7 @@ void WEmbedEmbedder::weightPenaltyForce(int v) {
     double a = std::exp(hiddenParameter) * (squareLog - 1.0);
     double b = (1.0 + std::exp(hiddenParameter)) * squareLog;
 
-    weightParameterForce[v] -= options.weightPenatly * (a / b);
+    weightParameterForce[v] -= options.weightPenalty * (a / b);
 }
 
 std::vector<double> WEmbedEmbedder::constructDegreeWeights(const Graph& g) {

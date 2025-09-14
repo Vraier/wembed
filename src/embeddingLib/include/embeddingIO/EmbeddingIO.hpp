@@ -18,6 +18,7 @@ enum EmbeddingType {
     WeightedInfEmb = 6,
     PoincareEmb = 7,
     InfNormEmb = 8,
+    AdditiveEmb = 9
 };
 
 class EmbeddingIO {

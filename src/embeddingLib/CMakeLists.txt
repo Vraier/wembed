@@ -14,6 +14,7 @@ set(HEADERS
         include/embeddingSpace/WeightedNoDim.hpp
         include/embeddingSpace/Cosine.hpp
         include/embeddingSpace/MercatorEmbedding.hpp
+        include/embeddingSpace/Additive.hpp
 
         include/embeddingIO/EmbeddingIO.hpp
 
@@ -44,7 +45,8 @@ set(SOURCES
         src/embeddingSpace/Cosine.cpp
         src/embeddingSpace/Poincare.cpp
         src/embeddingSpace/MercatorEmbedding.cpp
-        
+        src/embeddingSpace/Additive.cpp
+
         src/embeddingIO/EmbeddingIO.cpp
 
         src/partition/LabelPropagation.cpp

@@ -149,10 +149,12 @@ void addOptions(CLI::App& app, Options& opts) {
 
     app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
         ->capture_default_str();
-    app.add_option("--weight-penalty", opts.embedderOptions.weightPenatly,
+    app.add_option("--weight-penalty", opts.embedderOptions.weightPenalty,
                    "Determines how strong unit weights are enforces")
         ->capture_default_str();
     app.add_flag("--dump-weights", opts.embedderOptions.dumpWeights, "Dump weights to file");
+    app.add_flag("--additive-weights", opts.embedderOptions.additiveWeights,
+                 "Use additive weights instead of multiplicative weights");
 
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();

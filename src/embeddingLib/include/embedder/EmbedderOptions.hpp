@@ -38,7 +38,8 @@ struct EmbedderOptions {
 
     // regarding weights
     double weightLearningRate = 0.0;  // learning rate for weights
-    double weightPenatly = 0.0;       // how strong too large weights are penalized
+    double weightPenalty = 0.0;       // how strong too large weights are penalized
+    bool additiveWeights = false;
     bool dumpWeights = false;         // if set, the weights will be dumped to a file
 
     // Gradient descent parameters

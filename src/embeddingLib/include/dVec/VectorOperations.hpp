@@ -13,7 +13,7 @@ static inline double calculateLPNorm(const CVecRef x, const CVecRef y, int p = 2
 /**
  * Given x and y, calculate sigma/sigma x ||x-y||_p
  */
-static inline void differentiatePNormDifference(const CVecRef x, const CVecRef y, TmpVec<0>& result, int p = 2) {
+static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef y, TmpVec<0>& result, int p = 2) {
     double lpNorm = calculateLPNorm(x, y, p);
 
     if (lpNorm == 0.0) {

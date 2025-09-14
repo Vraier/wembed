@@ -38,7 +38,8 @@ std::map<EmbeddingType, std::string> embeddingTypeMap = {
     {EmbeddingType::MercatorEmb, "Mercator"},
     {EmbeddingType::WeightedNoDimEmb, "WeightedNoDim"},
     {EmbeddingType::WeightedInfEmb, "WeightedInf"},
-    {EmbeddingType::PoincareEmb, "Poincare"}
+    {EmbeddingType::PoincareEmb, "Poincare"},
+    {EmbeddingType::AdditiveEmb, "Additive"}
 };
 
 std::map<LogType, std::string> logTypeMap = {

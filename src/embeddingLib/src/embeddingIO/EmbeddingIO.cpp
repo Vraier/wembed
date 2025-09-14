@@ -14,6 +14,7 @@
 #include "WeightedGeometric.hpp"
 #include "WeightedGeometricInf.hpp"
 #include "WeightedNoDim.hpp"
+#include "Additive.hpp"
 
 std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates, int lpNorm) {
     switch (type) {
@@ -94,6 +95,11 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
         case InfNormEmb: {
             LOG_INFO("Constructing inf norm embedding");
             return std::make_unique<InfNorm>(coordinates);
+        }
+        case AdditiveEmb: {
+            LOG_INFO("Constructing additive embedding");
+            auto pair = splitLastColumn(coordinates);
+            return std::make_unique<Additive>(pair.first, pair.second);
         }
         default:
             LOG_ERROR("Unknown embedding type");
