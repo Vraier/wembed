@@ -18,8 +18,8 @@ class SFMLDrawer {
     void updateDisplay(const Graph &g, const Coordinates &coords, const std::vector<Color> &colors);
     void calculateBounds(const Coordinates &coords);
 
-    double minX, minY, maxX, maxY;  // minimum/maximum coordinates of all vertices
-    double width, height;
+    float minX, minY, maxX, maxY;  // minimum/maximum coordinates of all vertices
+    float width, height;
 
     sf::RenderWindow *window;
     sf::Clock *clock;

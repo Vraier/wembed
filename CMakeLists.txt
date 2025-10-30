@@ -42,7 +42,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest cli11 girgs)
 
 # try to find sfml, if it is not avaliable we will not build the drawLib
-find_package(SFML 2.5 COMPONENTS window graphics system audio QUIET)
+find_package(SFML 3 COMPONENTS Window Graphics System Audio QUIET)
 if(SFML_FOUND)
         message(STATUS "SFML found, embedding animation will be available")
 else()

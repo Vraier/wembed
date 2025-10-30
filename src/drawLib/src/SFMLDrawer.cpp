@@ -6,10 +6,8 @@
 #include "ThickLine.hpp"
 
 SFMLDrawer::SFMLDrawer() {
-    sf::ContextSettings settings;
-    settings.antialiasingLevel = 8;
-    window = new sf::RenderWindow(sf::VideoMode(1600, 900), "2D Graph Simulation",
-                                  sf::Style::Titlebar | sf::Style::Close, settings);
+    window = new sf::RenderWindow(sf::VideoMode({1600, 900}), "2D Graph Simulation",
+                                  sf::Style::Titlebar | sf::Style::Close);
     clock = new sf::Clock();
 
     window->clear();
@@ -23,18 +21,17 @@ SFMLDrawer::~SFMLDrawer() {
     delete clock;
 }
 
-void SFMLDrawer::processFrame(const Graph &g, const Coordinates &coords, const std::vector<Color> &colors) {
+void SFMLDrawer::processFrame(const Graph& g, const Coordinates& coords, const std::vector<Color>& colors) {
     // handle events
-    sf::Event event;
-    while (window->pollEvent(event)) {
-        if (event.type == sf::Event::Closed) window->close();
+    while (const std::optional<sf::Event> event = window->pollEvent()) {
+        if (event->is<sf::Event::Closed>()) window->close();
     }
     // draw to screen
     updateDisplay(g, coords, colors);
     currentFrame++;
 }
 
-void SFMLDrawer::processFrame(const Graph &g, const Coordinates &coords, const std::vector<double> &colScale) {
+void SFMLDrawer::processFrame(const Graph& g, const Coordinates& coords, const std::vector<double>& colScale) {
     ASSERT(g.getNumVertices() == colScale.size());
     ASSERT(g.getNumVertices() == coords.size());
 
@@ -54,7 +51,7 @@ void SFMLDrawer::processFrame(const Graph &g, const Coordinates &coords, const s
     processFrame(g, coords, colors);
 }
 
-void SFMLDrawer::processFrame(const Graph &g, const Coordinates &coords) {
+void SFMLDrawer::processFrame(const Graph& g, const Coordinates& coords) {
     std::vector<Color> colors(g.getNumVertices());
     for (int i = 0; i < g.getNumVertices(); i++) {
         colors[i] = Color{100, 100, 100};  // gray default color for nodes
@@ -62,7 +59,7 @@ void SFMLDrawer::processFrame(const Graph &g, const Coordinates &coords) {
     processFrame(g, coords, colors);
 }
 
-void SFMLDrawer::calculateBounds(const Coordinates &coords) {
+void SFMLDrawer::calculateBounds(const Coordinates& coords) {
     int n = coords.size();
 
     ASSERT(n > 0);
@@ -72,10 +69,10 @@ void SFMLDrawer::calculateBounds(const Coordinates &coords) {
     maxY = coords[0][1];
     minY = coords[0][1];
     for (int i = 0; i < n; i++) {
-        maxX = std::max(maxX, coords[i][0]);
-        minX = std::min(minX, coords[i][0]);
-        maxY = std::max(maxY, coords[i][1]);
-        minY = std::min(minY, coords[i][1]);
+        maxX = std::max(maxX, (float)coords[i][0]);
+        minX = std::min(minX, (float)coords[i][0]);
+        maxY = std::max(maxY, (float)coords[i][1]);
+        minY = std::min(minY, (float)coords[i][1]);
     }
 
     width = maxX - minX;
@@ -91,7 +88,7 @@ void SFMLDrawer::calculateBounds(const Coordinates &coords) {
     height = maxY - minY;
 }
 
-void SFMLDrawer::updateDisplay(const Graph &g, const Coordinates &coords, const std::vector<Color> &colors) {
+void SFMLDrawer::updateDisplay(const Graph& g, const Coordinates& coords, const std::vector<Color>& colors) {
     ASSERT(!coords.empty());
     ASSERT(coords[0].size() == 2);
     window->clear(sf::Color(220, 220, 220, 255));
@@ -110,7 +107,7 @@ void SFMLDrawer::updateDisplay(const Graph &g, const Coordinates &coords, const 
     }
 
     // set the view
-    sf::View view(sf::FloatRect(minX, minY, width, height));
+    sf::View view(sf::FloatRect({minX, minY}, {width, height}));
     window->setView(view);
 
     // calculate node size dynamically

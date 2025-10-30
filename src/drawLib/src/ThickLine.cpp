@@ -5,12 +5,12 @@
 #include <stdexcept>
 
 Thick_Line::Thick_Line()
-    : _thickness{THICKNESS}, _color{COLOR}, _shape{sf::TriangleStrip}, _last_dot{-2}
+    : _thickness{THICKNESS}, _color{COLOR}, _shape{sf::PrimitiveType::TriangleStrip}, _last_dot{-2}
 {
 }
 
 Thick_Line::Thick_Line(const point_set &pts)
-    : _thickness{THICKNESS}, _color{COLOR}, _shape{sf::TriangleStrip}, _last_dot{-2}
+    : _thickness{THICKNESS}, _color{COLOR}, _shape{sf::PrimitiveType::TriangleStrip}, _last_dot{-2}
 {
     renew_shape(pts);
 }
@@ -19,7 +19,7 @@ void Thick_Line::renew_shape(const point_set &pts)
 {
     _last_dot = -2;
     auto pts_count = pts.size();
-    _shape = sf::VertexArray(sf::TriangleStrip, 0);
+    _shape = sf::VertexArray(sf::PrimitiveType::TriangleStrip, 0);
     for (auto i = 0; i < (int)pts_count; ++i)
     {
         add_point(pts[i]);
