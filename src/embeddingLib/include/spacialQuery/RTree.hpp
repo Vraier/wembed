@@ -121,7 +121,7 @@ namespace impl {
 
     namespace bgi = boost::geometry::index;
 
-    constexpr size_t MAX_DIMENSION = 16;
+    constexpr size_t MAX_DIMENSION = 8;
 
     template <size_t D, template<size_t DIM> class PredicateMapper, typename OutIter, typename ValueType, typename... Args>
     struct QueryDispatch;
