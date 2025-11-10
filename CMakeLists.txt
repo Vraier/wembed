@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.26)
 
 project(WEmbed VERSION 0.0.3 LANGUAGES CXX)
 
+option(WEMBED_AS_LIBRARY "Only build the C++ library." OFF)
+
+
 # define compiler flags for project
 # use interface library to not force the flags on the user
 add_library(wembed_flags INTERFACE)
@@ -21,25 +24,30 @@ find_package(Eigen3 REQUIRED)
 #find_package(Boost 1.74 REQUIRED)
 
 include(FetchContent)
-# Google Test
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.17.0
-)
-# CLI11
-FetchContent_Declare(
-    cli11
-    GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
-    GIT_TAG v2.5.0
-)
-# Girg generator
-FetchContent_Declare(
-    girgs 
-    GIT_REPOSITORY https://github.com/chistopher/girgs.git
-)
 
-FetchContent_MakeAvailable(googletest cli11 girgs)
+if(NOT WEMBED_AS_LIBRARY)
+    # Google Test
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        v1.17.0
+    )
+    # CLI11
+    FetchContent_Declare(
+        cli11
+        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+        GIT_TAG v2.5.0
+    )
+    # Girg generator
+    FetchContent_Declare(
+        girgs
+        GIT_REPOSITORY https://github.com/chistopher/girgs.git
+    )
+
+    FetchContent_MakeAvailable(googletest cli11 girgs)
+
+    enable_testing()
+endif()
 
 # try to find sfml, if it is not avaliable we will not build the drawLib
 find_package(SFML 3 COMPONENTS Window Graphics System Audio QUIET)
@@ -60,11 +68,18 @@ if(EMBEDDING_USE_ASSERTIONS)
         add_compile_definitions(EMBEDDING_USE_ASSERTIONS)
 endif(EMBEDDING_USE_ASSERTIONS)
 
-enable_testing()
-
 # export compile_commands.json, which can be used by editors for auto
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src)
-add_subdirectory(python)
-add_subdirectory(tests)
+if(NOT WEMBED_AS_LIBRARY)
+    add_subdirectory(python)
+    add_subdirectory(tests)
+endif()
+
+
+add_library(wembedLib STATIC "src/wembed.cpp")
+target_include_directories(wembedLib PUBLIC "include/")
+
+target_link_libraries(wembedLib PRIVATE wembed_flags graphLib embeddingLib)
+set_target_properties(wembedLib PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
