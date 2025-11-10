@@ -15,7 +15,7 @@ class LayeredEmbedder : public EmbedderInterface {
     using Timer = util::Timer;
 
    public:
-    LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
+    LayeredEmbedder(const Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
         : timer(std::make_shared<Timer>()),
           options(opts),
           originalGraph(g),

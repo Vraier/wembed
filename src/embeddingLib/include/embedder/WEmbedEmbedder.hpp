@@ -12,7 +12,7 @@ class WEmbedEmbedder : public EmbedderInterface {
     using Timer = util::Timer;
 
    public:
-    WEmbedEmbedder(Graph &g, EmbedderOptions opts, std::shared_ptr<Timer> timer_ptr = std::make_shared<Timer>())
+    WEmbedEmbedder(const Graph &g, EmbedderOptions opts, std::shared_ptr<Timer> timer_ptr = std::make_shared<Timer>())
         : timer(timer_ptr),
           options(opts),
           graph(g),
