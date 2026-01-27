@@ -78,7 +78,7 @@ if(NOT WEMBED_AS_LIBRARY)
 endif()
 
 
-add_library(wembedLib STATIC "src/wembed.cpp")
+add_library(wembedLib SHARED "src/wembed.cpp")
 target_include_directories(wembedLib PUBLIC "include/")
 
 target_link_libraries(wembedLib PRIVATE wembed_flags graphLib embeddingLib)
