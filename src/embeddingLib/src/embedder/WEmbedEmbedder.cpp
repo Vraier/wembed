@@ -333,7 +333,7 @@ void WEmbedEmbedder::weightPenaltyForce(int v) {
 std::vector<double> WEmbedEmbedder::constructDegreeWeights(const Graph& g) {
     std::vector<double> weights(g.getNumVertices());
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
-        weights[v] = g.getNumNeighbors(v);
+        weights[v] = std::max<double>(g.getNumNeighbors(v), 0.5);
     }
     return weights;
 }
