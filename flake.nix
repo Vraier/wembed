@@ -24,13 +24,20 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, googletest, cli11, girgs, pybind11 }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+    googletest,
+    cli11,
+    girgs,
+    pybind11,
+  }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
         pkgs = nixpkgs.legacyPackages.${system};
         python = pkgs.python3;
-      in
-      {
+      in {
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "wembed";
           version = "0.0.1";
@@ -45,6 +52,8 @@
             git
             python3.pkgs.scikit-build-core
             python3.pkgs.pybind11
+            cargo
+            rustc
           ];
 
           buildInputs = with pkgs; [
@@ -77,7 +86,7 @@
           postInstall = ''
             # Ensure Python package is installed correctly
             export PYTHONPATH="$out/${python.sitePackages}:$PYTHONPATH"
-            
+
             # Make the CLI executable available
             mkdir -p $out/bin
             cp bin/cli_wembed $out/bin/wembed
@@ -126,23 +135,30 @@
             ninja
             pkg-config
             git
-            
+
+            # Rust
+            cargo
+            rustc
+            rustfmt
+            clippy
+
             # Core dependencies
             eigen
             boost
             gtest
             sfml
-            
+
             # Python tools and dependencies
             python3
             python3.pkgs.scikit-build-core
             python3.pkgs.pybind11
             python3.pkgs.pip
             python3.pkgs.virtualenv
-            
+
             # Development tools
             gdb
             valgrind
+            samply
             ccache
             clang-tools # For clang-format, clang-tidy
             pre-commit
@@ -156,17 +172,17 @@
           shellHook = ''
             echo "Welcome to WEmbed development environment!"
             echo "Build tools and dependencies are available."
-            
+
             # Setup ccache
             export CCACHE_DIR=$PWD/.ccache
             export PATH="${pkgs.ccache}/bin:$PATH"
-            
+
             # Make tests verbose by default
             export CTEST_OUTPUT_ON_FAILURE=1
 
             # Setup Python environment variables
             export PYTHONPATH="$PWD:$PYTHONPATH"
-            
+
             # Create virtual environment if it doesn't exist
             if [ ! -d ".venv" ]; then
               python -m venv .venv
