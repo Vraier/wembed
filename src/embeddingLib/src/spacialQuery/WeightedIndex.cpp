@@ -4,6 +4,7 @@
 
 #include "RTree.hpp"
 #include "SNNQueries.hpp"
+#include "ATreeQueries.hpp"
 
 using indexEntries = std::pair<CVecRef, NodeId>;
 
@@ -40,6 +41,9 @@ void WeightedIndex::updateIndices(const VecList& positions, const std::vector<do
             break;
         case IndexType::SNN:
             spacialIndices.push_back(std::make_unique<SNNQueries>(std::move(bucketContent[i]), DIMENSION));
+            break;
+        case IndexType::ATree:
+            spacialIndices.push_back(std::make_unique<ATreeQueries>(std::move(bucketContent[i]), DIMENSION));
             break;
         default:
         LOG_ERROR("Unknown index type");
