@@ -8,7 +8,7 @@ enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1, Original = 2 };
 
-enum class IndexType { RTree = 0, SNN = 1, ATree = 2 };
+enum class IndexType { RTree = 0, SNN = 1, Sprk = 2 };
 
 inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::Simple, "Simple"},
                                                                 {OptimizerType::Adam, "Adam"}};
@@ -16,7 +16,7 @@ inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::
 inline std::map<WeightType, std::string> weightTypeMap = {
     {WeightType::Unit, "Unit"}, {WeightType::Degree, "Degree"}, {WeightType::Original, "Original"}};
 
-inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::RTree, "RTree"}, {IndexType::SNN, "SNN"}, {IndexType::ATree, "ATree"}};
+inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::RTree, "RTree"}, {IndexType::SNN, "SNN"}, {IndexType::Sprk, "Sprk"}};
 
 struct EmbedderOptions {
     int embeddingDimension = 4;

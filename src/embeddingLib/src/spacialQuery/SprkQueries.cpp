@@ -1,8 +1,8 @@
-#include "ATreeQueries.hpp"
+#include "SprkQueries.hpp"
 
 #include <stdexcept>
 
-ATreeQueries::ATreeQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension)
+SprkQueries::SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension)
     : handle_(nullptr),
       id_translation(),
       dimension(dimension) {
@@ -19,24 +19,24 @@ ATreeQueries::ATreeQueries(const std::vector<std::pair<CVecRef, NodeId>>& points
             }
             id_translation.push_back(id);
         }
-        handle_ = atree_create(data.data(), rows, dimension);
+        handle_ = sprk_create(data.data(), rows, dimension);
     }
 }
 
-ATreeQueries::~ATreeQueries() {
-    if (handle_) atree_destroy(handle_);
+SprkQueries::~SprkQueries() {
+    if (handle_) sprk_destroy(handle_);
 }
 
-ATreeQueries::ATreeQueries(ATreeQueries&& other) noexcept
+SprkQueries::SprkQueries(SprkQueries&& other) noexcept
     : handle_(other.handle_),
       id_translation(std::move(other.id_translation)),
       dimension(other.dimension) {
     other.handle_ = nullptr;
 }
 
-ATreeQueries& ATreeQueries::operator=(ATreeQueries&& other) noexcept {
+SprkQueries& SprkQueries::operator=(SprkQueries&& other) noexcept {
     if (this != &other) {
-        if (handle_) atree_destroy(handle_);
+        if (handle_) sprk_destroy(handle_);
         handle_ = other.handle_;
         id_translation = std::move(other.id_translation);
         dimension = other.dimension;
@@ -45,7 +45,7 @@ ATreeQueries& ATreeQueries::operator=(ATreeQueries&& other) noexcept {
     return *this;
 }
 
-size_t ATreeQueries::query_sphere(CVecRef point, double radius, std::vector<int>& out) const {
+size_t SprkQueries::query_sphere(CVecRef point, double radius, std::vector<int>& out) const {
     ASSERT(point.dimension() == dimension);
 
     if (handle_ && !id_translation.empty()) {
@@ -56,20 +56,20 @@ size_t ATreeQueries::query_sphere(CVecRef point, double radius, std::vector<int>
 
         uint64_t* ids = nullptr;
         size_t count = 0;
-        atree_query_radius_alloc(handle_, query.data(), radius, &ids, &count);
+        sprk_query_radius(handle_, query.data(), radius, &ids, &count);
 
         for (size_t i = 0; i < count; ++i) {
             out.push_back(id_translation[ids[i]]);
         }
-        atree_free_results(ids, count);
+        sprk_free_results(ids, count);
     }
     return out.size();
 }
 
-size_t ATreeQueries::query_nearest(CVecRef, unsigned int, std::vector<int>&) const {
+size_t SprkQueries::query_nearest(CVecRef, unsigned int, std::vector<int>&) const {
     throw std::runtime_error("Not implemented!");
 }
 
-size_t ATreeQueries::query_box(CVecRef, CVecRef, std::vector<int>&) const {
+size_t SprkQueries::query_box(CVecRef, CVecRef, std::vector<int>&) const {
     throw std::runtime_error("Not implemented!");
 }

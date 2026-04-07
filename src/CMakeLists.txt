@@ -5,7 +5,7 @@ add_subdirectory(embeddingLib)
 add_subdirectory(evaluationLib)
 add_subdirectory(drawLib)
 add_subdirectory(SNN)
-add_subdirectory(atree)
+add_subdirectory(sprk)
 
 # Executables
 add_subdirectory(cli_wembed)
