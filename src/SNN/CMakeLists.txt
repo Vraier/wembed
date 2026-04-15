@@ -16,5 +16,6 @@ file(GLOB_RECURSE SRC_FILES ${SOURCE_DIR}/*.cpp)
 add_library(snn STATIC ${SRC_FILES})
 
 target_include_directories(snn PUBLIC ${INCLUDE_DIR})
+target_link_libraries(snn PUBLIC Eigen3::Eigen)
 set_target_properties(snn PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 

@@ -1,6 +1,7 @@
 #include "GeometricGraphSampler.hpp"
 
 #include <iostream>
+#include <numbers>
 #include <unordered_map>
 
 #include "GraphAlgorithms.hpp"
@@ -9,7 +10,7 @@
 
 GraphCoordinatesPair GeometricGraphSampler::generateRandomGraphWithCoordinates(int n) {
     double gridSize = std::sqrt(n);
-    double radius = std::sqrt(20.0 / M_PI);
+    double radius = std::sqrt(20.0 / std::numbers::pi);
     return generateRandomGraph(n, gridSize, radius);
 }
 

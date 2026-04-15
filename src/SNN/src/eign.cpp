@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include <cassert>
 #include <iostream>
-#include <eigen3/Eigen/SVD>
+#include <Eigen/SVD>
 
 void svd_eigen_sovler(const Matrix& mat, Matrix& vt) {
     Eigen::BDCSVD<Eigen::MatrixXd> svd_wrapper = mat.bdcSvd(Eigen::ComputeFullV);

@@ -1,6 +1,7 @@
 #include "MercatorEmbedding.hpp"
 
 #include <iostream>
+#include <numbers>
 
 MercatorEmbedding::MercatorEmbedding(const std::vector<double>& radii,
                                      const std::vector<std::vector<double>>& positions)
@@ -38,7 +39,7 @@ double MercatorEmbedding::S1_distance(double r1, double r2, double theta1, doubl
     if ((r1 == r2) && (theta1 == theta2)) {
         return 0;
     }
-    double delta_theta = M_PI - std::fabs(M_PI - std::fabs(theta1 - theta2));
+    double delta_theta = std::numbers::pi - std::fabs(std::numbers::pi - std::fabs(theta1 - theta2));
     if (delta_theta == 0) {
         return std::fabs(r1 - r2);
     } else {

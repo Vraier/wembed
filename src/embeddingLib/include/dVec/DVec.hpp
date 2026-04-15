@@ -2,7 +2,7 @@
 
 #include <array>
 #include <cmath>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <type_traits>
 #include <vector>
 
@@ -22,13 +22,13 @@ template <typename Inner, int SLOT>
 class CVecRefImpl;
 
 template <typename L, typename R>
-class AddExpr;
+struct AddExpr;
 
 template <typename L, typename R>
-class SubExpr;
+struct SubExpr;
 
 template <typename E>
-class MultExpr;
+struct MultExpr;
 
 template <typename Inner>
 class VecBase {
@@ -74,15 +74,15 @@ class VecBase {
     template <typename I, int S>
     friend class CVecRefImpl;
     template <typename L, typename R>
-    friend class AddExpr;
+    friend struct AddExpr;
     template <typename L, typename R>
     friend AddExpr<typename L::ExprType, typename R::ExprType> operator+(const L&, const R&);
     template <typename L, typename R>
-    friend class SubExpr;
+    friend struct SubExpr;
     template <typename L, typename R>
     friend SubExpr<typename L::ExprType, typename R::ExprType> operator-(const L&, const R&);
     template <typename E>
-    friend class MultExpr;
+    friend struct MultExpr;
     template <typename E>
     friend MultExpr<typename E::ExprType> operator*(double, const E&);
 
@@ -239,9 +239,6 @@ class VecRefImpl {
     // data directly. Therefore, we make a compile-time case distinction here.
     using ContainedType = std::conditional_t<SLOT == -1, typename Inner::RefType, typename Inner::TmpValueType>;
 
-    template <unsigned int N_SLOTS>
-    using Buffer = typename Inner::BufferType<N_SLOTS>;
-
    public:
     using MemoryType = typename Inner::MemoryType;
     using ExprType = Vec;
@@ -249,7 +246,7 @@ class VecRefImpl {
     VecRefImpl(MemoryType* mem, unsigned int dimension) : coord(mem, dimension) {}
 
     template <unsigned int N_SLOTS>
-    VecRefImpl(Buffer<N_SLOTS>& buffer) : coord(buffer.template construct<ContainedType, SLOT>()) {
+    VecRefImpl(typename Inner::template BufferType<N_SLOTS>& buffer) : coord(buffer.template construct<ContainedType, SLOT>()) {
         static_assert(SLOT >= 0, "TmpVec with negative slot not allowed!");
         static_assert(SLOT < N_SLOTS, "Invalid slot!");
         if constexpr (ASSERTIONS_ACTIVE) {
@@ -260,7 +257,7 @@ class VecRefImpl {
     }
 
     template <unsigned int N_SLOTS>
-    VecRefImpl(Buffer<N_SLOTS>& buffer, double default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
+    VecRefImpl(typename Inner::template BufferType<N_SLOTS>& buffer, double default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
         static_assert(SLOT >= 0, "TmpVec with negative slot not allowed!");
         static_assert(SLOT < N_SLOTS, "Invalid slot!");
         setAll(default_value);
@@ -452,7 +449,7 @@ class VecRefImpl {
     }
 
     template <unsigned int N_SLOTS>
-    void initRefCount(Buffer<N_SLOTS>& buffer) {
+    void initRefCount(typename Inner::template BufferType<N_SLOTS>& buffer) {
 #ifdef EMBEDDING_USE_ASSERTIONS
         ref_count = &buffer.ref_counts[SLOT];
         ASSERT(*ref_count == 0, "Double use of slot " << SLOT);

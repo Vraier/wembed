@@ -5,6 +5,7 @@
 #include <locale>
 #include <vector>
 #include <map>
+#include <string>
 
 namespace util {
 

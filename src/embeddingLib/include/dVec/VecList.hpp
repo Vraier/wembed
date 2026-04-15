@@ -40,7 +40,7 @@ class VecList {
 
     void setAll(double default_value) {
         #pragma omp parallel for
-        for (size_t i = 0; i < size(); ++i) {
+        for (int64_t i = 0; i < size(); ++i) {
             (*this)[i].setAll(default_value);
         }
     }

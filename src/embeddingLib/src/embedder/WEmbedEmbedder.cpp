@@ -1,6 +1,7 @@
 #include "WEmbedEmbedder.hpp"
 
 #include <fstream>
+#include <numeric>
 
 #include "VectorOperations.hpp"
 

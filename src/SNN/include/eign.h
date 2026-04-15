@@ -27,7 +27,7 @@ SOFTWARE.
 #ifndef EIGN_H
 #define EIGN_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 using Matrix = Eigen::MatrixXd;
 
 void svd_eigen_sovler(const Matrix& mat, Matrix& vt);

@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <vector>
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 class SnnModel {
     public:

@@ -6,11 +6,19 @@ project(WEmbed VERSION 0.0.3 LANGUAGES CXX)
 # use interface library to not force the flags on the user
 add_library(wembed_flags INTERFACE)
 target_compile_features(wembed_flags INTERFACE cxx_std_20)
-target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -DBOOST_ALLOW_DEPRECATED_HEADERS -fno-omit-frame-pointer)
 
-#target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:RELEASE>:-mtune=native -march=native>>") # for some reason compiling with pip does not work with this
-target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") 
-target_link_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>")
+if(MSVC)
+        add_compile_options(/Zc:preprocessor)
+        target_compile_options(wembed_flags INTERFACE /W2 /wd4018 /wd4251 /wd4592)
+        target_compile_definitions(wembed_flags INTERFACE BOOST_ALLOW_DEPRECATED_HEADERS)
+        target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:Debug>:/RTC1>")
+else()
+        # GCC/Clang flags
+        target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -fno-omit-frame-pointer)
+        target_compile_definitions(wembed_flags INTERFACE BOOST_ALLOW_DEPRECATED_HEADERS)
+        target_compile_options(wembed_flags INTERFACE "$<$<CONFIG:Debug>:-fsanitize=address,undefined>")
+        target_link_options(wembed_flags INTERFACE "$<$<CONFIG:Debug>:-fsanitize=address,undefined>")
+endif()
 
 # Dependencies
 # openmp 
