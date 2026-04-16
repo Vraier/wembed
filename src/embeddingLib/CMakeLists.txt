@@ -30,6 +30,7 @@ set(HEADERS
         # Embedder
         include/embedder/EmbedderOptions.hpp
         include/embedder/WEmbedEmbedder.hpp
+        include/embedder/NewWEmbedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
@@ -59,6 +60,7 @@ set(SOURCES
 
         # Embedder
         src/embedder/WEmbedEmbedder.cpp
+        src/embedder/NewWEmbedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
         
         src/gradientOptimizer/AdamOptimizer.cpp
