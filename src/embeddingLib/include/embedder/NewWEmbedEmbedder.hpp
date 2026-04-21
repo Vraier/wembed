@@ -1,8 +1,10 @@
 #pragma once
-#include <EmbedderOptions.hpp>
-#include <VecList.hpp>
+
+#include <execution>
 
 #include "EmbedderInterface.hpp"
+#include "EmbedderOptions.hpp"
+#include "VecList.hpp"
 
 class NewWEmbedEmbedder : public EmbedderInterface {
 
@@ -13,6 +15,27 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     uint32_t currentIteration = 0;
     VecList currentPositions;
     std::vector<double> currentWeights;
+    std::vector<double> weightPrefixSum;
+    std::vector<uint32_t> sortedNodeIDs;
+
+    [[nodiscard]] uint32_t graphSize() const {
+        return this->graph.getNumVertices();
+    }
+
+    void computeWeightPrefixSum() {
+        //TODO: parallel?
+        weightPrefixSum[0] = currentWeights[0];
+        for (size_t i = 1; i < currentWeights.size(); i++) {
+            weightPrefixSum[i] = currentWeights[i] + weightPrefixSum[i - 1];
+        }
+    }
+
+    void sortNodes() {
+        std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
+        std::sort(std::execution::par_unseq, sortedNodeIDs.begin(), sortedNodeIDs.end(),
+                  [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
+    }
+
     public:
     NewWEmbedEmbedder(const Graph& g,
                       const EmbedderOptions &opts,
@@ -21,12 +44,14 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         opts(opts),
                         timer(timer_ptr),
                         currentPositions(opts.embeddingDimension, g.getNumVertices()),
-                        currentWeights(g.getNumVertices())
+                        currentWeights(g.getNumVertices()),
+                        weightPrefixSum(g.getNumVertices()),
+                        sortedNodeIDs(g.getNumVertices())
     {
         //TODO: Initialize coordinates randomly and weights based on degree
     }
 
-    virtual ~NewWEmbedEmbedder() override {};
+    virtual ~NewWEmbedEmbedder() override {}
     virtual void calculateStep() override;
     virtual bool isFinished() override;
     virtual void calculateEmbedding() override;
