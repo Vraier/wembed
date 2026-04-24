@@ -18,23 +18,15 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     std::vector<double> weightPrefixSum;
     std::vector<uint32_t> sortedNodeIDs;
 
-    [[nodiscard]] uint32_t graphSize() const {
-        return this->graph.getNumVertices();
-    }
+    //TODO: Maybe better to use a parameter passed to a function or as a return value
+    bool insignificantPosChange = false;
 
-    void computeWeightPrefixSum() {
-        //TODO: parallel?
-        weightPrefixSum[0] = currentWeights[0];
-        for (size_t i = 1; i < currentWeights.size(); i++) {
-            weightPrefixSum[i] = currentWeights[i] + weightPrefixSum[i - 1];
-        }
-    }
+    [[nodiscard]] constexpr uint32_t graphSize() const;
 
-    void sortNodes() {
-        std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
-        std::sort(std::execution::par_unseq, sortedNodeIDs.begin(), sortedNodeIDs.end(),
-                  [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
-    }
+    void computeWeightPrefixSum();
+    void sortNodes();
+
+    void debug_dumpWeights() const;
 
     public:
     NewWEmbedEmbedder(const Graph& g,

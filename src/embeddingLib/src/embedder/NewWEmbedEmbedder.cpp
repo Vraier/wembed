@@ -1,12 +1,50 @@
 #include "NewWEmbedEmbedder.hpp"
 
+#include <fstream>
+
+
+// ======================================================================================
+//
+//                       PUBLIC FUNCTIONS NewWEmbedEmbedder
+//
+// ======================================================================================
 void NewWEmbedEmbedder::calculateStep() {
-    //TODO: Advance embedding by single gradient descent
+    /* TODO:
+     * Update indices
+     * calculate attracting forces
+     * calculate repelling forces
+     * calculate weight Penalties
+     * update positions
+     * update weights
+     * compute change in positions
+     */
+
+    //Increase current step
+    this->currentIteration++;
+
+    //TODO: This could only be compiled in debug mode
+    //Dump weights to debug file
+    if (this->opts.dumpWeights) {
+        debug_dumpWeights();
+    }
+
+    //Abort in the case of the first hierarchy layer
+    if (graphSize() <= 1) {
+        this->insignificantPosChange = true;
+        return;
+    }
+
+    // Declare and define all temporary containers and parameters
+    VecList force(this->opts.embeddingDimension, graphSize());
+    VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
+    std::vector<double> weightParameterForce(graphSize(), 0);
+
+
+
 }
 
 bool NewWEmbedEmbedder::isFinished() {
-    //TODO: Add check for insignificant change
-    return this->currentIteration >= this->opts.maxIterations;
+    return this->currentIteration >= this->opts.maxIterations || this->insignificantPosChange;
 }
 
 void NewWEmbedEmbedder::calculateEmbedding() {
@@ -60,4 +98,55 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
     sortNodes();
     computeWeightPrefixSum();
     //TODO: Update hidden parameters
+}
+
+// ======================================================================================
+//
+//                       PRIVATE FUNCTIONS NewWEmbedEmbedder
+//
+// ======================================================================================
+
+[[nodiscard]] constexpr uint32_t NewWEmbedEmbedder::graphSize() const {
+    return this->graph.getNumVertices();
+}
+
+void NewWEmbedEmbedder::computeWeightPrefixSum() {
+    //TODO: parallel?
+    weightPrefixSum[0] = currentWeights[0];
+    for (size_t i = 1; i < currentWeights.size(); i++) {
+        weightPrefixSum[i] = currentWeights[i] + weightPrefixSum[i - 1];
+    }
+}
+
+void NewWEmbedEmbedder::sortNodes() {
+    std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
+    std::sort(std::execution::par_unseq, sortedNodeIDs.begin(), sortedNodeIDs.end(),
+              [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
+}
+
+void NewWEmbedEmbedder::debug_dumpWeights() const {
+    const std::string outFile = "weight_dump.txt";
+    std::ios_base::openmode mode = std::ios_base::out;
+    std::ofstream dumpFile;
+
+    if (currentIteration <= 1) {
+        mode |= std::ios_base::trunc;
+    } else {
+        mode |= std::ios_base::app;
+    }
+
+    dumpFile.open(outFile, mode);
+    if (dumpFile.rdstate() == std::fstream::failbit) {
+        LOG_ERROR("Trying to open the weight_dump logfile failed. No weights were dumped")
+    }
+
+    for (size_t i = 0; i < graphSize(); i++) {
+        dumpFile << this->currentWeights[i] << " ";
+    }
+    dumpFile << std::endl;
+
+    dumpFile.close();
+    if (dumpFile.rdstate() == std::fstream::failbit) {
+       LOG_ERROR("Trying to close the weight_dump logfile failed, but weights were dumped anyway");
+    }
 }
