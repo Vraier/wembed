@@ -5,6 +5,7 @@
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "VecList.hpp"
+#include "WeightedIndex.hpp"
 
 class NewWEmbedEmbedder : public EmbedderInterface {
 
@@ -27,6 +28,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void sortNodes();
 
     void debug_dumpWeights() const;
+
+    void updateIndex(std::vector<NodeId>& indexToGraphMap, WeightedIndex& currentWeightedIndex);
+    void calculateAllAttractingForces();
 
     public:
     NewWEmbedEmbedder(const Graph& g,

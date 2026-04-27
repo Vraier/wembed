@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "WeightedIndex.hpp"
+
 
 // ======================================================================================
 //
@@ -10,7 +12,6 @@
 // ======================================================================================
 void NewWEmbedEmbedder::calculateStep() {
     /* TODO:
-     * Update indices
      * calculate attracting forces
      * calculate repelling forces
      * calculate weight Penalties
@@ -36,10 +37,24 @@ void NewWEmbedEmbedder::calculateStep() {
 
     // Declare and define all temporary containers and parameters
     VecList force(this->opts.embeddingDimension, graphSize());
-    VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
     std::vector<double> weightParameterForce(graphSize(), 0);
+    std::vector<NodeId> indexToGraphMap;
+    WeightedIndex currentWeightedIndex(this->opts.indexType, this->opts.embeddingDimension);
 
+    VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
+#pragma omp parallel for default(none) shared(oldPositions) schedule(static)
+    for (size_t i = 0; i < graphSize(); i++) {
+        oldPositions[i] = this->currentPositions[i];
+    }
 
+    //Rebuild indices
+    this->timer->startTiming("index", "Construct spacial index");
+    updateIndex(indexToGraphMap, currentWeightedIndex);
+    this->timer->stopTiming("index");
+
+    this->timer->startTiming("attracting_forces", "Compute Attracting Forces");
+    calculateAllAttractingForces();
+    this->timer->stopTiming("attracting_forces");
 
 }
 
@@ -149,4 +164,38 @@ void NewWEmbedEmbedder::debug_dumpWeights() const {
     if (dumpFile.rdstate() == std::fstream::failbit) {
        LOG_ERROR("Trying to close the weight_dump logfile failed, but weights were dumped anyway");
     }
+}
+
+void NewWEmbedEmbedder::updateIndex(std::vector<NodeId> &indexToGraphMap, WeightedIndex &currentWeightedIndex) {
+    if (this->opts.numNegativeSamples >= 0) {
+        return; //we are not using a geometric index
+    }
+
+    //calculate new indices
+    if (this->opts.IndexSize >= 1.0) {
+        indexToGraphMap.resize(graphSize());
+        std::iota(indexToGraphMap.begin(), indexToGraphMap.end(), 0);
+        const std::vector<double> weightBuckets =
+            WeightedIndex::getDoublingWeightBuckets(this->currentWeights, this->opts.doublingFactor);
+        currentWeightedIndex.updateIndices(this->currentPositions, this->currentWeights, weightBuckets);
+    } else {
+        //Only insert a fraction of nodes into the index
+        const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
+        indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
+        VecList positions(this->opts.embeddingDimension, numNodes);
+        std::vector<double> weights(numNodes);
+
+#pragma omp parallel for default(none) shared(numNodes, positions, weights, indexToGraphMap) schedule(static)
+        for (size_t i = 0; i < numNodes; i++) {
+            positions[i] = this->currentPositions[indexToGraphMap[i]];
+            weights[i] = this->currentWeights[indexToGraphMap[i]];
+        }
+
+        const std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, this->opts.doublingFactor);
+        currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
+    }
+}
+
+void NewWEmbedEmbedder::calculateAllAttractingForces() {
+    //TODO:
 }
