@@ -17,7 +17,8 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     VecList currentPositions;
     std::vector<double> currentWeights;
     std::vector<double> weightPrefixSum;
-    std::vector<uint32_t> sortedNodeIDs;
+    std::vector<int32_t> sortedNodeIDs;
+    std::vector<double> currentWeightParameters;
 
     //TODO: Maybe better to use a parameter passed to a function or as a return value
     bool insignificantPosChange = false;
@@ -26,11 +27,14 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void computeWeightPrefixSum();
     void sortNodes();
+    void attractionForce(const NodeId v, const NodeId u, VecList& force, VecBuffer<1>& buffer);
+    void attractionWeightForce(const NodeId v, const NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
 
     void debug_dumpWeights() const;
 
     void updateIndex(std::vector<NodeId>& indexToGraphMap, WeightedIndex& currentWeightedIndex);
-    void calculateAllAttractingForces();
+    void calculateAllAttractingForces(VecList& force, std::vector<double>& weightParameterForce);
+    void calculateAllRepellingForces();
 
     public:
     NewWEmbedEmbedder(const Graph& g,
@@ -42,7 +46,8 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         currentPositions(opts.embeddingDimension, g.getNumVertices()),
                         currentWeights(g.getNumVertices()),
                         weightPrefixSum(g.getNumVertices()),
-                        sortedNodeIDs(g.getNumVertices())
+                        sortedNodeIDs(g.getNumVertices()),
+                        currentWeightParameters(g.getNumVertices())
     {
         //TODO: Initialize coordinates randomly and weights based on degree
     }
