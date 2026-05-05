@@ -1,7 +1,6 @@
 #pragma once
 
-#include <execution>
-
+#include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "VecList.hpp"
@@ -14,11 +13,15 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     std::shared_ptr<util::Timer> timer;
 
     uint32_t currentIteration = 0;
+    uint32_t numRepForceCalculations = 0;
     VecList currentPositions;
     std::vector<double> currentWeights;
     std::vector<double> weightPrefixSum;
     std::vector<int32_t> sortedNodeIDs;
     std::vector<double> currentWeightParameters;
+
+    AdamOptimizer posOptimizer;
+    AdamOptimizer weightOptimizer;
 
     //TODO: Maybe better to use a parameter passed to a function or as a return value
     bool insignificantPosChange = false;
@@ -29,12 +32,17 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void sortNodes();
     void attractionForce(const NodeId v, const NodeId u, VecList& force, VecBuffer<1>& buffer);
     void attractionWeightForce(const NodeId v, const NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
+    void repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer);
+    void repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer);
 
     void debug_dumpWeights() const;
 
     void updateIndex(std::vector<NodeId>& indexToGraphMap, WeightedIndex& currentWeightedIndex);
+    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer, WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap) const;
     void calculateAllAttractingForces(VecList& force, std::vector<double>& weightParameterForce);
-    void calculateAllRepellingForces();
+    void calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap);
+
+    [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
 
     public:
     NewWEmbedEmbedder(const Graph& g,
@@ -47,7 +55,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         currentWeights(g.getNumVertices()),
                         weightPrefixSum(g.getNumVertices()),
                         sortedNodeIDs(g.getNumVertices()),
-                        currentWeightParameters(g.getNumVertices())
+                        currentWeightParameters(g.getNumVertices()),
+                        posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
+                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
     {
         //TODO: Initialize coordinates randomly and weights based on degree
     }
