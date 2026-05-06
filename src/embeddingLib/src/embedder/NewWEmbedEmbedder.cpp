@@ -50,7 +50,7 @@ void NewWEmbedEmbedder::calculateStep() {
 
     //Compute repelling forces
     this->timer->startTiming("repelling_forces", "Compute Repelling Forces");
-    calculateAllRepellingForces(currentWeightedIndex, indexToGraphMap);
+    calculateAllRepellingForces(currentWeightedIndex, indexToGraphMap, force, weightParameterForce);
     this->timer->stopTiming("repelling_forces");
 
     //TODO: Refactor from here
@@ -240,12 +240,73 @@ void NewWEmbedEmbedder::attractionWeightForce(const NodeId v, const NodeId u, st
     weightParameterForce[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
-    //TODO:
+void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer, VecList& currentForce) {
+    //TODO: Definitly refactor
+    if (v == u) return;
+
+    const CVecRef posV = currentPositions[v];
+    const CVecRef posU = currentPositions[u];
+    TmpVec<0> result(forceBuffer, 0.0);
+    const double dist = vectorOperations::calculateLPNorm(posV, posU, this->opts.lpNorm);
+
+    // displace in random direction if positions are identical
+    if (dist <= 0) {
+        result.setToRandomUnitVector();
+        currentForce[v] += result;
+        return;
+    }
+
+    vectorOperations::differentiateLPNormDifference(posV, posU, result, this->opts.lpNorm);
+
+    // calculate weighted distance
+    const double wv = currentWeights[v];
+    const double wu = currentWeights[u];
+    const double weightScaling = this->opts.additiveWeights ? (Toolkit::myPow(wv, 1.0 / this->opts.embeddingDimension) +
+                                                               Toolkit::myPow(wu, 1.0 / this->opts.embeddingDimension))
+                                                            : Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
+    const double weightDist = dist / weightScaling;
+    if (weightDist > this->opts.edgeLength) {
+        //TODO: Why result *= 0? Why not result = 0?
+        result *= 0;
+    } else {
+        result *= this->opts.repulsionScale / weightScaling;
+    }
+
+    // increase repulsion force when we use less negative samples
+    if (this->opts.numNegativeSamples > 0) {
+        result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
+    }
+
+    currentForce[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
-    //TODO:
+void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer, std::vector<double>& weightParameterForce) {
+    //TODO: Reafctor
+    if (this->opts.weightLearningRate <= 0.0 || v == u) return;
+
+    const CVecRef posV = currentPositions[v];
+    const CVecRef posU = currentPositions[u];
+    const double wv = currentWeights[v];
+    const double wu = currentWeights[u];
+    const double hiddenParameter = currentWeightParameters[v];
+    TmpVec<0> tmp(forceBuffer, 0.0);
+    double dist = 0;
+    tmp = posV - posU;
+
+    dist = tmp.norm();
+
+    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
+    if (weightDist > this->opts.edgeLength) {
+        return;
+    }
+
+    double exPlus1 = std::exp(hiddenParameter) + 1;
+    double result = dist * wu * std::exp(hiddenParameter);
+    result /= static_cast<double>(this->opts.embeddingDimension) * exPlus1 *
+              Toolkit::myPow(wu * std::log(exPlus1),
+                             static_cast<double>(this->opts.embeddingDimension + 1.0) / static_cast<double>(this->opts.embeddingDimension));
+
+    weightParameterForce[v] -= result;
 }
 
 void NewWEmbedEmbedder::debug_dumpWeights() const {
@@ -333,7 +394,7 @@ void NewWEmbedEmbedder::calculateAllAttractingForces(VecList& force, std::vector
     }
 }
 
-void NewWEmbedEmbedder::calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap) {
+void NewWEmbedEmbedder::calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap, VecList& currentForce, std::vector<double>& weightParameterForce) {
     VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
@@ -346,8 +407,8 @@ void NewWEmbedEmbedder::calculateAllRepellingForces(WeightedIndex currentWeighte
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
-            repellingForce(v, u, forceBuffer);
-            repellingWeightForce(v, u, forceBuffer);
+            repellingForce(v, u, forceBuffer, currentForce);
+            repellingWeightForce(v, u, forceBuffer, weightParameterForce);
             numRepForceCalculations++;
         }
     }

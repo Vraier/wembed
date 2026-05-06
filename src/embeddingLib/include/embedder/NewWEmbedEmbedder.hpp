@@ -32,15 +32,16 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void sortNodes();
     void attractionForce(NodeId v, NodeId u, VecList& force, VecBuffer<1>& buffer);
     void attractionWeightForce(NodeId v, NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
-    void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
-    void repellingWeightForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
+    void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer, VecList &currentForce);
+    void repellingWeightForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer, std::vector<double> &weightParameterForce);
 
     void debug_dumpWeights() const;
 
     void updateIndex(std::vector<NodeId>& indexToGraphMap, WeightedIndex& currentWeightedIndex);
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer, WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap) const;
     void calculateAllAttractingForces(VecList& force, std::vector<double>& weightParameterForce);
-    void calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap);
+    void calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId> &indexToGraphMap, VecList &currentForce, std::vector<double> &
+                                     weightParameterForce);
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
 
