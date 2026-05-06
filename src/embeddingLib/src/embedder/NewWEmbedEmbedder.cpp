@@ -358,3 +358,54 @@ std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes)
     std::vector<NodeId> result;
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
 }
+
+std::vector<std::vector<double>> NewWEmbedEmbedder::constructRandomCoordinates(const uint32_t dimension) const {
+    const double CUBE_SIDE_LENGTH = Toolkit::myPow(graphSize(), 1.0 / dimension);
+    std::vector coords(graphSize(), std::vector<double>(dimension));
+
+    for (int i = 0; i < graphSize(); i++) {
+        for (int j = 0; j < dimension; j++) {
+            coords[i][j] = Rand::randomDouble(0, CUBE_SIDE_LENGTH);
+        }
+    }
+    return coords;
+}
+
+std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
+                                                   const std::vector<double>& weights) {
+    const int N = weights.size();
+    std::vector<double> rescaledWeights(N);
+
+    for (NodeId v = 0; v < N; v++) {
+        if (dimensionHint > 0) {
+            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)embeddingDimension / (double)dimensionHint);
+        } else {
+            rescaledWeights[v] = weights[v];
+        }
+    }
+
+    double weightSum = 0.0;
+    for (int v = 0; v < N; v++) {
+        weightSum += rescaledWeights[v];
+    }
+    for (int v = 0; v < N; v++) {
+        rescaledWeights[v] = rescaledWeights[v] * ((double)N / weightSum);
+    }
+    return rescaledWeights;
+}
+
+std::vector<double> NewWEmbedEmbedder::constructDegreeWeights(const Graph& g) {
+    std::vector<double> weights(g.getNumVertices());
+    for (NodeId v = 0; v < g.getNumVertices(); v++) {
+        weights[v] = g.getNumNeighbors(v);
+    }
+    return weights;
+}
+
+std::vector<double> NewWEmbedEmbedder::constructUnitWeights(int N) {
+    std::vector<double> weights(N);
+    for (NodeId v = 0; v < N; v++) {
+        weights[v] = 1.0;
+    }
+    return weights;
+}

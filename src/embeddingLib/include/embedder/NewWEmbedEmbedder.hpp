@@ -30,10 +30,10 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void computeWeightPrefixSum();
     void sortNodes();
-    void attractionForce(const NodeId v, const NodeId u, VecList& force, VecBuffer<1>& buffer);
-    void attractionWeightForce(const NodeId v, const NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
-    void repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer);
-    void repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer);
+    void attractionForce(NodeId v, NodeId u, VecList& force, VecBuffer<1>& buffer);
+    void attractionWeightForce(NodeId v, NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
+    void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
+    void repellingWeightForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
 
     void debug_dumpWeights() const;
 
@@ -43,6 +43,15 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap);
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
+
+    [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates(uint32_t dimension) const;
+
+    std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
+                                       const std::vector<double> &weights);
+
+    std::vector<double> constructDegreeWeights(const Graph &g);
+
+    std::vector<double> constructUnitWeights(int N);
 
     public:
     NewWEmbedEmbedder(const Graph& g,
@@ -59,10 +68,25 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
                         weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
     {
-        //TODO: Initialize coordinates randomly and weights based on degree
+
+        //TODO: Refactor all of the below called functions
+        NewWEmbedEmbedder::setCoordinates(constructRandomCoordinates(opts.embeddingDimension));
+
+        switch (opts.weightType) {
+            case WeightType::Degree:
+                NewWEmbedEmbedder::setWeights(NewWEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
+                                                                          NewWEmbedEmbedder::constructDegreeWeights(g)));
+                break;
+            case WeightType::Unit:
+                NewWEmbedEmbedder::setWeights(NewWEmbedEmbedder::constructUnitWeights(graphSize()));
+                break;
+            default:
+                LOG_ERROR("Weight type not supported");
+        }
     }
 
-    virtual ~NewWEmbedEmbedder() override {}
+    //TODO: Add Python Bindings?
+    virtual ~NewWEmbedEmbedder() override = default;
     virtual void calculateStep() override;
     virtual bool isFinished() override;
     virtual void calculateEmbedding() override;
