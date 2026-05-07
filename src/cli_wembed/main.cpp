@@ -9,7 +9,7 @@
 #include "LayeredEmbedder.hpp"
 #include "Options.hpp"
 #include "StringManipulation.hpp"
-#include "WEmbedEmbedder.hpp"
+#include "NewWEmbedEmbedder.hpp"
 
 #ifdef EMBEDDING_USE_ANIMATION
 #include "SFMLDrawer.hpp"
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
                                    std::vector<double>(inputGraph.getNumEdges() * 2, 1.0));
         embedder = std::make_unique<LayeredEmbedder>(inputGraph, coarsener, opts.embedderOptions);
     } else {
-        embedder = std::make_unique<WEmbedEmbedder>(inputGraph, opts.embedderOptions);
+        embedder = std::make_unique<NewWEmbedEmbedder>(inputGraph, opts.embedderOptions);
     }
 
     // Read embedding 

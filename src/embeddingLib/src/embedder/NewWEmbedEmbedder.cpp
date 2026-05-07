@@ -1,4 +1,3 @@
-#include <execution>
 #include <fstream>
 
 #include "NewWEmbedEmbedder.hpp"
@@ -173,7 +172,7 @@ void NewWEmbedEmbedder::computeWeightPrefixSum() {
 
 void NewWEmbedEmbedder::sortNodes() {
     std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
-    std::sort(std::execution::par_unseq, sortedNodeIDs.begin(), sortedNodeIDs.end(),
+    std::sort(sortedNodeIDs.begin(), sortedNodeIDs.end(),
               [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
 }
 
