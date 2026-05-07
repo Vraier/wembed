@@ -8,16 +8,10 @@
 
 class NewWEmbedEmbedder : public EmbedderInterface {
 
-    Graph graph;
-    EmbedderOptions opts;
     std::shared_ptr<util::Timer> timer;
 
     uint32_t currentIteration = 0;
     uint32_t numRepForceCalculations = 0;
-    VecList currentPositions;
-    std::vector<double> currentWeights;
-    std::vector<double> weightPrefixSum;
-    std::vector<int32_t> sortedNodeIDs;
     std::vector<double> currentWeightParameters;
 
     AdamOptimizer posOptimizer;
@@ -26,10 +20,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     //TODO: Maybe better to use a parameter passed to a function or as a return value
     bool insignificantPosChange = false;
 
-    [[nodiscard]] constexpr uint32_t graphSize() const;
-
-    void computeWeightPrefixSum();
-    void sortNodes();
     void attractionForce(NodeId v, NodeId u, VecList& force, VecBuffer<1>& buffer);
     void attractionWeightForce(NodeId v, NodeId u, std::vector<double>& weightParameterForce, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer, VecList &currentForce);
@@ -37,7 +27,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void debug_dumpWeights() const;
 
-    void updateIndex(std::vector<NodeId>& indexToGraphMap, WeightedIndex& currentWeightedIndex);
+    void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer, WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap) const;
     void calculateAllAttractingForces(VecList& force, std::vector<double>& weightParameterForce);
     void calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId> &indexToGraphMap, VecList &currentForce, std::vector<double> &
@@ -58,13 +48,8 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     NewWEmbedEmbedder(const Graph& g,
                       const EmbedderOptions &opts,
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
-                      : graph(g),
-                        opts(opts),
+                      : EmbedderInterface(g, opts),
                         timer(timer_ptr),
-                        currentPositions(opts.embeddingDimension, g.getNumVertices()),
-                        currentWeights(g.getNumVertices()),
-                        weightPrefixSum(g.getNumVertices()),
-                        sortedNodeIDs(g.getNumVertices()),
                         currentWeightParameters(g.getNumVertices()),
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
                         weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)

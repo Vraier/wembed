@@ -16,9 +16,8 @@ class LayeredEmbedder : public EmbedderInterface {
 
    public:
     LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
-        : timer(std::make_shared<Timer>()),
-          options(opts),
-          originalGraph(g),
+        : EmbedderInterface(g, opts),
+          timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
           currentLayer(hierarchy->getNumLayers() - 1),
           currentEmbedder(hierarchy->graphs[currentLayer], opts, timer) {};
@@ -41,8 +40,6 @@ class LayeredEmbedder : public EmbedderInterface {
     // decreases the layer and initializes a new embedder
     virtual void expandPositions();
 
-    EmbedderOptions options;
-    Graph originalGraph;
     std::shared_ptr<GraphHierarchy> hierarchy;
 
     int currentIteration = 0;

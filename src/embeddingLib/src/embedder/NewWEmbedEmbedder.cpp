@@ -12,7 +12,7 @@
 // ======================================================================================
 void NewWEmbedEmbedder::calculateStep() {
     //Increase current step
-    this->currentIteration++;
+    params.nextStep();
 
     //Dump weights to debug file
     if (this->opts.dumpWeights) {
@@ -39,7 +39,7 @@ void NewWEmbedEmbedder::calculateStep() {
 
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
-    updateIndex(indexToGraphMap, currentWeightedIndex);
+    updateIndex();
     this->timer->stopTiming("index");
 
     //Compute attracting forces
@@ -144,7 +144,6 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
 
     this->currentWeights = weights;
     sortNodes();
-    computeWeightPrefixSum();
 
     //TODO: parallel?
     for (size_t i = 0; i < graphSize(); i++) {
@@ -157,24 +156,6 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
 //                       PRIVATE FUNCTIONS NewWEmbedEmbedder
 //
 // ======================================================================================
-
-[[nodiscard]] constexpr uint32_t NewWEmbedEmbedder::graphSize() const {
-    return this->graph.getNumVertices();
-}
-
-void NewWEmbedEmbedder::computeWeightPrefixSum() {
-    //TODO: parallel?
-    weightPrefixSum[0] = currentWeights[0];
-    for (size_t i = 1; i < currentWeights.size(); i++) {
-        weightPrefixSum[i] = currentWeights[i] + weightPrefixSum[i - 1];
-    }
-}
-
-void NewWEmbedEmbedder::sortNodes() {
-    std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
-    std::sort(sortedNodeIDs.begin(), sortedNodeIDs.end(),
-              [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
-}
 
 void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecList& force, VecBuffer<1> &buffer) {
     //TODO: maybe refactor
@@ -335,33 +316,33 @@ void NewWEmbedEmbedder::debug_dumpWeights() const {
     }
 }
 
-void NewWEmbedEmbedder::updateIndex(std::vector<NodeId> &indexToGraphMap, WeightedIndex &currentWeightedIndex) {
+void NewWEmbedEmbedder::updateIndex() {
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
 
     //calculate new indices
     if (this->opts.IndexSize >= 1.0) {
-        indexToGraphMap.resize(graphSize());
-        std::iota(indexToGraphMap.begin(), indexToGraphMap.end(), 0);
+        params.indexToGraphMap.resize(graphSize());
+        std::iota(params.indexToGraphMap.begin(), params.indexToGraphMap.end(), 0);
         const std::vector<double> weightBuckets =
             WeightedIndex::getDoublingWeightBuckets(this->currentWeights, this->opts.doublingFactor);
-        currentWeightedIndex.updateIndices(this->currentPositions, this->currentWeights, weightBuckets);
+        params.currentWeightedIndex.updateIndices(this->currentPositions, this->currentWeights, weightBuckets);
     } else {
         //Only insert a fraction of nodes into the index
         const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
-        indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
+        params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
         VecList positions(this->opts.embeddingDimension, numNodes);
         std::vector<double> weights(numNodes);
 
-#pragma omp parallel for default(none) shared(numNodes, positions, weights, indexToGraphMap) schedule(static)
+#pragma omp parallel for default(none) shared(numNodes, positions, weights, params) schedule(static)
         for (size_t i = 0; i < numNodes; i++) {
-            positions[i] = this->currentPositions[indexToGraphMap[i]];
-            weights[i] = this->currentWeights[indexToGraphMap[i]];
+            positions[i] = this->currentPositions[params.indexToGraphMap[i]];
+            weights[i] = this->currentWeights[params.indexToGraphMap[i]];
         }
 
         const std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, this->opts.doublingFactor);
-        currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
+        params.currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
     }
 }
 

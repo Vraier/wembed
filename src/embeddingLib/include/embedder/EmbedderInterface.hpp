@@ -1,14 +1,54 @@
 #pragma once
 
 #include <vector>
+#include <boost/geometry/core/coordinate_dimension.hpp>
 
+#include "EmbedderOptions.hpp"
+#include "EmbedderParameters.hpp"
 #include "Graph.hpp"
 #include "Timings.hpp"
+#include "VecList.hpp"
+#include "WeightedIndex.hpp"
 
 /**
  * Interface for weighted embedder classes.
  */
 class EmbedderInterface {
+
+    protected:
+    // graph information
+    Graph graph;
+    VecList currentPositions;
+    std::vector<double> currentWeights;
+    std::vector<int32_t> sortedNodeIDs;
+
+    // embedding information
+    EmbedderOptions opts;
+    EmbedderParameters params;
+
+    EmbedderInterface(const Graph& g, const EmbedderOptions& opts)
+                        : graph(g),
+                          currentPositions(opts.embeddingDimension, g.getNumVertices()),
+                          currentWeights(g.getNumVertices()),
+                          sortedNodeIDs(g.getNumVertices()),
+                          opts(opts),
+                          params(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
+    {
+
+    }
+
+    // graph functions
+    [[nodiscard]] constexpr uint32_t graphSize() const {
+        return this->graph.getNumVertices();
+    }
+
+    void sortNodes() {
+        std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
+        std::ranges::sort(sortedNodeIDs,
+                          [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
+    }
+
+
    public:
     virtual ~EmbedderInterface() {};
 

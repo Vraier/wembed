@@ -29,6 +29,7 @@ set(HEADERS
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
+        include/embedder/EmbedderParameters.hpp
         include/embedder/WEmbedEmbedder.hpp
         include/embedder/NewWEmbedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
