@@ -12,6 +12,7 @@
 #include "WeightedIndex.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
+    //TODO: remove redundant variables
     using Timer = util::Timer;
 
    public:

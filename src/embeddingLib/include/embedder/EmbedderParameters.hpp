@@ -15,7 +15,7 @@ struct EmbedderParameters {
     std::vector<NodeId> indexToGraphMap;
     WeightedIndex currentWeightedIndex;
 
-    explicit EmbedderParameters(const uint32_t graphSize, const uint32_t dimension, const IndexType indexType)
+    explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension, const IndexType indexType)
                               : force(dimension, graphSize),
                                 weightParameterForce(graphSize),
                                 indexToGraphMap(graphSize),

@@ -25,12 +25,6 @@ void NewWEmbedEmbedder::calculateStep() {
         return;
     }
 
-    // Declare and define all temporary containers and parameters
-    VecList force(this->opts.embeddingDimension, graphSize());
-    std::vector<double> weightParameterForce(graphSize(), 0);
-    std::vector<NodeId> indexToGraphMap;
-    WeightedIndex currentWeightedIndex(this->opts.indexType, this->opts.embeddingDimension);
-
     VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
 #pragma omp parallel for default(none) shared(oldPositions) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
@@ -44,22 +38,22 @@ void NewWEmbedEmbedder::calculateStep() {
 
     //Compute attracting forces
     this->timer->startTiming("attracting_forces", "Compute Attracting Forces");
-    calculateAllAttractingForces(force, weightParameterForce);
+    calculateAllAttractingForces();
     this->timer->stopTiming("attracting_forces");
 
     //Compute repelling forces
     this->timer->startTiming("repelling_forces", "Compute Repelling Forces");
-    calculateAllRepellingForces(currentWeightedIndex, indexToGraphMap, force, weightParameterForce);
+    calculateAllRepellingForces();
     this->timer->stopTiming("repelling_forces");
 
     //TODO: Refactor from here
     //applying gradient
     this->timer->startTiming("apply_forces", "Applying Forces");
     //Update positions
-    this->posOptimizer.update(this->currentPositions, force);
+    this->posOptimizer.update(this->currentPositions, this->params.force);
     //Update weights
     if (this->opts.weightLearningRate > 0.0) {
-        this->weightOptimizer.update(currentWeightParameters, weightParameterForce);
+        this->weightOptimizer.update(currentWeightParameters, this->params.weightParameterForce);
         for (NodeId i = 0; i < graphSize(); i++) {
             currentWeights[i] = std::log(1 + std::exp(this->currentWeightParameters[i]));
         }
@@ -79,8 +73,8 @@ void NewWEmbedEmbedder::calculateStep() {
     }
     const double averageNormDiff = sumNormDiffSquared / graphSize();
 
-    if (this->currentIteration == 1 || (currentIteration > 0 && currentIteration % 10 == 0)) {
-        std::cout << "(Iteration " << currentIteration << ": #rep forces " << numRepForceCalculations
+    if (this->params.currentIteration == 1 || (this->params.currentIteration > 0 && this->params.currentIteration % 10 == 0)) {
+        std::cout << "(Iteration " << this->params.currentIteration << ": #rep forces " << numRepForceCalculations
                   << ", relative pos change: " << averageNormDiff << ")" << std::endl;
     }
 
@@ -92,18 +86,18 @@ void NewWEmbedEmbedder::calculateStep() {
 }
 
 bool NewWEmbedEmbedder::isFinished() {
-    return this->currentIteration >= this->opts.maxIterations || this->insignificantPosChange;
+    return this->params.currentIteration >= this->opts.maxIterations || this->insignificantPosChange;
 }
 
 void NewWEmbedEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
-    currentIteration = 0;
+    this->params.currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
+    LOG_INFO("Finished calculating embedding in iteration " << this->params.currentIteration);
 }
 
 Graph NewWEmbedEmbedder::getCurrentGraph() {
@@ -140,12 +134,13 @@ void NewWEmbedEmbedder::setCoordinates(const std::vector<std::vector<double> > &
 }
 
 void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
+    //TODO: This could be in EmbedderInterface?
     ASSERT(graphSize() == weights.size());
 
     this->currentWeights = weights;
     sortNodes();
 
-    //TODO: parallel?
+#pragma omp parallel for default(none) shared(currentWeights, currentWeightParameters) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
         currentWeightParameters[i] = std::log(std::exp(currentWeights[i]) - 1.0);
     }
@@ -157,7 +152,7 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
 //
 // ======================================================================================
 
-void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecList& force, VecBuffer<1> &buffer) {
+void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1> &buffer) {
     //TODO: maybe refactor
     if (v == u) return;
 
@@ -170,7 +165,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecList&
     //displace in random direction if positions are identical
     if (dist <= 0) {
         result.setToRandomUnitVector();
-        force[v] += result;
+        this->params.force[v] += result;
         return;
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, result, this->opts.lpNorm);
@@ -190,10 +185,10 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecList&
         result *= this->opts.attractionScale / weightScaling;
     }
 
-    force[v] += result;
+    this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::attractionWeightForce(const NodeId v, const NodeId u, std::vector<double> &weightParameterForce, VecBuffer<1> &buffer) {
+void NewWEmbedEmbedder::attractionWeightForce(const NodeId v, const NodeId u, VecBuffer<1> &buffer) {
     //TODO: maybe refactor
     if (this->opts.weightLearningRate <= 0.0 || v == u) return;
 
@@ -217,10 +212,10 @@ void NewWEmbedEmbedder::attractionWeightForce(const NodeId v, const NodeId u, st
                                          static_cast<double>(this->opts.embeddingDimension + 1) /
                                              static_cast<double>(this->opts.embeddingDimension));
 
-    weightParameterForce[v] += result;
+    this->params.weightParameterForce[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer, VecList& currentForce) {
+void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
     //TODO: Definitly refactor
     if (v == u) return;
 
@@ -232,7 +227,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     // displace in random direction if positions are identical
     if (dist <= 0) {
         result.setToRandomUnitVector();
-        currentForce[v] += result;
+        this->params.force[v] += result;
         return;
     }
 
@@ -257,10 +252,10 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
-    currentForce[v] += result;
+    this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer, std::vector<double>& weightParameterForce) {
+void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
     //TODO: Reafctor
     if (this->opts.weightLearningRate <= 0.0 || v == u) return;
 
@@ -286,7 +281,7 @@ void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, Vec
               Toolkit::myPow(wu * std::log(exPlus1),
                              static_cast<double>(this->opts.embeddingDimension + 1.0) / static_cast<double>(this->opts.embeddingDimension));
 
-    weightParameterForce[v] -= result;
+    this->params.weightParameterForce[v] -= result;
 }
 
 void NewWEmbedEmbedder::debug_dumpWeights() const {
@@ -294,7 +289,7 @@ void NewWEmbedEmbedder::debug_dumpWeights() const {
     std::ios_base::openmode mode = std::ios_base::out;
     std::ofstream dumpFile;
 
-    if (currentIteration <= 1) {
+    if (this->params.currentIteration <= 1) {
         mode |= std::ios_base::trunc;
     } else {
         mode |= std::ios_base::app;
@@ -346,7 +341,7 @@ void NewWEmbedEmbedder::updateIndex() {
     }
 }
 
-std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer, WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap) const {
+std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const {
     //TODO: Definitely think about refactoring this
     std::vector<NodeId> candidates;
 
@@ -355,26 +350,26 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
         return candidates;
     }
 
-    currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
+    this->params.currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
                                                        candidates, buffer);
     for (NodeId& candidate: candidates) {
-        candidate = indexToGraphMap[candidate];
+        candidate = this->params.indexToGraphMap[candidate];
         ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
     }
     return candidates;
 }
 
-void NewWEmbedEmbedder::calculateAllAttractingForces(VecList& force, std::vector<double>& weightParameterForce) {
+void NewWEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
     for (const NodeId v : this->sortedNodeIDs) {
         for (const NodeId u : graph.getNeighbors(v)) {
-            attractionForce(v, u, force, buffer);
-            attractionWeightForce(v, u, weightParameterForce, buffer);
+            attractionForce(v, u, buffer);
+            attractionWeightForce(v, u, buffer);
         }
     }
 }
 
-void NewWEmbedEmbedder::calculateAllRepellingForces(WeightedIndex currentWeightedIndex, std::vector<NodeId>& indexToGraphMap, VecList& currentForce, std::vector<double>& weightParameterForce) {
+void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
@@ -382,13 +377,13 @@ void NewWEmbedEmbedder::calculateAllRepellingForces(WeightedIndex currentWeighte
 #pragma omp parallel for firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
 
     for (const NodeId v : sortedNodeIDs) {
-        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer, currentWeightedIndex, indexToGraphMap);
+        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (const NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
-            repellingForce(v, u, forceBuffer, currentForce);
-            repellingWeightForce(v, u, forceBuffer, weightParameterForce);
+            repellingForce(v, u, forceBuffer);
+            repellingWeightForce(v, u, forceBuffer);
             numRepForceCalculations++;
         }
     }
@@ -400,28 +395,14 @@ std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes)
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
 }
 
-std::vector<std::vector<double>> NewWEmbedEmbedder::constructRandomCoordinates(const uint32_t dimension) const {
-    const double CUBE_SIDE_LENGTH = Toolkit::myPow(graphSize(), 1.0 / dimension);
-    std::vector coords(graphSize(), std::vector<double>(dimension));
-
-    for (int i = 0; i < graphSize(); i++) {
-        for (int j = 0; j < dimension; j++) {
-            coords[i][j] = Rand::randomDouble(0, CUBE_SIDE_LENGTH);
-        }
-    }
-    return coords;
-}
-
-std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
-                                                   const std::vector<double>& weights) {
-    const int N = weights.size();
-    std::vector<double> rescaledWeights(N);
+std::vector<double> NewWEmbedEmbedder::rescaleWeights() const {
+    const int N = graphSize();
+    std::vector<double> rescaledWeights = constructDegreeWeights();
 
     for (NodeId v = 0; v < N; v++) {
-        if (dimensionHint > 0) {
-            rescaledWeights[v] = Toolkit::myPow(weights[v], (double)embeddingDimension / (double)dimensionHint);
-        } else {
-            rescaledWeights[v] = weights[v];
+        if (this->opts.dimensionHint > 0) {
+            rescaledWeights[v] = Toolkit::myPow(rescaledWeights[v],
+                static_cast<double>(this->opts.embeddingDimension) / static_cast<double>(this->opts.dimensionHint));
         }
     }
 
@@ -430,23 +411,19 @@ std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint
         weightSum += rescaledWeights[v];
     }
     for (int v = 0; v < N; v++) {
-        rescaledWeights[v] = rescaledWeights[v] * ((double)N / weightSum);
+        rescaledWeights[v] = rescaledWeights[v] * (static_cast<double>(N) / weightSum);
     }
     return rescaledWeights;
 }
 
-std::vector<double> NewWEmbedEmbedder::constructDegreeWeights(const Graph& g) {
-    std::vector<double> weights(g.getNumVertices());
-    for (NodeId v = 0; v < g.getNumVertices(); v++) {
-        weights[v] = g.getNumNeighbors(v);
+std::vector<double> NewWEmbedEmbedder::constructDegreeWeights() const {
+    std::vector<double> weights(graphSize());
+    for (NodeId v = 0; v < graphSize(); v++) {
+        weights[v] = this->graph.getNumNeighbors(v);
     }
     return weights;
 }
 
-std::vector<double> NewWEmbedEmbedder::constructUnitWeights(int N) {
-    std::vector<double> weights(N);
-    for (NodeId v = 0; v < N; v++) {
-        weights[v] = 1.0;
-    }
-    return weights;
+std::vector<double> NewWEmbedEmbedder::constructUnitWeights() const {
+    return std::vector(graphSize(), 1.0);
 }

@@ -49,6 +49,23 @@ class EmbedderInterface {
     }
 
 
+    // embedding functions
+    // TODO: If only the (New)WembedEmbedder needs this, this might actually better be in another class
+    // TODO: Alternatively, this could be in the random class
+    [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates() const {
+        const int32_t dimension = this->opts.embeddingDimension;
+        const double CUBE_SIDE_LENGTH = Toolkit::myPow(graphSize(), 1.0 / dimension);
+        std::vector coords(graphSize(), std::vector<double>(dimension));
+
+        for (int i = 0; i < graphSize(); i++) {
+            for (int j = 0; j < dimension; j++) {
+                coords[i][j] = Rand::randomDouble(0, CUBE_SIDE_LENGTH);
+            }
+        }
+        return coords;
+    }
+
+
    public:
     virtual ~EmbedderInterface() {};
 
