@@ -54,20 +54,13 @@ class EmbedderInterface {
     // TODO: Alternatively, this could be in the random class
     [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates() const {
         const int32_t dimension = this->opts.embeddingDimension;
-        const double CUBE_SIDE_LENGTH = Toolkit::myPow(graphSize(), 1.0 / dimension);
-        std::vector coords(graphSize(), std::vector<double>(dimension));
-
-        for (int i = 0; i < graphSize(); i++) {
-            for (int j = 0; j < dimension; j++) {
-                coords[i][j] = Rand::randomDouble(0, CUBE_SIDE_LENGTH);
-            }
-        }
-        return coords;
+        const double CUBE_SIDE_LENGTH = Toolkit::myPow(static_cast<float>(graphSize()), 1.0 / dimension);
+        return Rand::randomCoordinates(graphSize(), dimension, CUBE_SIDE_LENGTH);
     }
 
 
    public:
-    virtual ~EmbedderInterface() {};
+    virtual ~EmbedderInterface() = default;
 
     /**
      * Advances the embedding by a single gradient descent step.
