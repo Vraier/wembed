@@ -33,9 +33,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
 
     //TODO: Those three could be in EmbeddingInterface or even graph
-    std::vector<double> rescaleWeights() const;
-    std::vector<double> constructDegreeWeights() const;
-    std::vector<double> constructUnitWeights() const;
+    [[nodiscard]] std::vector<double> rescaleWeights() const;
+    [[nodiscard]] std::vector<double> constructDegreeWeights() const;
+    [[nodiscard]] std::vector<double> constructUnitWeights() const;
 
     public:
     NewWEmbedEmbedder(const Graph& g,

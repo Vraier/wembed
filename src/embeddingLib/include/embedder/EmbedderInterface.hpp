@@ -38,7 +38,7 @@ class EmbedderInterface {
     }
 
     // graph functions
-    [[nodiscard]] constexpr uint32_t graphSize() const {
+    [[nodiscard]] inline uint32_t graphSize() const {
         return this->graph.getNumVertices();
     }
 
@@ -51,11 +51,10 @@ class EmbedderInterface {
 
     // embedding functions
     // TODO: If only the (New)WembedEmbedder needs this, this might actually better be in another class
-    // TODO: Alternatively, this could be in the random class
     [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates() const {
         const int32_t dimension = this->opts.embeddingDimension;
         const double CUBE_SIDE_LENGTH = Toolkit::myPow(static_cast<float>(graphSize()), 1.0 / dimension);
-        return Rand::randomCoordinates(graphSize(), dimension, CUBE_SIDE_LENGTH);
+        return Rand::randomCoordinates(static_cast<int>(graphSize()), dimension, CUBE_SIDE_LENGTH);
     }
 
 

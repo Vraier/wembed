@@ -53,6 +53,7 @@ void NewWEmbedEmbedder::calculateStep() {
     this->posOptimizer.update(this->currentPositions, this->params.force);
     //Update weights
     if (this->opts.weightLearningRate > 0.0) {
+        std::cout << "I am being executed" << std::endl;
         this->weightOptimizer.update(currentWeightParameters, this->params.weightParameterForce);
         for (NodeId i = 0; i < graphSize(); i++) {
             currentWeights[i] = std::log(1 + std::exp(this->currentWeightParameters[i]));
