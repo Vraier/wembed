@@ -131,6 +131,7 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
     this->currentWeights = weights;
     sortNodes();
 
+#pragma omp parallel for default(none) shared(expWeights, currentWeights) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
         expWeights[i] = Toolkit::myPow(currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
     }
