@@ -126,11 +126,14 @@ void NewWEmbedEmbedder::setCoordinates(const std::vector<std::vector<double> > &
 }
 
 void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
-    //TODO: This could be in EmbedderInterface?
     ASSERT(graphSize() == weights.size());
 
     this->currentWeights = weights;
     sortNodes();
+
+    for (size_t i = 0; i < graphSize(); i++) {
+        expWeights[i] = Toolkit::myPow(currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
+    }
 }
 
 // ======================================================================================
@@ -157,12 +160,9 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, result, this->opts.lpNorm);
 
-    const double wv = currentWeights[v];
-    const double wu = currentWeights[u];
     const double weightScaling = this->opts.additiveWeights ?
-                           (Toolkit::myPow(wv, 1.0 / this->opts.embeddingDimension) +
-                           Toolkit::myPow(wu, 1.0 / this->opts.embeddingDimension)) :
-                           Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
+                           (expWeights[v] + expWeights[u]) :
+                           (expWeights[v] * expWeights[u]);
 
     const double weightDist = dist / weightScaling;
 
@@ -194,11 +194,8 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     vectorOperations::differentiateLPNormDifference(posV, posU, result, this->opts.lpNorm);
 
     // calculate weighted distance
-    const double wv = currentWeights[v];
-    const double wu = currentWeights[u];
-    const double weightScaling = this->opts.additiveWeights ? (Toolkit::myPow(wv, 1.0 / this->opts.embeddingDimension) +
-                                                               Toolkit::myPow(wu, 1.0 / this->opts.embeddingDimension))
-                                                            : Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
+    const double weightScaling = this->opts.additiveWeights ? (expWeights[v] + expWeights[u])
+                                                            : (expWeights[v] * expWeights[u]);
     const double weightDist = dist / weightScaling;
     if (weightDist > this->opts.edgeLength) {
         //TODO: Why result *= 0? Why not result = 0?
