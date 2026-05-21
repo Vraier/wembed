@@ -47,18 +47,9 @@ void NewWEmbedEmbedder::calculateStep() {
     this->timer->stopTiming("repelling_forces");
 
     //TODO: Refactor from here
-    //applying gradient
-    this->timer->startTiming("apply_forces", "Applying Forces");
     //Update positions
+    this->timer->startTiming("apply_forces", "Applying Forces");
     this->posOptimizer.update(this->currentPositions, this->params.force);
-    //Update weights
-    if (this->opts.weightLearningRate > 0.0) {
-        std::cout << "I am being executed" << std::endl;
-        this->weightOptimizer.update(currentWeightParameters, this->params.weightParameterForce);
-        for (NodeId i = 0; i < graphSize(); i++) {
-            currentWeights[i] = std::log(1 + std::exp(this->currentWeightParameters[i]));
-        }
-    }
     this->timer->stopTiming("apply_forces");
 
     //calculate change in positions
@@ -140,11 +131,6 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
 
     this->currentWeights = weights;
     sortNodes();
-
-#pragma omp parallel for default(none) shared(currentWeights, currentWeightParameters) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        currentWeightParameters[i] = std::log(std::exp(currentWeights[i]) - 1.0);
-    }
 }
 
 // ======================================================================================
@@ -189,33 +175,6 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::attractionWeightForce(const NodeId v, const NodeId u, VecBuffer<1> &buffer) {
-    //TODO: maybe refactor
-    if (this->opts.weightLearningRate <= 0.0 || v == u) return;
-
-    const CVecRef posV = this->currentPositions[v];
-    const CVecRef posU = this->currentPositions[u];
-
-    const double wv = currentWeights[v];
-    const double wu = currentWeights[u];
-    const double hiddenParameter = this->currentWeightParameters[v];
-    TmpVec<0> tmp(buffer, 0.0);
-    tmp = posV - posU;
-    const double dist = tmp.norm();
-    const double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
-
-    if (weightDist <= this->opts.edgeLength) return;
-
-    const double exPlus1 = std::exp(hiddenParameter) + 1;
-    const double result = dist * wu * std::exp(hiddenParameter) /
-                          static_cast<double>(this->opts.embeddingDimension) * exPlus1 *
-                          Toolkit::myPow(wu * std::log(exPlus1),
-                                         static_cast<double>(this->opts.embeddingDimension + 1) /
-                                             static_cast<double>(this->opts.embeddingDimension));
-
-    this->params.weightParameterForce[v] += result;
-}
-
 void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
     //TODO: Definitly refactor
     if (v == u) return;
@@ -254,35 +213,6 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     }
 
     this->params.force[v] += result;
-}
-
-void NewWEmbedEmbedder::repellingWeightForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
-    //TODO: Reafctor
-    if (this->opts.weightLearningRate <= 0.0 || v == u) return;
-
-    const CVecRef posV = currentPositions[v];
-    const CVecRef posU = currentPositions[u];
-    const double wv = currentWeights[v];
-    const double wu = currentWeights[u];
-    const double hiddenParameter = currentWeightParameters[v];
-    TmpVec<0> tmp(forceBuffer, 0.0);
-    double dist = 0;
-    tmp = posV - posU;
-
-    dist = tmp.norm();
-
-    double weightDist = dist / Toolkit::myPow(wu * wv, 1.0 / this->opts.embeddingDimension);
-    if (weightDist > this->opts.edgeLength) {
-        return;
-    }
-
-    double exPlus1 = std::exp(hiddenParameter) + 1;
-    double result = dist * wu * std::exp(hiddenParameter);
-    result /= static_cast<double>(this->opts.embeddingDimension) * exPlus1 *
-              Toolkit::myPow(wu * std::log(exPlus1),
-                             static_cast<double>(this->opts.embeddingDimension + 1.0) / static_cast<double>(this->opts.embeddingDimension));
-
-    this->params.weightParameterForce[v] -= result;
 }
 
 void NewWEmbedEmbedder::debug_dumpWeights() const {
@@ -365,7 +295,6 @@ void NewWEmbedEmbedder::calculateAllAttractingForces() {
     for (const NodeId v : this->sortedNodeIDs) {
         for (const NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
-            attractionWeightForce(v, u, buffer);
         }
     }
 }
@@ -384,7 +313,6 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
                 continue;
             }
             repellingForce(v, u, forceBuffer);
-            repellingWeightForce(v, u, forceBuffer);
             numRepForceCalculations++;
         }
     }

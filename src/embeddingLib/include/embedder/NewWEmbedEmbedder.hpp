@@ -11,7 +11,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     std::shared_ptr<util::Timer> timer;
 
     uint32_t numRepForceCalculations = 0;
-    std::vector<double> currentWeightParameters;
 
     AdamOptimizer posOptimizer;
     AdamOptimizer weightOptimizer;
@@ -19,9 +18,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     bool insignificantPosChange = false;
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
-    void attractionWeightForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
-    void repellingWeightForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
 
     void debug_dumpWeights() const;
 
@@ -43,7 +40,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
-                        currentWeightParameters(g.getNumVertices()),
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
                         weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
     {
@@ -59,6 +55,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                 break;
             default:
                 LOG_ERROR("Weight type not supported");
+        }
+        if (opts.weightLearningRate > 0) {
+            LOG_WARNING("There is no weight learning for this type of embedder");
         }
     }
 
