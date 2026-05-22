@@ -159,7 +159,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
         this->params.force[v] += result;
         return;
     }
-    vectorOperations::differentiateLPNormDifference(posU, posV, result, this->opts.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result, this->opts.lpNorm);
 
     const double weightScaling = this->opts.additiveWeights ?
                            (expWeights[v] + expWeights[u]) :
@@ -192,7 +192,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         return;
     }
 
-    vectorOperations::differentiateLPNormDifference(posV, posU, result, this->opts.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posV, posU, dist, result, this->opts.lpNorm);
 
     // calculate weighted distance
     const double weightScaling = this->opts.additiveWeights ? (expWeights[v] + expWeights[u])

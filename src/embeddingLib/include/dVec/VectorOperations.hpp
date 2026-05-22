@@ -10,12 +10,7 @@ static inline double calculateLPNorm(const CVecRef x, const CVecRef y, int p = 2
     return Toolkit::myPow(sum, 1.0 / p);
 }
 
-/**
- * Given x and y, calculate sigma/sigma x ||x-y||_p
- */
-static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef y, TmpVec<0>& result, int p = 2) {
-    double lpNorm = calculateLPNorm(x, y, p);
-
+static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef y, const double lpNorm, TmpVec<0>& result, int p = 2) {
     if (lpNorm == 0.0) {
         result.setAll(0.0);
         return;
@@ -27,5 +22,12 @@ static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef 
         double derivative = Toolkit::myPow(diff / lpNorm, p-1) * sign;
         result[i] = derivative;
     }
+}
+
+/**
+ * Given x and y, calculate sigma/sigma x ||x-y||_p
+ */
+static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef y, TmpVec<0>& result, int p = 2) {
+    differentiateLPNormDifference(x, y, calculateLPNorm(x, y, p), result, p);
 }
 }
