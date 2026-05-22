@@ -46,7 +46,6 @@ void NewWEmbedEmbedder::calculateStep() {
     calculateAllRepellingForces();
     this->timer->stopTiming("repelling_forces");
 
-    //TODO: Refactor from here
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
     this->posOptimizer.update(this->currentPositions, this->params.force);
@@ -143,8 +142,35 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
 //
 // ======================================================================================
 
+
+void NewWEmbedEmbedder::debug_dumpWeights() const {
+    const std::string outFile = "weight_dump.txt";
+    std::ios_base::openmode mode = std::ios_base::out;
+    std::ofstream dumpFile;
+
+    if (this->params.currentIteration <= 1) {
+        mode |= std::ios_base::trunc;
+    } else {
+        mode |= std::ios_base::app;
+    }
+
+    dumpFile.open(outFile, mode);
+    if (dumpFile.rdstate() == std::fstream::failbit) {
+        LOG_ERROR("Trying to open the weight_dump logfile failed. No weights were dumped")
+    }
+
+    for (size_t i = 0; i < graphSize(); i++) {
+        dumpFile << this->currentWeights[i] << " ";
+    }
+    dumpFile << std::endl;
+
+    dumpFile.close();
+    if (dumpFile.rdstate() == std::fstream::failbit) {
+        LOG_ERROR("Trying to close the weight_dump logfile failed, but weights were dumped anyway");
+    }
+}
+
 void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1> &buffer) {
-    //TODO: maybe refactor
     if (v == u) return;
 
     const CVecRef posV = currentPositions[v];
@@ -177,7 +203,6 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
 }
 
 void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
-    //TODO: Definitly refactor
     if (v == u) return;
 
     const CVecRef posV = currentPositions[v];
@@ -199,7 +224,6 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
                                                             : (expWeights[v] * expWeights[u]);
     const double weightDist = dist / weightScaling;
     if (weightDist > this->opts.edgeLength) {
-        //TODO: Why result *= 0? Why not result = 0?
         result *= 0;
     } else {
         result *= this->opts.repulsionScale / weightScaling;
@@ -211,33 +235,6 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     }
 
     this->params.force[v] += result;
-}
-
-void NewWEmbedEmbedder::debug_dumpWeights() const {
-    const std::string outFile = "weight_dump.txt";
-    std::ios_base::openmode mode = std::ios_base::out;
-    std::ofstream dumpFile;
-
-    if (this->params.currentIteration <= 1) {
-        mode |= std::ios_base::trunc;
-    } else {
-        mode |= std::ios_base::app;
-    }
-
-    dumpFile.open(outFile, mode);
-    if (dumpFile.rdstate() == std::fstream::failbit) {
-        LOG_ERROR("Trying to open the weight_dump logfile failed. No weights were dumped")
-    }
-
-    for (size_t i = 0; i < graphSize(); i++) {
-        dumpFile << this->currentWeights[i] << " ";
-    }
-    dumpFile << std::endl;
-
-    dumpFile.close();
-    if (dumpFile.rdstate() == std::fstream::failbit) {
-       LOG_ERROR("Trying to close the weight_dump logfile failed, but weights were dumped anyway");
-    }
 }
 
 void NewWEmbedEmbedder::updateIndex() {

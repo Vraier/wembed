@@ -18,10 +18,10 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     bool insignificantPosChange = false;
 
+    void debug_dumpWeights() const;
+
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
-
-    void debug_dumpWeights() const;
 
     void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;

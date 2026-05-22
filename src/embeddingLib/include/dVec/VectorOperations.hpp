@@ -17,9 +17,9 @@ static inline void differentiateLPNormDifference(const CVecRef x, const CVecRef 
     }
 
     for (size_t i = 0; i < x.dimension(); i++) {
-        double diff = std::abs(x[i] - y[i]);
-        double sign = (x[i] - y[i]) < 0 ? -1.0 : 1.0;
-        double derivative = Toolkit::myPow(diff / lpNorm, p-1) * sign;
+        const double diff = std::abs(x[i] - y[i]);
+        const double sign = (x[i] - y[i]) < 0 ? -1.0 : 1.0;
+        const double derivative = Toolkit::myPow(diff / lpNorm, p-1) * sign;
         result[i] = derivative;
     }
 }
