@@ -37,11 +37,16 @@ class EmbedderInterface {
 
     }
 
-    // graph functions
+    /**
+     * Returns the number of vertices of the graph
+     */
     [[nodiscard]] inline uint32_t graphSize() const {
         return this->graph.getNumVertices();
     }
 
+    /**
+     * Sorts the node IDs according to the nodes weight
+     */
     void sortNodes() {
         std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
         std::ranges::sort(sortedNodeIDs,
@@ -50,7 +55,10 @@ class EmbedderInterface {
 
 
     // embedding functions
-    // TODO: If only the (New)WembedEmbedder needs this, this might actually better be in another class
+    /**
+     * randomly places the nodes in the embedding space
+     * @return A vector of coordinates, where vector[v] are the coordinates of the node with ID v
+     */
     [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates() const {
         const int32_t dimension = this->opts.embeddingDimension;
         const double CUBE_SIDE_LENGTH = Toolkit::myPow(static_cast<float>(graphSize()), 1.0 / dimension);

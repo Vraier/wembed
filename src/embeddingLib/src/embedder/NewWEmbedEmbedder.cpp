@@ -56,12 +56,13 @@ void NewWEmbedEmbedder::calculateStep() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
     double sumNormDiffSquared = 0.0;
 
-    //TODO: parallel
+#pragma omp parallel for default(none) shared(buffer, oldPositions, currentPositions, sumNormDiffSquared) schedule(static)
     for (size_t v = 0; v < graphSize(); v++) {
         TmpVec<0> tmpVec(buffer);
         tmpVec = oldPositions[v] - currentPositions[v];
         sumNormDiffSquared += tmpVec.sqNorm();
     }
+
     const double averageNormDiff = sumNormDiffSquared / graphSize();
 
     if (this->params.currentIteration == 1 || (this->params.currentIteration > 0 && this->params.currentIteration % 10 == 0)) {
@@ -299,10 +300,9 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-#pragma omp parallel for firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
-
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
     for (const NodeId v : sortedNodeIDs) {
-        std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
+        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (const NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
@@ -315,12 +315,11 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
 
 //TODO: This could be moved somewhere else
 std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes) const {
-    std::vector<NodeId> result;
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
 }
 
 std::vector<double> NewWEmbedEmbedder::rescaleWeights() const {
-    const int N = graphSize();
+    const uint32_t N = graphSize();
     std::vector<double> rescaledWeights = constructDegreeWeights();
 
     for (NodeId v = 0; v < N; v++) {
