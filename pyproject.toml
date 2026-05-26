@@ -28,7 +28,9 @@ build.targets = ["wembed_python"]
 install.components = ["python"]
 
 [tool.cibuildwheel]
-linux.before-all = """yum update -y && yum install -y git wget cmake python3-devel && 
+linux.before-all = """yum update -y && yum install -y git wget cmake python3-devel &&
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source $HOME/.cargo/env
 wget https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz &&
 tar -xzf eigen-3.4.0.tar.gz && 
 cd eigen-3.4.0 && 

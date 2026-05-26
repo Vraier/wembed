@@ -21,3 +21,4 @@ corrosion_set_env_vars(sprk_ffi "RUSTFLAGS=-C target-cpu=native")
 set_target_properties(sprk_ffi PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${sprk_SOURCE_DIR}/sprk-ffi/include"
 )
+install(TARGETS sprk_ffi LIBRARY DESTINATION . COMPONENT python)
