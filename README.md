@@ -61,7 +61,7 @@ wembed.writeCoordinates("example.emb", emb.getCoordinates(), emb.getWeights())
 
 ## Installing Dependencies
 
-In order to compile WEmbed you need to have `Eigen3` and `Boost` headers installed.
+In order to compile WEmbed you need to have `Eigen3` headers installed.
 You can look at the development [Dockerfile](https://github.com/Vraier/wembed/blob/main/docker_dev/Dockerfile) for more information.
 WEmbed also depends on a few other smaller libraries, these get downloaded automatically by CMake via Fetchcontent (you do not have to worry about them), 
 look at the root [CMakeLists.txt](https://github.com/Vraier/wembed/blob/main/CMakeLists.txt) for more information.

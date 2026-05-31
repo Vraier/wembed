@@ -23,7 +23,6 @@ set(HEADERS
 
         include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
-        include/spacialQuery/RTree.hpp
         include/spacialQuery/SNNQueries.hpp
         include/spacialQuery/SprkQueries.hpp
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <boost/geometry/core/coordinate_dimension.hpp>
 
 #include "EmbedderOptions.hpp"
 #include "EmbedderParameters.hpp"
