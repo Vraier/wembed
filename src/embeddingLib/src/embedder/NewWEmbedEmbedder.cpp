@@ -131,9 +131,9 @@ void NewWEmbedEmbedder::setWeights(const std::vector<double> &weights) {
     this->currentWeights = weights;
     sortNodes();
 
-#pragma omp parallel for default(none) shared(expWeights, currentWeights) schedule(static)
+#pragma omp parallel for default(none) shared(invExpWeights, currentWeights) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
-        expWeights[i] = Toolkit::myPow(currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
+        invExpWeights[i] = 1.0 / Toolkit::myPow(currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
     }
 }
 
@@ -189,15 +189,15 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result, this->opts.lpNorm);
 
     const double weightScaling = this->opts.additiveWeights ?
-                           (expWeights[v] + expWeights[u]) :
-                           (expWeights[v] * expWeights[u]);
+                           (invExpWeights[v] + invExpWeights[u]) :
+                           (invExpWeights[v] * invExpWeights[u]);
 
-    const double weightDist = dist / weightScaling;
+    const double weightDist = dist * weightScaling;
 
     if (weightDist <= this->opts.edgeLength) {
         result *= 0;
     } else {
-        result *= this->opts.attractionScale / weightScaling;
+        result *= this->opts.attractionScale * weightScaling;
     }
 
     this->params.force[v] += result;
@@ -221,13 +221,12 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     vectorOperations::differentiateLPNormDifference(posV, posU, dist, result, this->opts.lpNorm);
 
     // calculate weighted distance
-    const double weightScaling = this->opts.additiveWeights ? (expWeights[v] + expWeights[u])
-                                                            : (expWeights[v] * expWeights[u]);
-    const double weightDist = dist / weightScaling;
-    if (weightDist > this->opts.edgeLength) {
+    const double weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
+                                                            : (invExpWeights[v] * invExpWeights[u]);
+    if (dist * weightScaling > this->opts.edgeLength) {
         result *= 0;
     } else {
-        result *= this->opts.repulsionScale / weightScaling;
+        result *= this->opts.repulsionScale * weightScaling;
     }
 
     // increase repulsion force when we use less negative samples

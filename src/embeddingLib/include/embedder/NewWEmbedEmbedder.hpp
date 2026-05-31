@@ -12,7 +12,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     uint32_t numRepForceCalculations = 0;
 
-    std::vector<double> expWeights;
+    std::vector<double> invExpWeights;
     AdamOptimizer posOptimizer;
     AdamOptimizer weightOptimizer;
 
@@ -41,7 +41,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
-                        expWeights(g.getNumVertices()),
+                        invExpWeights(g.getNumVertices()),
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
                         weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
     {

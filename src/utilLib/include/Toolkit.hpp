@@ -51,7 +51,7 @@ inline double myPow(double base, double exp) {
 }
 
 inline float myPowf(float base, float exp) {
-    return std::powf(base, exp);
+    return ::powf(base, exp);
     //TODO: Optimized algo
 }
 };  // namespace Toolkit
