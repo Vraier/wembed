@@ -189,7 +189,7 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
     CVecRef posU = currentPositions[u];
 
     TmpVec<0> result(buffer, 0.0);
-    double dist = vectorOperations::calculateLPNorm(posU, posV, options.lpNorm);
+    double dist = vectorOperations::calculateLPNorm(posU, posV);
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
@@ -198,7 +198,7 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    vectorOperations::differentiateLPNormDifference(posU, posV, result, options.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posU, posV, result);
 
     // calculate weighted distance
     double wv = currentWeights[v];
@@ -223,7 +223,7 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
     CVecRef posV = currentPositions[v];
     CVecRef posU = currentPositions[u];
     TmpVec<0> result(buffer, 0.0);
-    double dist = vectorOperations::calculateLPNorm(posV, posU, options.lpNorm);
+    double dist = vectorOperations::calculateLPNorm(posV, posU);
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
@@ -232,7 +232,7 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
         return;
     }
 
-    vectorOperations::differentiateLPNormDifference(posV, posU, result, options.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posV, posU, result);
 
     // calculate weighted distance
     double wv = currentWeights[v];

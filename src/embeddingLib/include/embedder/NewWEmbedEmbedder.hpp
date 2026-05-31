@@ -61,6 +61,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
         if (opts.weightLearningRate > 0) {
             LOG_WARNING("There is no weight learning for this type of embedder");
         }
+        if (opts.lpNorm != 2) {
+            LOG_WARNING("Currently lpNorm = 2 is the only supported lpNorm");
+        }
     }
 
     //TODO: Add Python Bindings?

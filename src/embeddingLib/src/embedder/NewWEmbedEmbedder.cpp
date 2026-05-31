@@ -178,7 +178,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     const CVecRef posU = currentPositions[u];
 
     TmpVec<0> result(buffer, 0.0);
-    const double dist = vectorOperations::calculateLPNorm(posU, posV, this->opts.lpNorm);
+    const double dist = vectorOperations::calculateLPNorm(posU, posV);
 
     //displace in random direction if positions are identical
     if (dist <= 0) {
@@ -186,7 +186,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
         this->params.force[v] += result;
         return;
     }
-    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result, this->opts.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
 
     const double weightScaling = this->opts.additiveWeights ?
                            (invExpWeights[v] + invExpWeights[u]) :
@@ -209,7 +209,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
     TmpVec<0> result(forceBuffer, 0.0);
-    const double dist = vectorOperations::calculateLPNorm(posV, posU, this->opts.lpNorm);
+    const double dist = vectorOperations::calculateLPNorm(posV, posU);
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
@@ -218,7 +218,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         return;
     }
 
-    vectorOperations::differentiateLPNormDifference(posV, posU, dist, result, this->opts.lpNorm);
+    vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
 
     // calculate weighted distance
     const double weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
