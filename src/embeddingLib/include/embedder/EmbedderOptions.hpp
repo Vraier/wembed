@@ -26,7 +26,7 @@ struct EmbedderOptions {
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
     int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
-    IndexType indexType = IndexType::SNN;  // determines the type of index used for the embedding
+    IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
     double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
     double doublingFactor = 2.0;           // determines how the weight buckets are calculated
     double positionMinChange = std::pow(10.0, -4);  // used to determine when the embedding can be halted
