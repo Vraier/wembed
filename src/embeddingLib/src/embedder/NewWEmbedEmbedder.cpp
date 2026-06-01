@@ -56,7 +56,7 @@ void NewWEmbedEmbedder::calculateStep() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
     double sumNormDiffSquared = 0.0;
 
-#pragma omp parallel for default(none) shared(buffer, oldPositions, currentPositions, sumNormDiffSquared) schedule(static)
+#pragma omp parallel for default(none) firstprivate(buffer) shared(oldPositions, currentPositions) reduction(+:sumNormDiffSquared) schedule(static)
     for (size_t v = 0; v < graphSize(); v++) {
         TmpVec<0> tmpVec(buffer);
         tmpVec = oldPositions[v] - currentPositions[v];
@@ -192,9 +192,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
                            (invExpWeights[v] + invExpWeights[u]) :
                            (invExpWeights[v] * invExpWeights[u]);
 
-    const double weightDist = dist * weightScaling;
-
-    if (weightDist <= this->opts.edgeLength) {
+    if (dist * weightScaling <= this->opts.edgeLength) {
         result *= 0;
     } else {
         result *= this->opts.attractionScale * weightScaling;
@@ -287,6 +285,7 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
 
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
+#pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph) schedule(runtime)
     for (const NodeId v : this->sortedNodeIDs) {
         for (const NodeId u : graph.getNeighbors(v)) {
             attractionForce(v, u, buffer);
