@@ -193,7 +193,7 @@ void WEmbedEmbedder::attractionForce(int v, int u, VecBuffer<1>& buffer) {
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
-        result.setToRandomUnitVector();
+        result.setToRandomUnitVectorThreadSafe(v);
         currentForce[v] += result;
         return;
     }
@@ -227,7 +227,7 @@ void WEmbedEmbedder::repulstionForce(int v, int u, VecBuffer<1>& buffer) {
 
     // displace in random direction if positions are identical
     if (dist <= 0) {
-        result.setToRandomUnitVector();
+        result.setToRandomUnitVectorThreadSafe(v);
         currentForce[v] += result;
         return;
     }

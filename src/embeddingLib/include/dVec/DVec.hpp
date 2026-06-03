@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <type_traits>
 #include <vector>
+#include <random>
 
 #include "Macros.hpp"
 #include "Rand.hpp"
@@ -409,6 +410,21 @@ class VecRefImpl {
         double norm = 0;
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] = Rand::gaussDistribution(0.0, 1.0);
+            norm += coord.get()[i] * coord.get()[i];
+        }
+        norm = std::sqrt(norm);
+        for (int i = 0; i < dimension(); i++) {
+            coord.get()[i] /= norm;
+        }
+    }
+
+    void setToRandomUnitVectorThreadSafe(int temporarySeed) {
+        std::normal_distribution<double> distribution{0.0, 1.0};
+        std::mt19937 generator(temporarySeed);
+
+        double norm = 0;
+        for (int i = 0; i < dimension(); i++) {
+            coord.get()[i] = distribution(generator);
             norm += coord.get()[i] * coord.get()[i];
         }
         norm = std::sqrt(norm);
