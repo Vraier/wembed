@@ -22,7 +22,9 @@ ParentPointerTree LabelPropagation::coarsenAllLayers() {
     double shrinkFactor = 0;  // always do a normal label propagation at the start
 
     // coarsen the graph until we achieved the desired size
-    while (coarsenedGraphs.back().getNumVertices() > options.finalGraphSize) {
+    // (or it has no edges, in which case further coarsening is pointless)
+    while (coarsenedGraphs.back().getNumVertices() > options.finalGraphSize
+           && coarsenedGraphs.back().getNumEdges() > 0) {
         SingleLayerNodePointer nextMapping;
 
         if (shrinkFactor < 0.5) {
@@ -35,7 +37,7 @@ ParentPointerTree LabelPropagation::coarsenAllLayers() {
         }
 
         auto newGraph = GraphAlgo::coarsenGraph(coarsenedGraphs.back(), nextMapping);
-        ASSERT(GraphAlgo::isConnected(newGraph.first), "Coarsened graph is not connected");
+        // ASSERT(GraphAlgo::isConnected(newGraph.first), "Coarsened graph is not connected");
         parentPointers.push_back(nextMapping);
         coarsenedGraphs.push_back(newGraph.first);
         edgeWeights.push_back(calculateNewEdgeWeights(edgeWeights.back(), newGraph.second));
@@ -118,6 +120,7 @@ SingleLayerNodePointer LabelPropagation::aggressivePropagation(const Graph& curr
     std::vector<int> numChildren(N, 0);
     std::vector<NodeId> clusterId(N, -1);
     std::vector<double> edgeSum(N, 0);
+    std::vector<NodeId> degreeZeroNodes;
 
     // count how many nodes were clustered in the last step
     for (NodeId c = 0; c < currParents.size(); c++) {
@@ -136,26 +139,43 @@ SingleLayerNodePointer LabelPropagation::aggressivePropagation(const Graph& curr
         // v will not have an edge to another node that was not merge as they would have been contracted in the previous
         // step otherwise
 
-        // determine the cluster to which v has the most edge weight
-        for (EdgeId e : currG.getEdges(v)) {
-            edgeSum[currG.getEdgeTarget(e)] += edgeWs[e];
-        }
-        NodeId largestCluster = -1;
-        double maxWeight = -1;
-        ASSERT(currG.getEdges(v).size() > 0, "Node " << v << " has no edges");
-        for (EdgeId e : currG.getEdges(v)) {
-            NodeId target = currG.getEdgeTarget(e);
-            if (edgeSum[target] > maxWeight) {
-                maxWeight = edgeSum[target];
-                largestCluster = target;
+        auto edge_list = currG.getEdges(v);
+        if (edge_list.size() > 0) {
+            // determine the cluster to which v has the most edge weight
+            for (EdgeId e : edge_list) {
+                edgeSum[currG.getEdgeTarget(e)] += edgeWs[e];
             }
-            // also reset the weight sum to zero
-            edgeSum[target] = 0;
-        }
+            NodeId largestCluster = -1;
+            double maxWeight = -1;
+            for (EdgeId e : edge_list) {
+                NodeId target = currG.getEdgeTarget(e);
+                if (edgeSum[target] > maxWeight) {
+                    maxWeight = edgeSum[target];
+                    largestCluster = target;
+                }
+                // also reset the weight sum to zero
+                edgeSum[target] = 0;
+            }
 
-        // update cluster arrays
-        clusterId[v] = largestCluster;
+            // update cluster arrays
+            clusterId[v] = largestCluster;
+        } else {
+            // Node has no edges and can't be handled by regular clustering. Instead, we cluster
+            // the degree zero nodes with each other
+            degreeZeroNodes.push_back(v);
+        }
     }
+
+    // set clusters for degree zero nodes
+    for (size_t i = 0; i < degreeZeroNodes.size(); ++i) {
+        NodeId v = degreeZeroNodes[i];
+        if ((i % 2) == 1) {
+            clusterId[v] = degreeZeroNodes[i - 1];
+        } else {
+            clusterId[v] = v;
+        }
+    }
+
     return compactClusterIds(clusterId);
 }
 
