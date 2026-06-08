@@ -18,6 +18,9 @@ struct Options {
     std::string embeddingDelimiter = ",";
 
     bool showTimings = false;
+    std::string timingLog;
+
+    std::string log;
 
     // Visualization
     bool animate = false;
@@ -25,4 +28,6 @@ struct Options {
     // Embedder Options
     bool layeredEmbedding = false;
     EmbedderOptions embedderOptions;
+
+    std::string comment;
 };

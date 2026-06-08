@@ -18,12 +18,25 @@
 
 void addOptions(CLI::App& app, Options& opts);
 
+void printComment(const std::string& comment);
+
 int main(int argc, char* argv[]) {
     // Parse the command line arguments
     CLI::App app("Embedder CLI");
     Options opts;
     addOptions(app, opts);
     CLI11_PARSE(app, argc, argv);
+
+    // Redirect output
+    std::streambuf *coutbuf = std::cout.rdbuf();
+    std::ofstream logfile;
+    if (!opts.log.empty()) {
+        logfile.open(opts.log, std::ios_base::out | std::ios_base::app);
+        std::cout.rdbuf(logfile.rdbuf());
+        if (!opts.comment.empty()) {
+            printComment(opts.comment);
+        }
+    }
 
     // set the seed
     if (opts.seed != -1) {
@@ -98,6 +111,11 @@ int main(int argc, char* argv[]) {
         std::vector<double> weights = embedder->getWeights();
         EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
     }
+
+    if (!opts.log.empty()) {
+        std::cout.rdbuf(coutbuf);
+    }
+
     return 0;
 }
 
@@ -107,6 +125,9 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--bipartite", opts.bipartite, "Treat the input graph as bipartite");
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
+    app.add_option("--timing-log", opts.timingLog, "Path to the log file for timing output");
+    app.add_option("--log", opts.log, "Path to the log file for the entire output");
+    app.add_option("--comment", opts.comment, "Adds a comment to the top of the current logging output");
 
     // Visualization
 #ifdef EMBEDDING_USE_ANIMATION
@@ -162,4 +183,13 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
         ->capture_default_str();
+}
+
+void printComment(const std::string &comment) {
+    for (size_t i = 0; i < 50; i++) std::cout << "=";
+    std::cout << std::endl << std::endl << "\t\t";
+    std::cout << comment << std::endl;
+    std::cout << std::endl;
+    for (size_t i = 0; i < 50; i++) std::cout << "=";
+    std::cout << std::endl;
 }
