@@ -16,8 +16,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     AdamOptimizer posOptimizer;
     AdamOptimizer weightOptimizer;
 
-    bool insignificantPosChange = false;
-
     void debug_dumpWeights() const;
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);

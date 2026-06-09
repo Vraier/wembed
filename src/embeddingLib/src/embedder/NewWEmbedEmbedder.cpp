@@ -21,7 +21,7 @@ void NewWEmbedEmbedder::calculateStep() {
 
     //Abort in the case of the first hierarchy layer
     if (graphSize() <= 1) {
-        this->insignificantPosChange = true;
+        this->params.insignificantPosChange = true;
         return;
     }
 
@@ -71,14 +71,14 @@ void NewWEmbedEmbedder::calculateStep() {
     }
 
     if (averageNormDiff < this->opts.positionMinChange) {
-        this->insignificantPosChange = true;
+        this->params.insignificantPosChange = true;
     }
 
     this->timer->stopTiming("position_change");
 }
 
 bool NewWEmbedEmbedder::isFinished() {
-    return this->params.currentIteration >= this->opts.maxIterations || this->insignificantPosChange;
+    return this->params.currentIteration >= this->opts.maxIterations || this->params.insignificantPosChange;
 }
 
 void NewWEmbedEmbedder::calculateEmbedding() {
