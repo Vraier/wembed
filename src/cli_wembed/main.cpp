@@ -28,14 +28,19 @@ int main(int argc, char* argv[]) {
     CLI11_PARSE(app, argc, argv);
 
     // Redirect output
-    std::streambuf *coutbuf = std::cout.rdbuf();
+    std::streambuf *coutbuf;
     std::ofstream logfile;
     if (!opts.log.empty()) {
         std::cout << "Divert std::cout to logfile" << std::endl;
+        coutbuf = std::cout.rdbuf();
         logfile.open(opts.log, std::ios_base::out | std::ios_base::app);
-        std::cout.rdbuf(logfile.rdbuf());
-        if (!opts.comment.empty()) {
-            printComment(opts.comment);
+        if (logfile.rdstate() == std::ostream::failbit) {
+            LOG_WARNING("Opening the log file failed, output will be written to standard output");
+        } else {
+            std::cout.rdbuf(logfile.rdbuf());
+            if (!opts.comment.empty()) {
+                printComment(opts.comment);
+            }
         }
     }
 
@@ -107,10 +112,17 @@ int main(int argc, char* argv[]) {
         if (!opts.timingLog.empty()) {
             std::ofstream timeLog;
             timeLog.open(opts.timingLog, std::ios_base::out | std::ios_base::app);
-            printComment(opts.comment, timeLog);
-            timeLog << util::timingsToStringRepresentation(timings);
-            timeLog << std::endl;
-            timeLog.close();
+            if (timeLog.rdstate() == std::ostream::failbit) {
+                LOG_WARNING("Could not open timeing logfile");
+            } else {
+                printComment(opts.comment, timeLog);
+                timeLog << util::timingsToStringRepresentation(timings);
+                timeLog << std::endl;
+                timeLog.close();
+                if (timeLog.rdstate() == std::ostream::failbit) {
+                    LOG_WARNING("Closing the timing logfile produced an error");
+                }
+            }
         }
     }
 
@@ -121,10 +133,13 @@ int main(int argc, char* argv[]) {
         EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
     }
 
-    if (!opts.log.empty()) {
+    if (!coutbuf) {
         std::cout.rdbuf(coutbuf);
         std::cout << "Reverted std::cout to standard output" << std::endl;
         logfile.close();
+        if (logfile.rdstate() == std::ostream::failbit) {
+            LOG_WARNING("Closing the logfile produced an error");
+        }
     }
 
     return 0;
@@ -138,7 +153,7 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
     app.add_option("--timing-log", opts.timingLog, "Path to the log file for timing output");
     app.add_option("--log", opts.log, "Path to the log file for the entire output");
-    app.add_option("--comment", opts.comment, "Adds a comment to the top of the current logging output");
+    app.add_option("--comment", opts.comment, "Adds a comment at the top of the current logging output");
 
     // Visualization
 #ifdef EMBEDDING_USE_ANIMATION
