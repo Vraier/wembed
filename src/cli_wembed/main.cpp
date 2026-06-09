@@ -18,7 +18,7 @@
 
 void addOptions(CLI::App& app, Options& opts);
 
-void printComment(const std::string& comment);
+void printComment(const std::string& comment, std::ostream& out = std::cout);
 
 int main(int argc, char* argv[]) {
     // Parse the command line arguments
@@ -31,6 +31,7 @@ int main(int argc, char* argv[]) {
     std::streambuf *coutbuf = std::cout.rdbuf();
     std::ofstream logfile;
     if (!opts.log.empty()) {
+        std::cout << "Divert std::cout to logfile" << std::endl;
         logfile.open(opts.log, std::ios_base::out | std::ios_base::app);
         std::cout.rdbuf(logfile.rdbuf());
         if (!opts.comment.empty()) {
@@ -103,6 +104,14 @@ int main(int argc, char* argv[]) {
         LOG_INFO("Printing Timings");
         std::vector<util::TimingResult> timings = embedder->getTimings();
         std::cout << util::timingsToStringRepresentation(timings);
+        if (!opts.timingLog.empty()) {
+            std::ofstream timeLog;
+            timeLog.open(opts.timingLog, std::ios_base::out | std::ios_base::app);
+            printComment(opts.comment, timeLog);
+            timeLog << util::timingsToStringRepresentation(timings);
+            timeLog << std::endl;
+            timeLog.close();
+        }
     }
 
     // Output the embedding
@@ -114,6 +123,8 @@ int main(int argc, char* argv[]) {
 
     if (!opts.log.empty()) {
         std::cout.rdbuf(coutbuf);
+        std::cout << "Reverted std::cout to standard output" << std::endl;
+        logfile.close();
     }
 
     return 0;
@@ -185,11 +196,11 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
 }
 
-void printComment(const std::string &comment) {
-    for (size_t i = 0; i < 50; i++) std::cout << "=";
-    std::cout << std::endl << std::endl << "\t\t";
-    std::cout << comment << std::endl;
-    std::cout << std::endl;
-    for (size_t i = 0; i < 50; i++) std::cout << "=";
-    std::cout << std::endl;
+void printComment(const std::string &comment, std::ostream& out) {
+    for (size_t i = 0; i < 50; i++) out << "=";
+    out << std::endl << std::endl << "\t\t";
+    out << comment << std::endl;
+    out << std::endl;
+    for (size_t i = 0; i < 50; i++) out << "=";
+    out << std::endl;
 }
