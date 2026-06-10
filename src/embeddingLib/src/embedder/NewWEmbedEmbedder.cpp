@@ -232,7 +232,13 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
+    nodeLocks[v % threadCount()].lock();
     this->params.force[v] += result;
+    nodeLocks[v % threadCount()].unlock();
+
+    nodeLocks[u % threadCount()].lock();
+    this->params.force[u] += result;
+    nodeLocks[u % threadCount()].unlock();
 }
 
 void NewWEmbedEmbedder::updateIndex() {

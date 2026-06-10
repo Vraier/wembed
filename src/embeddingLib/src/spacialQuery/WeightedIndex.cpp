@@ -75,8 +75,7 @@ void WeightedIndex::getNodesWithinWeightedDistanceForClass(CVecRef p, double wei
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
     ASSERT(weight_class < maxWeightOfClass.size());
 
-    double maxWeight = maxWeightOfClass[weight_class];
-    double queryRadius = radius * Toolkit::myPow(weight * maxWeight, 1.0 / (double)DIMENSION);
+    double queryRadius = radius * Toolkit::myPow(weight * weight, 1.0 / (double)DIMENSION);
     getWithinRadius(weight_class, p, queryRadius, output, buffer);
 }
 
