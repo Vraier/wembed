@@ -42,6 +42,10 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    //Output graphsize:
+    std::cout << "Successfully read graph" << std::endl;
+    std::cout << inputGraph.getNumVertices() << "," << inputGraph.getNumEdges() << std::endl;
+
     // Construct embedder
     std::unique_ptr<EmbedderInterface> embedder;
     if (opts.layeredEmbedding) {

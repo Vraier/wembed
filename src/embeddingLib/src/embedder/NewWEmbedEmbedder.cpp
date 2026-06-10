@@ -232,6 +232,8 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
+    //TODO: This is likely inefficient af
+    // If not, it is the bad neighbour search
     nodeLocks[v % threadCount()].lock();
     this->params.force[v] += result;
     nodeLocks[v % threadCount()].unlock();
