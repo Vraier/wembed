@@ -235,10 +235,6 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::symmetricRepellingForce(std::pair<NodeId, NodeId>, VecBuffer<1> forceBuffer) {
-    //TODO: Implement
-}
-
 void NewWEmbedEmbedder::updateIndex() {
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
@@ -287,28 +283,6 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
     return candidates;
 }
 
-void NewWEmbedEmbedder::getRepellingCandidatesForNodeThreadSafe(NodeId v, VecBuffer<2> &buffer, std::mutex& lock, std::vector<std::pair<NodeId, NodeId>> pairs) {
-    //TODO: Definitely think about refactoring this
-    std::vector<NodeId> candidates;
-
-    if (this->opts.numNegativeSamples >= 0) {
-        candidates = sampleRandomNoise(std::min(static_cast<int32_t>(graphSize()), this->opts.numNegativeSamples));
-    }
-
-    this->params.currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
-                                                       candidates, buffer);
-    for (NodeId& candidate: candidates) {
-        candidate = this->params.indexToGraphMap[candidate];
-        ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
-    }
-
-    lock.lock();
-    for (NodeId & candidate : candidates) {
-        pairs.emplace_back(v, candidate);
-    }
-    lock.unlock();
-}
-
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
 #pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph) schedule(runtime)
@@ -334,23 +308,6 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
             repellingForce(v, u, forceBuffer);
             numRepForceCalculations++;
         }
-    }
-
-    std::vector<std::pair<NodeId, NodeId>> repellingPairs;
-    repellingPairs.reserve(this->graph.getNumEdges());
-    std::mutex repellingLock;
-#pragma omp parallel for default(none) shared(repellingLock, repellingPairs) firstprivate(indexBuffer), schedule(runtime)
-    for (const NodeId& v : sortedNodeIDs) {
-        getRepellingCandidatesForNodeThreadSafe(v, indexBuffer, repellingLock, repellingPairs);
-    }
-
-    //TODO: Not thread safe if parallel. What to do?
-    for (auto& pair : repellingPairs) {
-        if (graph.areNeighbors(pair.first, pair.second) || graph.areInSameColorClass(pair.first, pair.second)) {
-            continue;
-        }
-        symmetricRepellingForce(pair, forceBuffer);
-        numRepForceCalculations++;
     }
 }
 

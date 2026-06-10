@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mutex>
-
 #include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
@@ -22,11 +20,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
-    void symmetricRepellingForce(std::pair<NodeId, NodeId>, VecBuffer<1> forceBuffer);
 
     void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
-    void getRepellingCandidatesForNodeThreadSafe(NodeId v, VecBuffer<2>& buffer, std::mutex& lock, std::vector<std::pair<NodeId, NodeId>> pairs);
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
 
