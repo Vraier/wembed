@@ -60,10 +60,10 @@ void LayeredEmbedder::expandPositions() {
     std::vector<double> newWeights;
     if (opts.weightType == WeightType::Degree) {
         newWeights =
-            WEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
-                                           WEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
+            NewWEmbedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
+                                           NewWEmbedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
     } else if (opts.weightType == WeightType::Unit) {
-        newWeights = WEmbedEmbedder::constructUnitWeights(newN);
+        newWeights = NewWEmbedEmbedder::constructUnitWeights(newN);
     } else {
         LOG_ERROR("Weight type not supported");
     }
@@ -85,7 +85,7 @@ void LayeredEmbedder::expandPositions() {
     }
 
     currentLayer--;
-    WEmbedEmbedder newEmbedder(hierarchy->graphs[currentLayer], opts, timer);
+    NewWEmbedEmbedder newEmbedder(hierarchy->graphs[currentLayer], opts, timer);
     currentEmbedder = std::move(newEmbedder);
     currentEmbedder.setCoordinates(newPositions);
     currentEmbedder.setWeights(newWeights);

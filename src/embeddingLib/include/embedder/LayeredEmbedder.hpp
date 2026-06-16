@@ -8,7 +8,7 @@
 #include "GraphHierarchy.hpp"
 #include "LabelPropagation.hpp"
 #include "Timings.hpp"
-#include "WEmbedEmbedder.hpp"
+#include "NewWEmbedEmbedder.hpp"
 #include "WeightedIndex.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
@@ -48,5 +48,5 @@ class LayeredEmbedder : public EmbedderInterface {
     bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
-    WEmbedEmbedder currentEmbedder;
+    NewWEmbedEmbedder currentEmbedder;
 };

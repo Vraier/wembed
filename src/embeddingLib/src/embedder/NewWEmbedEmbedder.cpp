@@ -171,13 +171,13 @@ void NewWEmbedEmbedder::debug_dumpWeights() const {
     }
 }
 
-void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1> &buffer) {
+void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
     if (v == u) return;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
 
-    TmpVec<0> result(buffer, 0.0);
+    TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posU, posV);
 
     //displace in random direction if positions are identical
@@ -201,7 +201,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
+void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
     if (v == u) return;
 
     const CVecRef posV = currentPositions[v];
@@ -316,14 +316,17 @@ std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes)
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
 }
 
-std::vector<double> NewWEmbedEmbedder::rescaleWeights() const {
-    const uint32_t N = graphSize();
-    std::vector<double> rescaledWeights = constructDegreeWeights();
+std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
+                                                   const std::vector<double>& weights) {
+    const int N = weights.size();
+    std::vector<double> rescaledWeights(N);
 
     for (NodeId v = 0; v < N; v++) {
-        if (this->opts.dimensionHint > 0) {
-            rescaledWeights[v] = Toolkit::myPow(rescaledWeights[v],
-                static_cast<double>(this->opts.embeddingDimension) / static_cast<double>(this->opts.dimensionHint));
+        if (dimensionHint > 0) {
+            rescaledWeights[v] = Toolkit::myPow(weights[v],
+                                    static_cast<double>(embeddingDimension) / static_cast<double>(dimensionHint));
+        } else {
+            rescaledWeights[v] = weights[v];
         }
     }
 
@@ -337,14 +340,18 @@ std::vector<double> NewWEmbedEmbedder::rescaleWeights() const {
     return rescaledWeights;
 }
 
-std::vector<double> NewWEmbedEmbedder::constructDegreeWeights() const {
-    std::vector<double> weights(graphSize());
-    for (NodeId v = 0; v < graphSize(); v++) {
-        weights[v] = this->graph.getNumNeighbors(v);
+std::vector<double> NewWEmbedEmbedder::constructDegreeWeights(const Graph& g) {
+    std::vector<double> weights(g.getNumVertices());
+    for (NodeId v = 0; v < g.getNumVertices(); v++) {
+        weights[v] = g.getNumNeighbors(v);
     }
     return weights;
 }
 
-std::vector<double> NewWEmbedEmbedder::constructUnitWeights() const {
-    return std::vector(graphSize(), 1.0);
+std::vector<double> NewWEmbedEmbedder::constructUnitWeights(const int N) {
+    std::vector<double> weights(N);
+    for (NodeId v = 0; v < N; v++) {
+        weights[v] = 1.0;
+    }
+    return weights;
 }

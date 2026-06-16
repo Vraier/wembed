@@ -6,6 +6,9 @@
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
 
+/**
+ * struct for holding parameters needed to compute an embedding
+ */
 struct EmbedderParameters {
     size_t currentIteration = 0;
     bool insignificantPosChange = false;
