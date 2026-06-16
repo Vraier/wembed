@@ -6,6 +6,9 @@ wheelhouse/
 dist/
 .direnv
 .envrc
+assets
+!assets/small_graph.edg
+!assets/internet_graph.jpg
 
 # Created by https://www.toptal.com/developers/gitignore/api/cmake,visualstudiocode,python,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=cmake,visualstudiocode,python,c++

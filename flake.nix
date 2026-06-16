@@ -58,7 +58,6 @@
 
           buildInputs = with pkgs; [
             eigen
-            boost
             gtest
             sfml
           ];

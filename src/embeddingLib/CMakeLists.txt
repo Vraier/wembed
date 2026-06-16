@@ -23,13 +23,13 @@ set(HEADERS
 
         include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
-        include/spacialQuery/RTree.hpp
         include/spacialQuery/SNNQueries.hpp
         include/spacialQuery/SprkQueries.hpp
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
-        include/embedder/WEmbedEmbedder.hpp
+        include/embedder/EmbedderParameters.hpp
+        include/embedder/NewWEmbedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
@@ -58,7 +58,7 @@ set(SOURCES
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder
-        src/embedder/WEmbedEmbedder.cpp
+        src/embedder/NewWEmbedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
         
         src/gradientOptimizer/AdamOptimizer.cpp

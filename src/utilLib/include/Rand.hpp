@@ -23,6 +23,7 @@ class Rand {
      * The bounds are inclusive
      */
     static int randomInt(int lowerBound, int upperBound);
+    static float randomFloat(float lowerBound, float upperBound);
     static double randomDouble(double lowerBound, double upperBound);
     /**
      * Returns a variable with normal distribution
@@ -37,6 +38,11 @@ class Rand {
      * Get k random numbers from the range [0, n-1] without replacement
      */
     static std::vector<int> randomSample(int n, int k);
+   /**
+    * Get k random float coordinates of dimension dim from the range [0, bound]
+    */
+    static std::vector<std::vector<float>> randomCoordinatesf(int k, int dim, float bound);
+    static std::vector<std::vector<double>> randomCoordinates(int k, int dim, double bound);
 
     /**
      * positive random integer

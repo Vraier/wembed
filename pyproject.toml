@@ -37,6 +37,4 @@ cd build &&
 cmake .. && 
 make install &&
 cd ../.. &&
-wget https://archives.boost.io/release/1.82.0/source/boost_1_82_0.tar.gz &&
-tar -xzf boost_1_82_0.tar.gz &&
-cp -r boost_1_82_0/boost /usr/local/include"""
+"""

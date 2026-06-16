@@ -25,6 +25,11 @@ int Rand::randomInt(int lowerBound, int upperBound) {
     return distribution(get()->generator);
 }
 
+float Rand::randomFloat(float lowerBound, float upperBound) {
+    std::uniform_real_distribution<float> dist(lowerBound, upperBound);
+    return dist(get()->generator);
+}
+
 double Rand::randomDouble(double lowerBound, double upperBound) {
     std::uniform_real_distribution<double> distribution(lowerBound, upperBound);
     return distribution(get()->generator);
@@ -67,6 +72,26 @@ std::vector<int> Rand::randomSample(int n, int k) {
 
     std::vector<int> result(selected.begin(), selected.end());
     return result;
+}
+
+std::vector<std::vector<float>> Rand::randomCoordinatesf(const int k, const int dim, const float bound) {
+    std::vector<std::vector<float>> coords(k, std::vector<float>(dim));
+    for (auto& coord : coords) {
+        for (auto& c : coord) {
+            c = randomFloat(0, bound);
+        }
+    }
+    return coords;
+}
+
+std::vector<std::vector<double>> Rand::randomCoordinates(const int k, const int dim, const double bound) {
+    std::vector<std::vector<double>> coords(k, std::vector<double>(dim));
+    for (auto& coord : coords) {
+        for (auto& c : coord) {
+            c = randomDouble(0, bound);
+        }
+    }
+    return coords;
 }
 
 int Rand::geometricVariable(double prob) {

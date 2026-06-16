@@ -49,4 +49,9 @@ inline double myPow(double base, double exp) {
 
     return r * u.d;
 }
+
+inline float myPowf(float base, float exp) {
+    return ::powf(base, exp);
+    //TODO: Optimized algo
+}
 };  // namespace Toolkit

@@ -6,7 +6,7 @@ project(WEmbed VERSION 0.0.3 LANGUAGES CXX)
 # use interface library to not force the flags on the user
 add_library(wembed_flags INTERFACE)
 target_compile_features(wembed_flags INTERFACE cxx_std_20)
-target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -DBOOST_ALLOW_DEPRECATED_HEADERS -fno-omit-frame-pointer)
+target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -fno-omit-frame-pointer)
 
 #target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:RELEASE>:-mtune=native -march=native>>") # for some reason compiling with pip does not work with this
 target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") 
@@ -17,8 +17,6 @@ target_link_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:
 find_package(OpenMP REQUIRED)
 # Eigen
 find_package(Eigen3 REQUIRED)
-# We only need the header libraries of boost but cmake can't require only the header libraries (?)
-#find_package(Boost 1.74 REQUIRED)
 
 include(FetchContent)
 # Google Test
@@ -42,6 +40,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest cli11 girgs)
 
 # try to find sfml, if it is not avaliable we will not build the drawLib
+option(SFML_STATIC_LIBRARIES "Use static SFML libraries" OFF)
 find_package(SFML 3 COMPONENTS Window Graphics System Audio QUIET)
 if(SFML_FOUND)
         message(STATUS "SFML found, embedding animation will be available")

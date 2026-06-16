@@ -8,7 +8,7 @@ enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1, Original = 2 };
 
-enum class IndexType { RTree = 0, SNN = 1, Sprk = 2 };
+enum class IndexType {SNN = 1, Sprk = 2 };
 
 inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::Simple, "Simple"},
                                                                 {OptimizerType::Adam, "Adam"}};
@@ -16,7 +16,7 @@ inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::
 inline std::map<WeightType, std::string> weightTypeMap = {
     {WeightType::Unit, "Unit"}, {WeightType::Degree, "Degree"}, {WeightType::Original, "Original"}};
 
-inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::RTree, "RTree"}, {IndexType::SNN, "SNN"}, {IndexType::Sprk, "Sprk"}};
+inline std::map<IndexType, std::string> indexTypeMap = { {IndexType::SNN, "SNN"}, {IndexType::Sprk, "Sprk"}};
 
 struct EmbedderOptions {
     int embeddingDimension = 4;
@@ -26,7 +26,7 @@ struct EmbedderOptions {
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
     int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
-    IndexType indexType = IndexType::SNN;  // determines the type of index used for the embedding
+    IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
     double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
     double doublingFactor = 2.0;           // determines how the weight buckets are calculated
     double positionMinChange = std::pow(10.0, -4);  // used to determine when the embedding can be halted
