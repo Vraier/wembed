@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
             std::ofstream timeLog;
             timeLog.open(opts.timingLog, std::ios_base::out | std::ios_base::app);
             if (timeLog.rdstate() == std::ostream::failbit) {
-                LOG_WARNING("Could not open timeing logfile");
+                LOG_WARNING("Could not open timing logfile");
             } else {
                 printComment(opts.comment, timeLog);
                 timeLog << util::timingsToStringRepresentation(timings);
