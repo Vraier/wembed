@@ -32,7 +32,7 @@ TEST(Metric, Reconstruction) {
 
     // construct embedding
     std::vector<std::vector<double>> coords = {{0, 0}, {1, 0}, {2, 0}};
-    double numNodeSamples = 1.0;
+    int numNodeSamples = 3;
     std::shared_ptr<Embedding> embedding = std::make_unique<Euclidean>(coords);
 
     Reconstruction metric(g, embedding, numNodeSamples);
