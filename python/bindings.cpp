@@ -12,7 +12,8 @@
 #include "GraphIO.hpp"
 #include "LabelPropagation.hpp"
 #include "LayeredEmbedder.hpp"
-#include "WEmbedEmbedder.hpp"
+#include "NewWEmbedEmbedder.hpp"
+#include "Timings.hpp"
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -39,6 +40,10 @@ class PyEmbedderInterface : public EmbedderInterface {
         PYBIND11_OVERRIDE_PURE(std::vector<double>, EmbedderInterface, getWeights);
     }
 
+    std::vector<util::TimingResult> getTimings() override {
+        PYBIND11_OVERRIDE_PURE(std::vector<util::TimingResult>, EmbedderInterface, getTimings);
+    }
+
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
         PYBIND11_OVERRIDE_PURE(void, EmbedderInterface, setCoordinates, coordinates);
     }
@@ -48,28 +53,34 @@ class PyEmbedderInterface : public EmbedderInterface {
     }
 };
 
-class PyWEmbedEmbedder : public WEmbedEmbedder {
+class PyNewWEmbedEmbedder : public NewWEmbedEmbedder {
    public:
-    using WEmbedEmbedder::WEmbedEmbedder;
+    using NewWEmbedEmbedder::NewWEmbedEmbedder;
 
-    void calculateStep() override { PYBIND11_OVERRIDE(void, WEmbedEmbedder, calculateStep); }
+    void calculateStep() override { PYBIND11_OVERRIDE(void, NewWEmbedEmbedder, calculateStep); }
 
-    bool isFinished() override { PYBIND11_OVERRIDE(bool, WEmbedEmbedder, isFinished); }
+    bool isFinished() override { PYBIND11_OVERRIDE(bool, NewWEmbedEmbedder, isFinished); }
 
-    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, WEmbedEmbedder, calculateEmbedding); }
+    void calculateEmbedding() override { PYBIND11_OVERRIDE(void, NewWEmbedEmbedder, calculateEmbedding); }
+
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, NewWEmbedEmbedder, getCurrentGraph); }
 
     std::vector<std::vector<double>> getCoordinates() override {
-        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, WEmbedEmbedder, getCoordinates);
+        PYBIND11_OVERRIDE(std::vector<std::vector<double>>, NewWEmbedEmbedder, getCoordinates);
     }
 
-    std::vector<double> getWeights() override { PYBIND11_OVERRIDE(std::vector<double>, WEmbedEmbedder, getWeights); }
+    std::vector<double> getWeights() override { PYBIND11_OVERRIDE(std::vector<double>, NewWEmbedEmbedder, getWeights); }
+
+    std::vector<util::TimingResult> getTimings() override {
+        PYBIND11_OVERRIDE(std::vector<util::TimingResult>, NewWEmbedEmbedder, getTimings);
+    }
 
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
-        PYBIND11_OVERRIDE(void, WEmbedEmbedder, setCoordinates, coordinates);
+        PYBIND11_OVERRIDE(void, NewWEmbedEmbedder, setCoordinates, coordinates);
     }
 
     void setWeights(const std::vector<double> &weights) override {
-        PYBIND11_OVERRIDE(void, WEmbedEmbedder, setWeights, weights);
+        PYBIND11_OVERRIDE(void, NewWEmbedEmbedder, setWeights, weights);
     }
 };
 
@@ -83,11 +94,17 @@ class PyLayeredEmbedder : public LayeredEmbedder {
 
     void calculateEmbedding() override { PYBIND11_OVERRIDE(void, LayeredEmbedder, calculateEmbedding); }
 
+    Graph getCurrentGraph() override { PYBIND11_OVERRIDE(Graph, LayeredEmbedder, getCurrentGraph); }
+
     std::vector<std::vector<double>> getCoordinates() override {
         PYBIND11_OVERRIDE(std::vector<std::vector<double>>, LayeredEmbedder, getCoordinates);
     }
 
     std::vector<double> getWeights() override { PYBIND11_OVERRIDE(std::vector<double>, LayeredEmbedder, getWeights); }
+
+    std::vector<util::TimingResult> getTimings() override {
+        PYBIND11_OVERRIDE(std::vector<util::TimingResult>, LayeredEmbedder, getTimings);
+    }
 
     void setCoordinates(const std::vector<std::vector<double>> &coordinates) override {
         PYBIND11_OVERRIDE(void, LayeredEmbedder, setCoordinates, coordinates);
@@ -116,7 +133,18 @@ PYBIND11_MODULE(wembed, m) {
         .def("areNeighbors", &Graph::areNeighbors)
         .def("__repr__", [](const Graph &a) { return a.toString(); });
 
-    // Embedder
+    // Timings
+    py::class_<util::TimingResult>(m, "TimingResult")
+        .def_readonly("depth", &util::TimingResult::depth)
+        .def_readonly("display_name", &util::TimingResult::display_name)
+        .def_readonly("value", &util::TimingResult::value)
+        .def("__repr__", [](const util::TimingResult &t) {
+            return "TimingResult(depth=" + std::to_string(t.depth) +
+                   ", display_name=" + t.display_name +
+                   ", value=" + std::to_string(t.value) + ")";
+        });
+
+    // Embedder options
     py::class_<EmbedderOptions>(m, "EmbedderOptions")
         .def(py::init<>())
         .def_readwrite("dimensionHint", &EmbedderOptions::dimensionHint)
@@ -128,9 +156,9 @@ PYBIND11_MODULE(wembed, m) {
             return "EmbedderOptions(dimensionHint=" + std::to_string(a.dimensionHint) +
                    ", embeddingDimension=" + std::to_string(a.embeddingDimension) +
                    ", weightType=" + std::to_string(static_cast<int>(a.weightType)) +
-                   ", maxIterations=" + std::to_string(a.maxIterations) + ", speed=" + std::to_string(a.learningRate) +
+                   ", maxIterations=" + std::to_string(a.maxIterations) +
+                   ", speed=" + std::to_string(a.learningRate) +
                    ", cooling=" + std::to_string(a.coolingFactor) + ")";
-                   ")";
         });
 
     py::class_<EmbedderInterface, PyEmbedderInterface>(m, "EmbedderInterface")
@@ -139,39 +167,42 @@ PYBIND11_MODULE(wembed, m) {
         .def("calculateEmbedding", &EmbedderInterface::calculateEmbedding)
         .def("getCoordinates", &EmbedderInterface::getCoordinates)
         .def("getWeights", &EmbedderInterface::getWeights)
+        .def("getTimings", &EmbedderInterface::getTimings)
         .def("setCoordinates", &EmbedderInterface::setCoordinates)
         .def("setWeights", &EmbedderInterface::setWeights);
 
-    py::class_<WEmbedEmbedder, PyWEmbedEmbedder>(m, "Embedder")
-        .def(py::init<Graph &, EmbedderOptions>())
-        .def("calculateStep", &WEmbedEmbedder::calculateStep)
-        .def("isFinished", &WEmbedEmbedder::isFinished)
-        .def("calculateEmbedding", &WEmbedEmbedder::calculateEmbedding)
-        .def("getCoordinates", &WEmbedEmbedder::getCoordinates)
-        .def("getWeights", &WEmbedEmbedder::getWeights)
-        .def("setCoordinates", &WEmbedEmbedder::setCoordinates)
-        .def("setWeights", &WEmbedEmbedder::setWeights)
-        .def("getTimings", &WEmbedEmbedder::getTimings);
+    py::class_<NewWEmbedEmbedder, EmbedderInterface, PyNewWEmbedEmbedder>(m, "Embedder")
+        .def(py::init<const Graph &, const EmbedderOptions &>())
+        .def("calculateStep", &NewWEmbedEmbedder::calculateStep)
+        .def("isFinished", &NewWEmbedEmbedder::isFinished)
+        .def("calculateEmbedding", &NewWEmbedEmbedder::calculateEmbedding)
+        .def("getCoordinates", &NewWEmbedEmbedder::getCoordinates)
+        .def("getWeights", &NewWEmbedEmbedder::getWeights)
+        .def("getTimings", &NewWEmbedEmbedder::getTimings)
+        .def("setCoordinates", &NewWEmbedEmbedder::setCoordinates)
+        .def("setWeights", &NewWEmbedEmbedder::setWeights);
 
-    py::class_<LayeredEmbedder, PyLayeredEmbedder>(m, "LayeredEmbedder")
+    py::class_<LayeredEmbedder, EmbedderInterface, PyLayeredEmbedder>(m, "LayeredEmbedder")
         .def(py::init<Graph &, LabelPropagation &, EmbedderOptions>())
         .def("calculateStep", &LayeredEmbedder::calculateStep)
         .def("isFinished", &LayeredEmbedder::isFinished)
         .def("calculateEmbedding", &LayeredEmbedder::calculateEmbedding)
         .def("getCoordinates", &LayeredEmbedder::getCoordinates)
         .def("getWeights", &LayeredEmbedder::getWeights)
+        .def("getTimings", &LayeredEmbedder::getTimings)
         .def("setCoordinates", &LayeredEmbedder::setCoordinates)
         .def("setWeights", &LayeredEmbedder::setWeights);
 
-    // LablePropagation
-
+    // LabelPropagation
     py::class_<PartitionerOptions>(m, "PartitionerOptions").def(py::init<>());
 
     py::class_<LabelPropagation>(m, "LabelPropagation")
         .def(py::init<PartitionerOptions, Graph &, std::vector<double> &>())
         .def("initialize", &LabelPropagation::coarsenAllLayers);
 
-    // Other functions
+    // Free functions
+    m.def("timingsToString", &util::timingsToStringRepresentation, py::arg("timings"));
+
     m.def("readEdgeList", &GraphIO::readEdgeList, py::arg("filePath"), py::arg("comment") = "#",
           py::arg("delimiter") = " ");
     m.def("writeCoordinates",

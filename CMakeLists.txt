@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 
-project(WEmbed VERSION 0.0.3 LANGUAGES CXX)
+project(WEmbed VERSION 0.1.0 LANGUAGES CXX)
 
 # define compiler flags for project
 # use interface library to not force the flags on the user

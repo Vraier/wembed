@@ -14,10 +14,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(sprk)
 
-corrosion_import_crate(MANIFEST_PATH ${sprk_SOURCE_DIR}/Cargo.toml CRATES sprk-ffi)
+corrosion_import_crate(MANIFEST_PATH ${sprk_SOURCE_DIR}/Cargo.toml CRATES sprk-ffi CRATE_TYPES staticlib)
 corrosion_set_env_vars(sprk_ffi "RUSTFLAGS=-C target-cpu=native")
 
-# Expose the C header for consumers via the corrosion-generated target (sprk_ffi)
-set_target_properties(sprk_ffi PROPERTIES
+set_target_properties(sprk_ffi-static PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${sprk_SOURCE_DIR}/sprk-ffi/include"
 )

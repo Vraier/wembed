@@ -40,7 +40,7 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "wembed";
-          version = "0.0.1";
+          version = "0.1.0";
 
           src = ./.;
 
@@ -128,6 +128,8 @@
         };
 
         devShells.default = pkgs.mkShell {
+          LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ];
+
           packages = with pkgs; [
             # Build tools
             cmake
@@ -143,7 +145,6 @@
 
             # Core dependencies
             eigen
-            boost
             gtest
             sfml
 
@@ -153,6 +154,8 @@
             python3.pkgs.pybind11
             python3.pkgs.pip
             python3.pkgs.virtualenv
+            pipx # for wheel building
+            podman # for wheel building
 
             # Development tools
             gdb
@@ -179,8 +182,8 @@
             # Make tests verbose by default
             export CTEST_OUTPUT_ON_FAILURE=1
 
-            # Setup Python environment variables
-            export PYTHONPATH="$PWD:$PYTHONPATH"
+            # Use podman for cibuildwheel (NixOS has no Docker daemon)
+            export CIBW_CONTAINER_ENGINE=podman
 
             # Create virtual environment if it doesn't exist
             if [ ! -d ".venv" ]; then

@@ -62,7 +62,7 @@ wembed.writeCoordinates("example.emb", emb.getCoordinates(), emb.getWeights())
 ## Installing Dependencies
 
 In order to compile WEmbed you need to have `Eigen3` headers installed.
-You can look at the development [Dockerfile](https://github.com/Vraier/wembed/blob/main/docker_dev/Dockerfile) for more information.
+You can look at the [flake.nix](https://github.com/Vraier/wembed/blob/main/flake.nix) for more information.
 WEmbed also depends on a few other smaller libraries, these get downloaded automatically by CMake via Fetchcontent (you do not have to worry about them), 
 look at the root [CMakeLists.txt](https://github.com/Vraier/wembed/blob/main/CMakeLists.txt) for more information.
 
@@ -87,7 +87,6 @@ make -j4
 
 All C++ source files can be found in [src](https://github.com/Vraier/wembed/blob/main/src/), this includes the [library](https://github.com/Vraier/wembed/blob/main/src/embeddingLib/) and small example command line applications for [C++](https://github.com/Vraier/wembed/blob/main/src/cli_wembed/). The [python](https://github.com/Vraier/wembed/blob/main/python/) folder contains code for the python bindings and an example using these bindings.
 Unit tests using google test are found in [tests](https://github.com/Vraier/wembed/blob/main/tests/).
-If you want to run WEmbed in a docker container, you can use the Dockerfile in [docker_dev](https://github.com/Vraier/wembed/blob/main/docker_dev/) ([docker_build](https://github.com/Vraier/wembed/blob/main/docker_build/) is used to build python packages).
 
 
 ## Work in progress
@@ -95,3 +94,6 @@ If you want to run WEmbed in a docker container, you can use the Dockerfile in [
 Note that WEmbed is still quite experimental, expect major changes in the future. Some code sections that will be changed in the immediate future include:
 
 * The repository contains some embedding code that is dead or outdated. This has to be updated or removed
+* Remove boost and SNN dependencies
+* Fix PyPi CI packaging
+* Allow embedding of unconnected graphs (add a global attracting force for that)

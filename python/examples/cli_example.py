@@ -52,6 +52,9 @@ def main():
     # calculate embedding
     embedder.calculateEmbedding()
 
+    timings = embedder.getTimings()
+    print(wembed.timingsToString(timings))
+
     # write embedding to file
     if embedding_file_path is not None:
         wembed.writeCoordinates(embedding_file_path, embedder.getCoordinates(), embedder.getWeights())
