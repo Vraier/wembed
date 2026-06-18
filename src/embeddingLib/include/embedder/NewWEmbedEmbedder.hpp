@@ -23,6 +23,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
      */
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
+    void calculateAllCentreForces();
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
 

@@ -46,6 +46,13 @@ void NewWEmbedEmbedder::calculateStep() {
     calculateAllRepellingForces();
     this->timer->stopTiming("repelling_forces");
 
+    //Compute centre forces
+    if (this->opts.centreScale != 0.0) {
+        this->timer->startTiming("centre_forces", "Computes Centre Force");
+        calculateAllCentreForces();
+        this->timer->stopTiming("centre_forces");
+    }
+
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
     this->posOptimizer.update(this->currentPositions, this->params.force);
@@ -308,6 +315,13 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
             repellingForce(v, u, forceBuffer);
             numRepForceCalculations++;
         }
+    }
+}
+
+void NewWEmbedEmbedder::calculateAllCentreForces() {
+#pragma omp parallel for default(none) shared(sortedNodeIDs, opts, params, currentPositions) schedule(static)
+    for (const NodeId v : this->sortedNodeIDs) {
+        this->params.force[v] += -1.0 * this->opts.centreScale * this->currentPositions[v];
     }
 }
 
