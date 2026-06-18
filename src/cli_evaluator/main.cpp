@@ -29,10 +29,6 @@ int main(int argc, char* argv[]) {
 
     // read in graph
     Graph inputGraph = GraphIO::readEdgeList(options.edgeListPath, options.edgeListComment, options.edgeListDelimiter);
-    if (!GraphAlgo::isConnected(inputGraph)) {
-        LOG_ERROR("Graph is not connected");
-        return 0;
-    }
 
     // read in embedding
     std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(

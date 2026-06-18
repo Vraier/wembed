@@ -37,10 +37,6 @@ int main(int argc, char* argv[]) {
     } else {
         inputGraph = GraphIO::readEdgeList(opts.graphPath);
     }
-    if (!GraphAlgo::isConnected(inputGraph)) {
-        LOG_ERROR("Graph is not connected");
-        return 0;
-    }
 
     // Construct embedder
     std::unique_ptr<EmbedderInterface> embedder;

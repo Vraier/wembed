@@ -343,7 +343,8 @@ std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint
 std::vector<double> NewWEmbedEmbedder::constructDegreeWeights(const Graph& g) {
     std::vector<double> weights(g.getNumVertices());
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
-        weights[v] = g.getNumNeighbors(v);
+        const int numNeighbors = g.getNumNeighbors(v);
+        weights[v] = (numNeighbors > 0) ? numNeighbors : 1;
     }
     return weights;
 }
