@@ -40,13 +40,6 @@ void NewWEmbedEmbedder::calculateStep() {
     }
     gravity[0] = -1.f / static_cast<float>(graphSize()) * gravity[0];
 
-    this->timer->startTiming("gravity", "Move graph towards centre");
-#pragma omp parallel for default(none) shared(gravity) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        this->params.force[i] = gravity[0];
-    }
-    this->timer->stopTiming("gravity");
-
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
     updateIndex();
@@ -73,6 +66,14 @@ void NewWEmbedEmbedder::calculateStep() {
     this->timer->startTiming("apply_forces", "Applying Forces");
     this->posOptimizer.update(this->currentPositions, this->params.force);
     this->timer->stopTiming("apply_forces");
+
+    this->timer->startTiming("gravity", "Move graph towards centre");
+#pragma omp parallel for default(none) shared(gravity) schedule(static)
+    for (size_t i = 0; i < graphSize(); i++) {
+        //this->params.force[i] = gravity[0];
+        this->currentPositions[i] += gravity[0];
+    }
+    this->timer->stopTiming("gravity");
 
     //calculate change in positions
     this->timer->startTiming("position_change", "Change in Positions");
