@@ -12,6 +12,9 @@
 // ======================================================================================
 void NewWEmbedEmbedder::calculateStep() {
 
+    //Increase current step
+    params.nextStep();
+
     //Dump weights to debug file
     if (this->opts.dumpWeights) {
         debug_dumpWeights();
@@ -23,6 +26,7 @@ void NewWEmbedEmbedder::calculateStep() {
         return;
     }
 
+    //TODO: optimize storing of old positions
     VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
     VecList gravity(this->opts.embeddingDimension, std::thread::hardware_concurrency());
 #pragma omp parallel for num_threads(std::thread::hardware_concurrency()) default(none) shared(oldPositions, gravity) schedule(static)
@@ -34,10 +38,14 @@ void NewWEmbedEmbedder::calculateStep() {
     for (size_t i = 1; i < std::thread::hardware_concurrency(); i++) {
         gravity[0] += gravity[i];
     }
-    gravity[0] = 1.f / static_cast<float>(graphSize()) * gravity[0];
+    gravity[0] = -1.f / static_cast<float>(graphSize()) * gravity[0];
 
-    //Increase current step
-    params.nextStep();
+    this->timer->startTiming("gravity", "Move graph towards centre");
+#pragma omp parallel for default(none) shared(gravity) schedule(static)
+    for (size_t i = 0; i < graphSize(); i++) {
+        this->params.force[i] = gravity[0];
+    }
+    this->timer->stopTiming("gravity");
 
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");

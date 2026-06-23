@@ -30,11 +30,4 @@ struct EmbedderParameters {
 
         force.setAll(0);
     }
-
-    //TODO: pass centreOfGrvity
-    void nextStep(CVecRef centreOfGrav) {
-        currentIteration++;
-
-        force.setAll(centreOfGrav);
-    }
 };
