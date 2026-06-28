@@ -67,3 +67,15 @@ python -m venv /tmp/test-wembed
 /tmp/test-wembed/bin/pip install wheelhouse/*.whl
 /tmp/test-wembed/bin/python python/examples/cli_example.py -i assets/small_graph.edg
 ```
+
+
+## Installing from TestPyPI
+
+```
+python -m venv /tmp/test-wembed-pypi
+source /tmp/test-wembed-pypi/bin/activate
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ wembed
+python python/examples/cli_example.py -i assets/small_graph.edg
+```
+
+`--extra-index-url` allows pip to fetch dependencies (e.g. pybind11) from the real PyPI when they are absent on TestPyPI.
