@@ -1,6 +1,7 @@
 release/
 debug/
 build/
+build-lib/
 profiling_build/
 wheelhouse/
 dist/
