@@ -145,7 +145,7 @@ static IndexType toInternalIndexType(SpatialIndex idx) {
 Embedder createEmbedder(const Graph& g, const Options& options) {
     EmbedderOptions opts;
     opts.embeddingDimension = options.embeddingDimension;
-    opts.weightType = options.useWeights ? WeightType::Degree : WeightType::Unit;
+    opts.weightType = options.useUnitWeights ? WeightType::Unit : WeightType::Degree;
     opts.dimensionHint = options.dimensionHint;
     opts.indexType = toInternalIndexType(options.indexType);
     opts.attractionScale = options.attractionScale;

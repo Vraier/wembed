@@ -55,7 +55,7 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
-    app.add_flag("!--no-weights", opts.embedderOptions.useWeights,
+    app.add_flag("--unit-weights", opts.embedderOptions.useUnitWeights,
                  "Disable degree-based weights (use unit weights instead)");
     app.add_option("--index-type", opts.embedderOptions.indexType,
                    "Type of spatial index used for the embedding (1=SNN, 2=Sprk)")

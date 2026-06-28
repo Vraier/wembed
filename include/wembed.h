@@ -43,7 +43,7 @@ struct TimingResult {
 struct Options {
     // Embedding parameters
     int32_t embeddingDimension = 4;
-    bool useWeights = true;                      // true: degree-based weights; false: unit weights
+    bool useUnitWeights = false;                      // true: degree-based weights; false: unit weights
     double dimensionHint = -1.0;                 // hint for the dimension of the input graph (-1 = auto)
     bool layeredEmbedding = false;               // multilevel embedding via graph coarsening
 
