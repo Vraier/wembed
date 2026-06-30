@@ -283,25 +283,33 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
     return candidates;
 }
 
-std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() const {
+std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
     std::vector<std::vector<NodeId>> candidates(graphSize());
     VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+    timer->startTiming("CandidateSearch", "Searching for repelling candidates");
 #pragma omp parallel for firstprivate(indexBuffer) shared(candidates) schedule(dynamic)
     for (size_t v = 0; v < graphSize(); v++) {
         const std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
         candidates[v] = tmp;
     }
+    timer->stopTiming("CandidateSearch");
 
     //Make things symmetric:
-    for (size_t v = 0; v < graphSize(); v++) {
-        for (auto u : candidates[v]) {
+    timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
+#pragma omp parallel for default(none) shared(candidates) schedule(dynamic)
+    //TODO: Do I have to lock v as well?
+    for (int v = 0; v < graphSize(); v++) {
+        for (const int u : candidates[v]) {
             bool contains = false;
-            for (size_t w = 0; w < candidates[u].size(); w++) {
-                if (candidates[u][w] == v) contains = true;
+            candidateLocks[u].lock();
+            for (const int w : candidates[u]) {
+                if (w == v) contains = true;
             }
             if (!contains) candidates[u].push_back(v);
+            candidateLocks[u].unlock();
         }
     }
+    timer->stopTiming("Symmetrizising");
     return candidates;
 }
 
