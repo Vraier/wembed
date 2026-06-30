@@ -286,8 +286,9 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
 std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() const {
     std::vector<std::vector<NodeId>> candidates(graphSize());
     VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+#pragma omp parallel for firstprivate(indexBuffer) shared(candidates) schedule(dynamic)
     for (size_t v = 0; v < graphSize(); v++) {
-        std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
+        const std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
         candidates[v] = tmp;
     }
 
@@ -321,7 +322,7 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
 
     const std::vector<std::vector<NodeId>> repellingCandidates = getAllRepellingCandidates();
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer, repellingCandidates), reduction(+:numRepForceCalculations), schedule(runtime)
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer) shared(repellingCandidates), reduction(+:numRepForceCalculations), schedule(runtime)
     for (const NodeId v : sortedNodeIDs) {
         for (const NodeId u : repellingCandidates[v]) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
