@@ -232,15 +232,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
-    //TODO: This is likely inefficient af
-    // If not, it is the bad neighbour search
-    nodeLocks[v % threadCount()].lock();
     this->params.force[v] += result;
-    nodeLocks[v % threadCount()].unlock();
-
-    nodeLocks[u % threadCount()].lock();
-    this->params.force[u] += result;
-    nodeLocks[u % threadCount()].unlock();
 }
 
 void NewWEmbedEmbedder::updateIndex() {
@@ -291,6 +283,27 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
     return candidates;
 }
 
+std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() const {
+    std::vector<std::vector<NodeId>> candidates(graphSize());
+    VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+    for (size_t v = 0; v < graphSize(); v++) {
+        std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
+        candidates[v] = tmp;
+    }
+
+    //Make things symmetric:
+    for (size_t v = 0; v < graphSize(); v++) {
+        for (auto u : candidates[v]) {
+            bool contains = false;
+            for (size_t w = 0; w < candidates[u].size(); w++) {
+                if (candidates[u][w] == v) contains = true;
+            }
+            if (!contains) candidates[u].push_back(v);
+        }
+    }
+    return candidates;
+}
+
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
 #pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph) schedule(runtime)
@@ -306,10 +319,11 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
+    const std::vector<std::vector<NodeId>> repellingCandidates = getAllRepellingCandidates();
+
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer, repellingCandidates), reduction(+:numRepForceCalculations), schedule(runtime)
     for (const NodeId v : sortedNodeIDs) {
-        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
-        for (const NodeId u : repellingCandidates) {
+        for (const NodeId u : repellingCandidates[v]) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }

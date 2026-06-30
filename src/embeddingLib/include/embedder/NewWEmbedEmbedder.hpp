@@ -18,8 +18,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     AdamOptimizer posOptimizer;
     AdamOptimizer weightOptimizer;
 
-    std::vector<std::mutex> nodeLocks;
-
     static inline unsigned int threadCount() {
         return std::thread::hardware_concurrency();
     }
@@ -31,6 +29,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
+    std::vector<std::vector<NodeId>> getAllRepellingCandidates() const;
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
 
@@ -49,8 +48,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
-                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8),
-                        nodeLocks(threadCount())
+                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
     {
 
         NewWEmbedEmbedder::setCoordinates(constructRandomCoordinates());
