@@ -2,8 +2,6 @@
 
 #include "NewWEmbedEmbedder.hpp"
 
-#include <thread>
-
 #include "VectorOperations.hpp"
 #include "WeightedIndex.hpp"
 
