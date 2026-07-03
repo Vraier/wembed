@@ -29,19 +29,24 @@ void NewWEmbedEmbedder::calculateStep() {
         return;
     }
 
-    //TODO: optimize storing of old positions
+    //TODO: optimize storing of old positions (Implement std::move for VecLists)
     VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
-    VecList gravity(this->opts.embeddingDimension, std::thread::hardware_concurrency());
-#pragma omp parallel for num_threads(std::thread::hardware_concurrency()) default(none) shared(oldPositions, gravity) schedule(static)
+#pragma omp parallel for default(none) shared(oldPositions) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
         oldPositions[i] = this->currentPositions[i];
-        gravity[omp_get_thread_num()] += this->currentPositions[i];
     }
 
-    for (size_t i = 1; i < std::thread::hardware_concurrency(); i++) {
-        gravity[0] += gravity[i];
+    std::vector<double> dimGravity(this->opts.embeddingDimension);
+    for (int dim = 0; dim < this->opts.embeddingDimension; dim++) {
+        double dimensionSum = 0.0;
+#pragma omp parallel for default(none) shared(dim) reduction(+:dimensionSum) schedule(static)
+        for (size_t v = 0; v < graphSize(); v++) {
+            dimensionSum += this->currentPositions[v][dim];
+        }
+        dimGravity[dim] = 1./static_cast<double>(graphSize()) * dimensionSum;
     }
-    gravity[0] = -1.f / static_cast<float>(graphSize()) * gravity[0];
+    //Potentially ugly hack cause write access to a VecRef::Memory is not fully implemented
+    VecList gravityCentre({dimGravity});
 
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
@@ -71,10 +76,9 @@ void NewWEmbedEmbedder::calculateStep() {
     this->timer->stopTiming("apply_forces");
 
     this->timer->startTiming("gravity", "Move graph towards centre");
-#pragma omp parallel for default(none) shared(gravity) schedule(static)
+#pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
-        //this->params.force[i] = gravity[0];
-        this->currentPositions[i] += gravity[0];
+        this->currentPositions[i] -= gravityCentre[0];
     }
     this->timer->stopTiming("gravity");
 
