@@ -106,11 +106,18 @@ class Embedder {
 
     // embedding calculation
     void calculateStep();
-    bool isFinished();
+    bool isFinished() const;
     void calculateEmbedding();
 
     // accessors
-    // TODO: revisit these for efficiency. let caller allocate memory
+    // Size accessors: reflect the CURRENT graph the embedder operates on
+    // (for LayeredEmbedder, this changes across coarsening layers).
+    int32_t getNumVertices() const;
+    int32_t getEmbeddingDimension() const;
+
+    // flat copy of coordinates getNumVertices() * getEmbeddingDimension() doubles, row-major.
+    void copyCoordinatesTo(double* out) const;
+
     Graph getCurrentGraph() const;
     std::vector<std::vector<double>> getCoordinates() const;
     std::vector<double> getWeights() const;

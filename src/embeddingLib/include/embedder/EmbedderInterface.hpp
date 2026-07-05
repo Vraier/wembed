@@ -69,6 +69,29 @@ class EmbedderInterface {
     virtual ~EmbedderInterface() = default;
 
     /**
+     * Number of vertices in the current graph the embedder is operating on.
+     * For LayeredEmbedder, this changes across coarsening layers.
+     */
+    virtual int getNumVertices() const {
+        return static_cast<int>(this->currentPositions.size());
+    }
+
+    /**
+     * Dimension of the embedding space.
+     */
+    virtual int getEmbeddingDimension() const {
+        return static_cast<int>(this->currentPositions.dimension());
+    }
+
+    /**
+     * Copy coordinates row-major into a caller-owned buffer of at least
+     * getNumVertices() * getEmbeddingDimension() doubles. Zero allocation.
+     */
+    virtual void copyCoordinatesTo(double* out) const {
+        this->currentPositions.copyToFlat(out);
+    }
+
+    /**
      * Advances the embedding by a single gradient descent step.
      */
     virtual void calculateStep() = 0;

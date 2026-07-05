@@ -35,6 +35,10 @@ class LayeredEmbedder : public EmbedderInterface {
     virtual std::vector<util::TimingResult> getTimings();
     virtual Graph getCurrentGraph();
 
+    int getNumVertices() const override { return currentEmbedder.getNumVertices(); }
+    int getEmbeddingDimension() const override { return currentEmbedder.getEmbeddingDimension(); }
+    void copyCoordinatesTo(double* out) const override { currentEmbedder.copyCoordinatesTo(out); }
+
    private:
     std::shared_ptr<Timer> timer;
 

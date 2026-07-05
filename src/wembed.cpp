@@ -86,12 +86,24 @@ void Embedder::calculateStep() {
     _embedder->calculateStep();
 }
 
-bool Embedder::isFinished() {
+bool Embedder::isFinished() const {
     return _embedder->isFinished();
 }
 
 void Embedder::calculateEmbedding() {
     _embedder->calculateEmbedding();
+}
+
+int32_t Embedder::getNumVertices() const {
+    return static_cast<int32_t>(_embedder->getNumVertices());
+}
+
+int32_t Embedder::getEmbeddingDimension() const {
+    return static_cast<int32_t>(_embedder->getEmbeddingDimension());
+}
+
+void Embedder::copyCoordinatesTo(double* out) const {
+    _embedder->copyCoordinatesTo(out);
 }
 
 Graph Embedder::getCurrentGraph() const {

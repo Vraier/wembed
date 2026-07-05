@@ -71,6 +71,14 @@ class VecList {
         return result;
     }
 
+    void copyToFlat(double* out) const {
+        for (size_t i = 0; i < size(); ++i) {
+            for (unsigned int d = 0; d < dimension(); ++d) {
+                out[i * dimension() + d] = (*this)[i][d];
+            }
+        }
+    }
+
     VecList copy() const {
         VecList result(*this);
         return result;
