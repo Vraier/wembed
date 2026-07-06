@@ -297,16 +297,30 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
     //Make things symmetric:
     timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
 #pragma omp parallel for default(none) shared(candidates) schedule(dynamic)
-    //TODO: Do I have to lock v as well?
     for (int v = 0; v < graphSize(); v++) {
-        for (const int u : candidates[v]) {
+        candidateLocks[v].lock();
+        const size_t candidatesSize = candidates[v].size();
+        candidateLocks[v].unlock();
+
+        for (size_t u = 0; u < candidatesSize; u++) {
+            candidateLocks[v].lock();
+            const NodeId node = candidates[v][u];
+            candidateLocks[v].unlock();
+            candidateLocks[node].lock();
+            const size_t nodeSize = candidates[node].size();
+            candidateLocks[node].unlock();
             bool contains = false;
-            candidateLocks[u].lock();
-            for (const int w : candidates[u]) {
-                if (w == v) contains = true;
+            for (size_t w = 0; w < nodeSize; w++) {
+                if (candidates[node][w] == v) {
+                    contains = true;
+                    break;
+                }
             }
-            if (!contains) candidates[u].push_back(v);
-            candidateLocks[u].unlock();
+            if (contains) continue;
+
+            candidateLocks[node].lock();
+            candidates[node].push_back(v);
+            candidateLocks[node].unlock();
         }
     }
     timer->stopTiming("Symmetrizising");
