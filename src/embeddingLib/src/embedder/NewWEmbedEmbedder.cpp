@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include "NewWEmbedEmbedder.hpp"
+
 #include "VectorOperations.hpp"
 #include "WeightedIndex.hpp"
 
@@ -11,6 +12,7 @@
 //
 // ======================================================================================
 void NewWEmbedEmbedder::calculateStep() {
+
     //Increase current step
     params.nextStep();
 
@@ -25,11 +27,24 @@ void NewWEmbedEmbedder::calculateStep() {
         return;
     }
 
+    //TODO: optimize storing of old positions (Implement std::move for VecLists)
     VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
 #pragma omp parallel for default(none) shared(oldPositions) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
         oldPositions[i] = this->currentPositions[i];
     }
+
+    std::vector<double> dimGravity(this->opts.embeddingDimension);
+    for (int dim = 0; dim < this->opts.embeddingDimension; dim++) {
+        double dimensionSum = 0.0;
+#pragma omp parallel for default(none) shared(dim) reduction(+:dimensionSum) schedule(static)
+        for (size_t v = 0; v < graphSize(); v++) {
+            dimensionSum += this->currentPositions[v][dim];
+        }
+        dimGravity[dim] = 1./static_cast<double>(graphSize()) * dimensionSum;
+    }
+    //Potentially ugly hack cause write access to a VecRef::Memory is not fully implemented
+    VecList gravityCentre({dimGravity});
 
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
@@ -46,10 +61,24 @@ void NewWEmbedEmbedder::calculateStep() {
     calculateAllRepellingForces();
     this->timer->stopTiming("repelling_forces");
 
+    //Compute centre forces
+    if (this->opts.centreScale != 0.0) {
+        this->timer->startTiming("centre_forces", "Computes Centre Force");
+        calculateAllCentreForces();
+        this->timer->stopTiming("centre_forces");
+    }
+
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
     this->posOptimizer.update(this->currentPositions, this->params.force);
     this->timer->stopTiming("apply_forces");
+
+    this->timer->startTiming("gravity", "Move graph towards centre");
+#pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
+    for (size_t i = 0; i < graphSize(); i++) {
+        this->currentPositions[i] -= gravityCentre[0];
+    }
+    this->timer->stopTiming("gravity");
 
     //calculate change in positions
     this->timer->startTiming("position_change", "Change in Positions");
@@ -311,6 +340,13 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     }
 }
 
+void NewWEmbedEmbedder::calculateAllCentreForces() {
+#pragma omp parallel for default(none) shared(sortedNodeIDs, opts, params, currentPositions) schedule(static)
+    for (const NodeId v : this->sortedNodeIDs) {
+        this->params.force[v] += -1.0 * this->opts.centreScale * this->currentPositions[v];
+    }
+}
+
 //TODO: This could be moved somewhere else
 std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes) const {
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
@@ -343,7 +379,8 @@ std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint
 std::vector<double> NewWEmbedEmbedder::constructDegreeWeights(const Graph& g) {
     std::vector<double> weights(g.getNumVertices());
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
-        weights[v] = g.getNumNeighbors(v);
+        const int numNeighbors = g.getNumNeighbors(v);
+        weights[v] = (numNeighbors > 0) ? numNeighbors : 1;
     }
     return weights;
 }

@@ -37,10 +37,6 @@ int main(int argc, char* argv[]) {
     } else {
         inputGraph = GraphIO::readEdgeList(opts.graphPath);
     }
-    if (!GraphAlgo::isConnected(inputGraph)) {
-        LOG_ERROR("Graph is not connected");
-        return 0;
-    }
 
     // Construct embedder
     std::unique_ptr<EmbedderInterface> embedder;
@@ -144,6 +140,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--attraction", opts.embedderOptions.attractionScale, "Changes magnitude of attracting forces")
         ->capture_default_str();
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
+        ->capture_default_str();
+    app.add_option("--centre, --center", opts.embedderOptions.centreScale, "Changes magnitude of centre force")
         ->capture_default_str();
     app.add_option("--expansion", opts.embedderOptions.expansionStretch, "Determines how much the embedding is stretched during layer expansion.")->capture_default_str();
 
