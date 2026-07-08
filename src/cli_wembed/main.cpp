@@ -18,12 +18,31 @@
 
 void addOptions(CLI::App& app, Options& opts);
 
+void printComment(const std::string& comment, std::ostream& out = std::cout);
+
 int main(int argc, char* argv[]) {
     // Parse the command line arguments
     CLI::App app("Embedder CLI");
     Options opts;
     addOptions(app, opts);
     CLI11_PARSE(app, argc, argv);
+
+    // Redirect output
+    std::streambuf *coutbuf;
+    std::ofstream logfile;
+    if (!opts.log.empty()) {
+        std::cout << "Divert std::cout to logfile" << std::endl;
+        coutbuf = std::cout.rdbuf();
+        logfile.open(opts.log, std::ios_base::out | std::ios_base::app);
+        if (logfile.rdstate() == std::ostream::failbit) {
+            LOG_WARNING("Opening the log file failed, output will be written to standard output");
+        } else {
+            std::cout.rdbuf(logfile.rdbuf());
+            if (!opts.comment.empty()) {
+                printComment(opts.comment);
+            }
+        }
+    }
 
     // set the seed
     if (opts.seed != -1) {
@@ -86,6 +105,21 @@ int main(int argc, char* argv[]) {
         LOG_INFO("Printing Timings");
         std::vector<util::TimingResult> timings = embedder->getTimings();
         std::cout << util::timingsToStringRepresentation(timings);
+        if (!opts.timingLog.empty()) {
+            std::ofstream timeLog;
+            timeLog.open(opts.timingLog, std::ios_base::out | std::ios_base::app);
+            if (timeLog.rdstate() == std::ostream::failbit) {
+                LOG_WARNING("Could not open timing logfile");
+            } else {
+                printComment(opts.comment, timeLog);
+                timeLog << util::timingsToStringRepresentation(timings);
+                timeLog << std::endl;
+                timeLog.close();
+                if (timeLog.rdstate() == std::ostream::failbit) {
+                    LOG_WARNING("Closing the timing logfile produced an error");
+                }
+            }
+        }
     }
 
     // Output the embedding
@@ -94,6 +128,16 @@ int main(int argc, char* argv[]) {
         std::vector<double> weights = embedder->getWeights();
         EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
     }
+
+    if (!coutbuf) {
+        std::cout.rdbuf(coutbuf);
+        std::cout << "Reverted std::cout to standard output" << std::endl;
+        logfile.close();
+        if (logfile.rdstate() == std::ostream::failbit) {
+            LOG_WARNING("Closing the logfile produced an error");
+        }
+    }
+
     return 0;
 }
 
@@ -103,6 +147,9 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--bipartite", opts.bipartite, "Treat the input graph as bipartite");
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
+    app.add_option("--timing-log", opts.timingLog, "Path to the log file for timing output");
+    app.add_option("--log", opts.log, "Path to the log file for the entire output");
+    app.add_option("--comment", opts.comment, "Adds a comment at the top of the current logging output");
 
     // Visualization
 #ifdef EMBEDDING_USE_ANIMATION
@@ -160,4 +207,13 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
         ->capture_default_str();
+}
+
+void printComment(const std::string &comment, std::ostream& out) {
+    for (size_t i = 0; i < 50; i++) out << "=";
+    out << std::endl << std::endl << "\t\t";
+    out << comment << std::endl;
+    out << std::endl;
+    for (size_t i = 0; i < 50; i++) out << "=";
+    out << std::endl;
 }
