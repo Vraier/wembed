@@ -284,47 +284,70 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
 }
 
 std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
-    std::vector<std::vector<NodeId>> candidates(graphSize());
-    VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
-    timer->startTiming("CandidateSearch", "Searching for repelling candidates");
+    if constexpr (true) {
+        std::vector<std::vector<NodeId>> candidates(graphSize());
+        VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+        timer->startTiming("CandidateSearch", "Searching for repelling candidates");
 #pragma omp parallel for firstprivate(indexBuffer) shared(candidates) schedule(dynamic)
-    for (size_t v = 0; v < graphSize(); v++) {
-        const std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
-        candidates[v] = tmp;
-    }
-    timer->stopTiming("CandidateSearch");
-
-    //Make things symmetric:
-    timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
-#pragma omp parallel for default(none) shared(candidates) schedule(dynamic)
-    for (int v = 0; v < graphSize(); v++) {
-        candidateLocks[v].lock();
-        const size_t candidatesSize = candidates[v].size();
-        candidateLocks[v].unlock();
-
-        for (size_t u = 0; u < candidatesSize; u++) {
-            candidateLocks[v].lock();
-            const NodeId node = candidates[v][u];
-            candidateLocks[v].unlock();
-            candidateLocks[node].lock();
-            const size_t nodeSize = candidates[node].size();
-            candidateLocks[node].unlock();
-            bool contains = false;
-            for (size_t w = 0; w < nodeSize; w++) {
-                if (candidates[node][w] == v) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (contains) continue;
-
-            candidateLocks[node].lock();
-            candidates[node].push_back(v);
-            candidateLocks[node].unlock();
+        for (size_t v = 0; v < graphSize(); v++) {
+            const std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
+            candidates[v] = tmp;
         }
+        timer->stopTiming("CandidateSearch");
+
+        //Make things symmetric:
+        timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
+#pragma omp parallel for default(none) shared(candidates) schedule(dynamic)
+        for (int v = 0; v < graphSize(); v++) {
+            candidateLocks[v].lock();
+            const size_t candidatesSize = candidates[v].size();
+            candidateLocks[v].unlock();
+
+            for (size_t u = 0; u < candidatesSize; u++) {
+                candidateLocks[v].lock();
+                const NodeId node = candidates[v][u];
+                candidateLocks[v].unlock();
+                candidateLocks[node].lock();
+                const size_t nodeSize = candidates[node].size();
+                candidateLocks[node].unlock();
+                bool contains = false;
+                for (size_t w = 0; w < nodeSize; w++) {
+                    if (candidates[node][w] == v) {
+                        contains = true;
+                        break;
+                    }
+                }
+                if (contains) continue;
+
+                candidateLocks[node].lock();
+                candidates[node].push_back(v);
+                candidateLocks[node].unlock();
+            }
+        }
+        timer->stopTiming("Symmetrizising");
+        return candidates;
+    } else {
+        std::vector<std::vector<NodeId>> candidates(graphSize());
+        VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+        timer->startTiming("CandidateSearch", "Searching for repelling candidates");
+        for (NodeId v = 0; v < graphSize(); v++) {
+            const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
+
+            this->candidateLocks[v].lock();
+            candidates[v].insert(candidates[v].end(), repellingCandidates.begin(), repellingCandidates.end());
+            this->candidateLocks[v].unlock();
+
+            //TODO: This does not work.
+            // repellingCandidate can only include neighbors with a smaller weight
+            for (const int repellingCandidate : repellingCandidates) {
+                candidateLocks[repellingCandidate].lock();
+                candidates[repellingCandidate].push_back(v);
+                candidateLocks[repellingCandidate].unlock();
+            }
+        }
+        timer->stopTiming("CandidateSearch");
+        return candidates;
     }
-    timer->stopTiming("Symmetrizising");
-    return candidates;
 }
 
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
