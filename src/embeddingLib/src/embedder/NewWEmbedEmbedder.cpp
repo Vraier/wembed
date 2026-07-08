@@ -287,6 +287,11 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
     if constexpr (true) {
         std::vector<std::vector<NodeId>> candidates(graphSize());
         VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+        //Stores the sizes of each candidate vector after node removal
+        //This allows to ignore all nodes that might be added to the vector by a different thread
+        std::vector<size_t> candidateSizes(graphSize());
+
+        //Get candidates for each Node
         timer->startTiming("CandidateSearch", "Searching for repelling candidates");
 #pragma omp parallel for firstprivate(indexBuffer) shared(candidates) schedule(dynamic)
         for (size_t v = 0; v < graphSize(); v++) {
@@ -295,33 +300,30 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
         }
         timer->stopTiming("CandidateSearch");
 
+        //Remove elements that are smaller and compute candidate sizes
+        timer->startTiming("NodeRemoval", "Remove heavier nodes");
+#pragma omp parallel for default(none) shared(candidates, candidateSizes) schedule(dynamic)
+        for (NodeId v = 0; v < graphSize(); v++) {
+            for (NodeId u = 0; u < candidates[v].size(); u++) {
+                if (currentWeights[candidates[v][u]] > currentWeights[v]) {
+                    candidates[v].erase(candidates[v].begin() + u);
+                }
+                else if (currentWeights[candidates[v][u]] == currentWeights[v] && candidates[v][u] > v) {
+                    candidates[v].erase(candidates[v].begin() + u);
+                }
+            }
+            candidateSizes[v] = candidates[v].size();
+        }
+        timer->stopTiming("NodeRemoval");
+
         //Make things symmetric:
         timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
-#pragma omp parallel for default(none) shared(candidates) schedule(dynamic)
+#pragma omp parallel for default(none) shared(candidates, candidateSizes) schedule(dynamic)
         for (int v = 0; v < graphSize(); v++) {
-            candidateLocks[v].lock();
-            const size_t candidatesSize = candidates[v].size();
-            candidateLocks[v].unlock();
-
-            for (size_t u = 0; u < candidatesSize; u++) {
-                candidateLocks[v].lock();
-                const NodeId node = candidates[v][u];
-                candidateLocks[v].unlock();
-                candidateLocks[node].lock();
-                const size_t nodeSize = candidates[node].size();
-                candidateLocks[node].unlock();
-                bool contains = false;
-                for (size_t w = 0; w < nodeSize; w++) {
-                    if (candidates[node][w] == v) {
-                        contains = true;
-                        break;
-                    }
-                }
-                if (contains) continue;
-
-                candidateLocks[node].lock();
-                candidates[node].push_back(v);
-                candidateLocks[node].unlock();
+            for (size_t u = 0; u < candidateSizes[v]; u++) {
+                candidateLocks[u].lock();
+                candidates[u].push_back(v);
+                candidateLocks[u].unlock();
             }
         }
         timer->stopTiming("Symmetrizising");
