@@ -284,7 +284,7 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
 }
 
 std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
-    if constexpr (true) {
+    if constexpr (false) {
         std::vector<std::vector<NodeId>> candidates(graphSize());
         VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
         //Stores the sizes of each candidate vector after node removal
@@ -328,10 +328,12 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
         }
         timer->stopTiming("Symmetrizising");
         return candidates;
-    } else {
+    } else { //TODO: NOPE, F1 score is 0.46
         std::vector<std::vector<NodeId>> candidates(graphSize());
         VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
+
         timer->startTiming("CandidateSearch", "Searching for repelling candidates");
+#pragma omp parallel for default(none) shared(candidates, indexBuffer) schedule(dynamic)
         for (NodeId v = 0; v < graphSize(); v++) {
             const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
 
@@ -339,12 +341,12 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
             candidates[v].insert(candidates[v].end(), repellingCandidates.begin(), repellingCandidates.end());
             this->candidateLocks[v].unlock();
 
-            //TODO: This does not work.
-            // repellingCandidate can only include neighbors with a smaller weight
             for (const int repellingCandidate : repellingCandidates) {
-                candidateLocks[repellingCandidate].lock();
-                candidates[repellingCandidate].push_back(v);
-                candidateLocks[repellingCandidate].unlock();
+                if (currentWeights[repellingCandidate] < currentWeights[v]) {
+                    candidateLocks[repellingCandidate].lock();
+                    candidates[repellingCandidate].push_back(v);
+                    candidateLocks[repellingCandidate].unlock();
+                }
             }
         }
         timer->stopTiming("CandidateSearch");
