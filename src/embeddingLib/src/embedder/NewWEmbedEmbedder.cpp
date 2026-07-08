@@ -34,18 +34,6 @@ void NewWEmbedEmbedder::calculateStep() {
         oldPositions[i] = this->currentPositions[i];
     }
 
-    std::vector<double> dimGravity(this->opts.embeddingDimension);
-    for (int dim = 0; dim < this->opts.embeddingDimension; dim++) {
-        double dimensionSum = 0.0;
-#pragma omp parallel for default(none) shared(dim) reduction(+:dimensionSum) schedule(static)
-        for (size_t v = 0; v < graphSize(); v++) {
-            dimensionSum += this->currentPositions[v][dim];
-        }
-        dimGravity[dim] = 1./static_cast<double>(graphSize()) * dimensionSum;
-    }
-    //Potentially ugly hack cause write access to a VecRef::Memory is not fully implemented
-    VecList gravityCentre({dimGravity});
-
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
     updateIndex();
@@ -74,10 +62,7 @@ void NewWEmbedEmbedder::calculateStep() {
     this->timer->stopTiming("apply_forces");
 
     this->timer->startTiming("gravity", "Move graph towards centre");
-#pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        this->currentPositions[i] -= gravityCentre[0];
-    }
+    applyGravityCentre();
     this->timer->stopTiming("gravity");
 
     //calculate change in positions
@@ -344,6 +329,26 @@ void NewWEmbedEmbedder::calculateAllCentreForces() {
 #pragma omp parallel for default(none) shared(sortedNodeIDs, opts, params, currentPositions) schedule(static)
     for (const NodeId v : this->sortedNodeIDs) {
         this->params.force[v] += -1.0 * this->opts.centreScale * this->currentPositions[v];
+    }
+}
+
+void NewWEmbedEmbedder::applyGravityCentre() {
+    std::vector<double> dimGravity(this->opts.embeddingDimension);
+    for (int dim = 0; dim < this->opts.embeddingDimension; dim++) {
+        double dimensionSum = 0.0;
+#pragma omp parallel for default(none) shared(dim) reduction(+:dimensionSum) schedule(static)
+        for (size_t v = 0; v < graphSize(); v++) {
+            dimensionSum += this->currentPositions[v][dim];
+        }
+        dimGravity[dim] = dimensionSum / static_cast<double>(graphSize());
+    }
+    // Wrap the centroid in a single-row VecList so we can use VecRef arithmetic below.
+    // TODO: this can be a temp vec probably
+    VecList gravityCentre({dimGravity});
+
+#pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
+    for (size_t i = 0; i < graphSize(); i++) {
+        this->currentPositions[i] -= gravityCentre[0];
     }
 }
 

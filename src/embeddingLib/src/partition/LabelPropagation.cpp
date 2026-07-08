@@ -37,7 +37,6 @@ ParentPointerTree LabelPropagation::coarsenAllLayers() {
         }
 
         auto newGraph = GraphAlgo::coarsenGraph(coarsenedGraphs.back(), nextMapping);
-        // ASSERT(GraphAlgo::isConnected(newGraph.first), "Coarsened graph is not connected");
         parentPointers.push_back(nextMapping);
         coarsenedGraphs.push_back(newGraph.first);
         edgeWeights.push_back(calculateNewEdgeWeights(edgeWeights.back(), newGraph.second));

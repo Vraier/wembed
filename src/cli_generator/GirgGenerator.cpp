@@ -65,10 +65,6 @@ std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> GirgGen
         return std::make_tuple(connected, coords, weights);
     }
 
-    if (GraphAlgo::isConnected(unconnected)) {
-        LOG_WARNING("Failed to produce an unconnected graph, please choose a different seed");
-    }
-
     LOG_INFO("Finished construction");
     return std::make_tuple(unconnected, girgPositions, girgWeights);
 }
