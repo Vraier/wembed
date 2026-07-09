@@ -283,8 +283,55 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
     return candidates;
 }
 
+static size_t find(std::vector<int>& vec, int value) {
+    size_t l = 0;
+    size_t r = vec.size();
+    while (l < r) {
+        size_t currPos = (l + r) / 2;
+        if (vec[currPos] < value) {
+            l = currPos + 1;
+        } else if (vec[currPos] > value) {
+            r = currPos;
+        } else if (vec[currPos] == value) {
+            return currPos;
+        }
+    }
+    return vec.size();
+}
+
+static bool candidateVerification(std::vector<std::vector<int>> candidates) {
+    for (auto & candidate : candidates) {
+        std::ranges::sort(candidate);
+    }
+    bool valid = true;
+    //Check for duplicates
+    for (size_t i = 0; i < candidates.size(); i++) {
+        for (size_t j = 1; j < candidates[i].size(); j++) {
+            if (candidates[i][j - 1] == candidates[i][j]) {
+                LOG_WARNING("There is a duplicate in the candidates of node " +
+                            std::to_string(i) + ". Node " +
+                            std::to_string(j) + " appears twice");
+                valid = false;
+            }
+        }
+    }
+
+    //Check for symmetry
+    for (size_t i = 0; i < candidates.size(); i++) {
+        for (size_t j = 0; j < candidates[i].size(); j++) {
+            if (candidates[i].size() == find(candidates[candidates[i][j]], i)) {
+                LOG_WARNING("The candidates for " + std::to_string(i) + " contain " + std::to_string(j)
+                            + ", but not vice versa");
+                valid = false;
+            }
+        }
+    }
+
+    return valid;
+}
+
 std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
-    if constexpr (false) {
+    if constexpr (true) {
         std::vector<std::vector<NodeId>> candidates(graphSize());
         VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
         //Stores the sizes of each candidate vector after node removal
@@ -327,6 +374,10 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
             }
         }
         timer->stopTiming("Symmetrizising");
+        //Verifying the results could be correct
+        if constexpr (false && !candidateVerification(candidates)) {
+            LOG_WARNING("No symmetric candidates");
+        }
         return candidates;
     } else { //TODO: NOPE, F1 score is 0.46
         std::vector<std::vector<NodeId>> candidates(graphSize());
@@ -350,6 +401,10 @@ std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates()
             }
         }
         timer->stopTiming("CandidateSearch");
+        //Verifying the results could be correct
+        if constexpr (false && !candidateVerification(candidates)) {
+            LOG_WARNING("No symmetric candidates");
+        }
         return candidates;
     }
 }
