@@ -2,6 +2,10 @@
 
 #include <stdexcept>
 
+SprkQueries::SprkQueries(size_t dimension) : handle_(nullptr), id_translation(), dimension(dimension) {
+    //TODO: May need to further implement this
+}
+
 SprkQueries::SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension)
     : handle_(nullptr),
       id_translation(),

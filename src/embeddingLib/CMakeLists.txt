@@ -23,7 +23,6 @@ set(HEADERS
 
         include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
-        include/spacialQuery/SNNQueries.hpp
         include/spacialQuery/SprkQueries.hpp
 
         # Embedder
@@ -55,7 +54,6 @@ set(SOURCES
         src/partition/GraphHierarchy.cpp
 
         src/spacialQuery/WeightedIndex.cpp
-        src/spacialQuery/SNNQueries.cpp
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder

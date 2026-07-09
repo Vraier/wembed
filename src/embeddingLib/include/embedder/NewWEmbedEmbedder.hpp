@@ -6,7 +6,6 @@
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "VecList.hpp"
-#include "WeightedIndex.hpp"
 
 class NewWEmbedEmbedder : public EmbedderInterface {
 

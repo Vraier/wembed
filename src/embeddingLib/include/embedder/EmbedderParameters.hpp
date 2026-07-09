@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include "Graph.hpp"
+#include "SprkQueries.hpp"
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
 
@@ -12,14 +13,12 @@ struct EmbedderParameters {
 
     VecList force;
     std::vector<NodeId> indexToGraphMap;
-    WeightedIndex currentWeightedIndex;
 
     explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension, const IndexType indexType)
                               : force(dimension, graphSize),
-                                indexToGraphMap(graphSize),
-                                currentWeightedIndex(indexType, dimension)
+                                indexToGraphMap(graphSize)
     {
-
+        //TODO: Initialize spatial index
     }
 
     void nextStep() {

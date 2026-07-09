@@ -9,7 +9,6 @@
 #include "LabelPropagation.hpp"
 #include "Timings.hpp"
 #include "WEmbedEmbedder.hpp"
-#include "WeightedIndex.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
     //TODO: remove redundant variables

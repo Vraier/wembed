@@ -236,6 +236,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
 }
 
 void NewWEmbedEmbedder::updateIndex() {
+    //TODO: This method should update sprk directly, without the intermediate WeightedIndex
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
@@ -274,6 +275,7 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
         return candidates;
     }
 
+    //TODO: Ask the spacial index(sprk) directly
     this->params.currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
                                                        candidates, buffer);
     for (NodeId& candidate: candidates) {
