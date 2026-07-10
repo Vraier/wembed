@@ -69,6 +69,9 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--repulsion", opts.embedderOptions.repulsionScale,
                    "Changes magnitude of repulsing forces")
         ->capture_default_str();
+    app.add_option("--centre,--center", opts.embedderOptions.centreScale,
+                   "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01– 0.1). Default 0 disables it.")
+        ->capture_default_str();
     app.add_option("--expansion", opts.embedderOptions.expansionStretch,
                    "Determines how much the embedding is stretched during layer expansion.")
         ->capture_default_str();

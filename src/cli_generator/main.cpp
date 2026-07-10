@@ -46,4 +46,5 @@ void addOptions(CLI::App& app, Options& options) {
     app.add_option("-d,--gen-dim", options.genDimension, "Dimension of the generated graph")->capture_default_str()->check(CLI::Range(1, 5));
     app.add_option("-t,--temp", options.temperature, "Temperature for the girg")->capture_default_str()->check(CLI::Range(0.0, 1.0));
     app.add_flag("--torus", options.torus, "Generates the graph on the torus");
+    app.add_flag("--unconnected", options.unconnected, "Generates an unconnected graph");
 }

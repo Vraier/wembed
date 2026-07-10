@@ -162,6 +162,7 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.indexType = toInternalIndexType(options.indexType);
     opts.attractionScale = options.attractionScale;
     opts.repulsionScale = options.repulsionScale;
+    opts.centreScale = options.centreScale;
     opts.edgeLength = options.edgeLength;
     opts.expansionStretch = options.expansionStretch;
     opts.coolingFactor = options.coolingFactor;

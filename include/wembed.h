@@ -51,6 +51,7 @@ struct Options {
     SpatialIndex indexType = IndexSprk;
     double attractionScale = 1.0;
     double repulsionScale = 1.0;
+    double centreScale = 0.0;                    // pull toward origin; nonzero enables it (useful for unconnected graphs)
     double edgeLength = 1.0;
     double expansionStretch = 1.0;               // stretch applied during layer expansion
 

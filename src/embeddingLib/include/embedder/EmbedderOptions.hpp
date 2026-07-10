@@ -33,6 +33,7 @@ struct EmbedderOptions {
     double attractionScale = 1.0;                   // factor by which attracting forces are scaled
     double repulsionScale = 1.0;                    // factor by which repulsion forces are scaled
                                                     //(usually best to set to same as attraction)
+    double centreScale = 0.0; //factor by which each node is drawn to the centre
     double edgeLength = 1.0;
     double expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 
