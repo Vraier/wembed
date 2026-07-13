@@ -236,38 +236,43 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
 }
 
 void NewWEmbedEmbedder::updateIndex() {
-    //TODO: This method should update sprk directly, without the intermediate WeightedIndex
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
+
+    std::vector<std::pair<CVecRef, NodeId>> points;
 
     //calculate new indices
     if (this->opts.IndexSize >= 1.0) {
         params.indexToGraphMap.resize(graphSize());
         std::iota(params.indexToGraphMap.begin(), params.indexToGraphMap.end(), 0);
-        const std::vector<double> weightBuckets =
-            WeightedIndex::getDoublingWeightBuckets(this->currentWeights, this->opts.doublingFactor);
-        params.currentWeightedIndex.updateIndices(this->currentPositions, this->currentWeights, weightBuckets);
+        for (size_t i = 0; i < graphSize(); i++) {
+            points.emplace_back(this->currentPositions[i], i);
+        }
     } else {
         //Only insert a fraction of nodes into the index
         const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
         params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
-        VecList positions(this->opts.embeddingDimension, numNodes);
-        std::vector<double> weights(numNodes);
+        points.resize(numNodes);
 
-#pragma omp parallel for default(none) shared(numNodes, positions, weights, params) schedule(static)
+#pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
         for (size_t i = 0; i < numNodes; i++) {
-            positions[i] = this->currentPositions[params.indexToGraphMap[i]];
-            weights[i] = this->currentWeights[params.indexToGraphMap[i]];
+            points.emplace(points.begin() + i, this->currentPositions[params.indexToGraphMap[i]],
+                                                    this->currentWeights[params.indexToGraphMap[i]]);
         }
-
-        const std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, this->opts.doublingFactor);
-        params.currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
     }
+    switch (opts.indexType) {
+        case IndexType::Sprk:
+            params.index = std::make_shared<SprkQueries>(std::move(points), this->opts.embeddingDimension);
+            break;
+        default:
+            LOG_ERROR("Unknown index type");
+            break;
+    }
+
 }
 
-std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const {
-    //TODO: Definitely think about refactoring this
+std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [[maybe_unused]] VecBuffer<2> &buffer) const {
     std::vector<NodeId> candidates;
 
     if (this->opts.numNegativeSamples >= 0) {
@@ -275,9 +280,15 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
         return candidates;
     }
 
-    //TODO: Ask the spacial index(sprk) directly
-    this->params.currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
-                                                       candidates, buffer);
+    const CVecRef position = this->currentPositions[v];
+    const double weight = this->currentWeights[v];
+    const double radius = this->opts.edgeLength;
+    const double queryRadius = radius * Toolkit::myPow(weight * weight, 1.0 / static_cast<double>(opts.embeddingDimension));
+
+    ASSERT(position.dimension() == opts.embeddingDimension);
+    ASSERT(queryRadius > 0);
+    this->params.index->query_sphere(position, queryRadius, candidates);
+
     for (NodeId& candidate: candidates) {
         candidate = this->params.indexToGraphMap[candidate];
         ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());

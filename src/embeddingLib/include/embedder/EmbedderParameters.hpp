@@ -12,13 +12,14 @@ struct EmbedderParameters {
     bool insignificantPosChange = false;
 
     VecList force;
+    std::shared_ptr<SpatialIndex> index = nullptr;
     std::vector<NodeId> indexToGraphMap;
 
-    explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension, const IndexType indexType)
+    explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension)
                               : force(dimension, graphSize),
                                 indexToGraphMap(graphSize)
     {
-        //TODO: Initialize spatial index
+
     }
 
     void nextStep() {

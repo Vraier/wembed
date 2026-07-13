@@ -19,10 +19,6 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     std::vector<std::mutex> candidateLocks;
 
-    static inline unsigned int threadCount() {
-        return std::thread::hardware_concurrency();
-    }
-
     void debug_dumpWeights() const;
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
