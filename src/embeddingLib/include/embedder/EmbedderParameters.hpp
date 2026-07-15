@@ -1,11 +1,8 @@
 #pragma once
 
-#include <cstddef>
-
 #include "Graph.hpp"
 #include "SprkQueries.hpp"
 #include "VecList.hpp"
-#include "WeightedIndex.hpp"
 
 struct EmbedderParameters {
     size_t currentIteration = 0;

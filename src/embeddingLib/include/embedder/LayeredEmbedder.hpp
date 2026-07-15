@@ -1,26 +1,28 @@
 #pragma once
 
-#include <memory>
 
 #include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "GraphHierarchy.hpp"
 #include "LabelPropagation.hpp"
+#include "NewWEmbedEmbedder.hpp"
 #include "Timings.hpp"
-#include "WEmbedEmbedder.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
     //TODO: remove redundant variables
     using Timer = util::Timer;
 
    public:
+
     LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
         : EmbedderInterface(g, opts),
           timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
-          currentLayer(hierarchy->getNumLayers() - 1),
-          currentEmbedder(hierarchy->graphs[currentLayer], opts, timer) {};
+          currentLayer(hierarchy->getNumLayers() - 1)
+    {
+        currentEmbedder = std::make_unique<NewWEmbedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
+    }
 
     virtual void calculateStep();
     virtual bool isFinished();
@@ -47,5 +49,5 @@ class LayeredEmbedder : public EmbedderInterface {
     bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
-    WEmbedEmbedder currentEmbedder;
+    std::unique_ptr<NewWEmbedEmbedder> currentEmbedder;
 };

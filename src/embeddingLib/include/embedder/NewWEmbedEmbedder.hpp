@@ -32,12 +32,11 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
 
-    //TODO: Those three could be in EmbeddingInterface or even graph
-    [[nodiscard]] std::vector<double> rescaleWeights() const;
-    [[nodiscard]] std::vector<double> constructDegreeWeights() const;
-    [[nodiscard]] std::vector<double> constructUnitWeights() const;
 
     public:
+    NewWEmbedEmbedder(NewWEmbedEmbedder& embedder) = delete;
+    NewWEmbedEmbedder operator=(NewWEmbedEmbedder& embedder) = delete;
+
     NewWEmbedEmbedder(const Graph& g,
                       const EmbedderOptions &opts,
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
@@ -53,10 +52,12 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
         switch (opts.weightType) {
             case WeightType::Degree:
-                NewWEmbedEmbedder::setWeights(NewWEmbedEmbedder::rescaleWeights());
+                NewWEmbedEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
+                                                             opts.embeddingDimension,
+                                                             constructDegreeWeights(g)));
                 break;
             case WeightType::Unit:
-                NewWEmbedEmbedder::setWeights(NewWEmbedEmbedder::constructUnitWeights());
+                NewWEmbedEmbedder::setWeights(constructUnitWeights(graphSize()));
                 break;
             default:
                 LOG_ERROR("Weight type not supported");
@@ -80,4 +81,9 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     virtual std::vector<util::TimingResult> getTimings() override;
     virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates) override;
     virtual void setWeights(const std::vector<double>& weights) override;
+
+    [[nodiscard]] static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
+                                                const std::vector<double>& weights);
+    [[nodiscard]] static std::vector<double> constructDegreeWeights(const Graph& g);
+    [[nodiscard]] static std::vector<double> constructUnitWeights(int N);
 };
