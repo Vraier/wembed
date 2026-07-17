@@ -10,6 +10,15 @@
 #include "WeightedIndex.hpp"
 
 /**
+ * Loss values from the last completed force computation.
+ */
+struct EmbeddingLoss {
+    double attractive;
+    double repulsive;
+    double total;
+};
+
+/**
  * Interface for weighted embedder classes.
  */
 class EmbedderInterface {
@@ -89,6 +98,15 @@ class EmbedderInterface {
      */
     virtual void copyCoordinatesTo(double* out) const {
         this->currentPositions.copyToFlat(out);
+    }
+
+    /**
+     * Loss from the most recent force computation
+     */
+    virtual EmbeddingLoss getLoss() const {
+        return {this->params.lastAttractLoss,
+                this->params.lastRepelLoss,
+                this->params.lastAttractLoss + this->params.lastRepelLoss};
     }
 
     /**

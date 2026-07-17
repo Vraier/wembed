@@ -137,6 +137,11 @@ std::vector<TimingResult> Embedder::getTimings() const {
     return out;
 }
 
+Loss Embedder::getLoss() const {
+    auto internal = _embedder->getLoss();
+    return {internal.attractive, internal.repulsive, internal.total};
+}
+
 void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) const {
     if (writeWeights) {
         EmbeddingIO::writeCoordinates(filePath, _embedder->getCoordinates(), _embedder->getWeights());

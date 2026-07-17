@@ -40,6 +40,13 @@ struct TimingResult {
     double value;
 };
 
+// Loss values from the most recent embedding step
+struct Loss {
+    double attractive;
+    double repulsive;
+    double total;
+};
+
 struct Options {
     // Embedding parameters
     int32_t embeddingDimension = 4;
@@ -127,6 +134,9 @@ class Embedder {
 
     // Hierarchical breakdown of time spent in each phase of the embedding.
     std::vector<TimingResult> getTimings() const;
+
+    // Loss from the most recent step.
+    Loss getLoss() const;
 
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;
 

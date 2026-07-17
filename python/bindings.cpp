@@ -29,6 +29,16 @@ PYBIND11_MODULE(wembed, m) {
         .def_readonly("display_name", &wembed::TimingResult::displayName)
         .def_readonly("value", &wembed::TimingResult::value);
 
+    py::class_<wembed::Loss>(m, "Loss")
+        .def_readonly("attractive", &wembed::Loss::attractive)
+        .def_readonly("repulsive", &wembed::Loss::repulsive)
+        .def_readonly("total", &wembed::Loss::total)
+        .def("__repr__", [](const wembed::Loss& l) {
+            return "Loss(attractive=" + std::to_string(l.attractive) +
+                   ", repulsive=" + std::to_string(l.repulsive) +
+                   ", total=" + std::to_string(l.total) + ")";
+        });
+
     py::class_<wembed::Options>(m, "Options")
         .def(py::init<>())
         .def_readwrite("embeddingDimension", &wembed::Options::embeddingDimension)
@@ -69,6 +79,7 @@ PYBIND11_MODULE(wembed, m) {
         .def("setCoordinates", &wembed::Embedder::setCoordinates)
         .def("setWeights", &wembed::Embedder::setWeights)
         .def("getTimings", &wembed::Embedder::getTimings)
+        .def("getLoss", &wembed::Embedder::getLoss)
         .def("writeCoordinates", &wembed::Embedder::writeCoordinates,
              py::arg("filePath"), py::arg("writeWeights") = true);
 
