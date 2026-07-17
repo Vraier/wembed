@@ -23,6 +23,7 @@ set(HEADERS
 
         include/spacialQuery/SpacialIndex.hpp
         include/spacialQuery/SprkQueries.hpp
+        include/spacialQuery/WeightedIndex.hpp
 
         # Embedder
         include/embedder/EmbedderOptions.hpp

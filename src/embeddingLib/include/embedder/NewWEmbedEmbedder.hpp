@@ -24,6 +24,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
 
+    void selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points);
     void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
     std::vector<std::vector<NodeId>> getAllRepellingCandidates();

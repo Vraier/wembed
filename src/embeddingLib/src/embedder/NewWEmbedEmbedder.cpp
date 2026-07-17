@@ -234,41 +234,42 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     this->params.force[v] += result;
 }
 
+void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
+
+    if (this->opts.IndexSize >= 1.0) {
+
+        params.indexToGraphMap.resize(graphSize());
+        points.resize(graphSize());
+
+//#pragma omp parallel for default(none) shared(points, params) schedule(static)
+        for (size_t i = 0; i < graphSize(); i++) {
+            this->params.indexToGraphMap[i] = i;
+            points[i] = std::make_pair(this->currentPositions[i], i);
+        }
+
+    } else {
+
+        //Only insert a fraction of nodes into the index
+        const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
+        params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
+        points.resize(numNodes);
+
+//#pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
+        for (int i = 0; i < numNodes; i++) {
+            points[i] = std::make_pair(this->currentPositions[params.indexToGraphMap[i]], i);
+        }
+
+    }
+}
+
 void NewWEmbedEmbedder::updateIndex() {
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
 
     std::vector<std::pair<CVecRef, NodeId>> points;
-
-    //calculate new indices
-    if (this->opts.IndexSize >= 1.0) {
-        params.indexToGraphMap.resize(graphSize());
-        std::iota(params.indexToGraphMap.begin(), params.indexToGraphMap.end(), 0);
-        for (size_t i = 0; i < graphSize(); i++) {
-            points.emplace_back(this->currentPositions[i], i);
-        }
-    } else {
-        //Only insert a fraction of nodes into the index
-        const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
-        params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
-        points.resize(numNodes);
-
-#pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
-        for (size_t i = 0; i < numNodes; i++) {
-            points.emplace(points.begin() + i, this->currentPositions[params.indexToGraphMap[i]],
-                                                    this->currentWeights[params.indexToGraphMap[i]]);
-        }
-    }
-    switch (opts.indexType) {
-        case IndexType::Sprk:
-            params.index = std::make_shared<SprkQueries>(std::move(points), this->opts.embeddingDimension);
-            break;
-        default:
-            LOG_ERROR("Unknown index type");
-            break;
-    }
-
+    selectNodes(points);
+    params.weightedIndex.updateIndex(points);
 }
 
 std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [[maybe_unused]] VecBuffer<2> &buffer) const {
@@ -279,19 +280,16 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
         return candidates;
     }
 
-    const CVecRef position = this->currentPositions[v];
-    const double weight = this->currentWeights[v];
-    const double radius = this->opts.edgeLength;
-    const double queryRadius = radius * Toolkit::myPow(weight * weight, 1.0 / static_cast<double>(opts.embeddingDimension));
+    this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, candidates);
 
-    ASSERT(position.dimension() == opts.embeddingDimension);
-    ASSERT(queryRadius > 0);
-    this->params.index->query_sphere(position, queryRadius, candidates);
-
-    for (NodeId& candidate: candidates) {
-        candidate = this->params.indexToGraphMap[candidate];
-        ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
+    if (this->opts.IndexSize < 1.0) {
+#pragma omp parallel for default(none) shared(candidates, std::cout) schedule(static)
+        for (NodeId& candidate: candidates) {
+            candidate = this->params.indexToGraphMap[candidate];
+            ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
+        }
     }
+
     return candidates;
 }
 

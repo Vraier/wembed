@@ -30,7 +30,7 @@ class EmbedderInterface {
                           currentWeights(g.getNumVertices()),
                           sortedNodeIDs(g.getNumVertices()),
                           opts(opts),
-                          params(g.getNumVertices(), opts.embeddingDimension)
+                          params(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
     {
 
     }
