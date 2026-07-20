@@ -24,11 +24,11 @@ struct EdgeContent {
 class Graph {
    public:
     Graph() { setSize(0, 0); };
-    Graph(std::map<int, std::set<int>> &map) {
+    Graph(const std::map<int, std::set<int>> &map) {
         constructFromMap(map);
         setUniqueColors();
     };
-    Graph(std::vector<std::pair<int, int>> &edges) {
+    Graph(const std::vector<std::pair<int, int>> &edges) {
         constructFromEdges(edges);
         setUniqueColors();
     };

@@ -29,7 +29,7 @@ set(HEADERS
         # Embedder
         include/embedder/EmbedderOptions.hpp
         include/embedder/EmbedderParameters.hpp
-        include/embedder/NewWEmbedEmbedder.hpp
+        include/embedder/WembedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
@@ -58,7 +58,7 @@ set(SOURCES
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder
-        src/embedder/NewWEmbedEmbedder.cpp
+        src/embedder/WembedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
         
         src/gradientOptimizer/AdamOptimizer.cpp

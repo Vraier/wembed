@@ -81,4 +81,10 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str();
     app.add_option("--speed", opts.embedderOptions.learningRate, "Learning rate of the embedding process")
         ->capture_default_str();
+    app.add_option("--optimizer", opts.embedderOptions.optimizerType,
+                   "Gradient descent optimizer (0=Simple, 1=Adam)")
+        ->capture_default_str();
+    app.add_option("--simple-max-displacement", opts.embedderOptions.simpleOptMaxDisplacement,
+                   "Per-step displacement cap for the Simple optimizer")
+        ->capture_default_str();
 }

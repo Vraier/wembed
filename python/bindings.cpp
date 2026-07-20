@@ -16,6 +16,11 @@ PYBIND11_MODULE(wembed, m) {
         .value("IndexSprk", wembed::IndexSprk)
         .export_values();
 
+    py::enum_<wembed::OptimizerType>(m, "OptimizerType")
+        .value("OptimizerSimple", wembed::OptimizerSimple)
+        .value("OptimizerAdam", wembed::OptimizerAdam)
+        .export_values();
+
     py::class_<wembed::Edge>(m, "Edge")
         .def(py::init<wembed::NodeId, wembed::NodeId>(), py::arg("src"), py::arg("dst"))
         .def_readwrite("src", &wembed::Edge::src)
@@ -51,10 +56,12 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("centreScale", &wembed::Options::centreScale)
         .def_readwrite("edgeLength", &wembed::Options::edgeLength)
         .def_readwrite("expansionStretch", &wembed::Options::expansionStretch)
+        .def_readwrite("optimizerType", &wembed::Options::optimizerType)
         .def_readwrite("coolingFactor", &wembed::Options::coolingFactor)
         .def_readwrite("learningRate", &wembed::Options::learningRate)
         .def_readwrite("maxIterations", &wembed::Options::maxIterations)
-        .def_readwrite("positionMinChange", &wembed::Options::positionMinChange);
+        .def_readwrite("positionMinChange", &wembed::Options::positionMinChange)
+        .def_readwrite("simpleOptMaxDisplacement", &wembed::Options::simpleOptMaxDisplacement);
 
     py::class_<wembed::Graph>(m, "Graph")
         .def("getNumVertices", &wembed::Graph::getNumVertices)

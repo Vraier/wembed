@@ -5,7 +5,7 @@
 #include "GraphIO.hpp"
 #include "LabelPropagation.hpp"
 #include "LayeredEmbedder.hpp"
-#include "NewWEmbedEmbedder.hpp"
+#include "WembedEmbedder.hpp"
 #include "Partitioner.hpp"
 #include "Rand.hpp"
 #include "Timings.hpp"
@@ -159,6 +159,14 @@ static IndexType toInternalIndexType(SpatialIndex idx) {
     return IndexType::Sprk;
 }
 
+static ::OptimizerType toInternalOptimizerType(OptimizerType opt) {
+    switch (opt) {
+        case OptimizerSimple: return ::OptimizerType::Simple;
+        case OptimizerAdam:   return ::OptimizerType::Adam;
+    }
+    return ::OptimizerType::Adam;
+}
+
 Embedder createEmbedder(const Graph& g, const Options& options) {
     EmbedderOptions opts;
     opts.embeddingDimension = options.embeddingDimension;
@@ -170,20 +178,20 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.centreScale = options.centreScale;
     opts.edgeLength = options.edgeLength;
     opts.expansionStretch = options.expansionStretch;
+    opts.optimizerType = toInternalOptimizerType(options.optimizerType);
     opts.coolingFactor = options.coolingFactor;
     opts.learningRate = options.learningRate;
     opts.maxIterations = options.maxIterations;
     opts.positionMinChange = options.positionMinChange;
+    opts.simpleOptMaxDisplacement = options.simpleOptMaxDisplacement;
 
-    // LayeredEmbedder/LabelPropagation constructors take a non-const Graph&,
-    // but neither actually mutates it; cast away const for compatibility.
-    auto& graph = const_cast<impl::EmbeddingGraph&>(*g._graph);
+    const auto& graph = *g._graph;
     if (options.layeredEmbedding) {
         std::vector<double> edgeWeights(g.getNumEdges() * 2, 1.0);
         auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
         return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
     } else {
-        return Embedder(std::make_unique<NewWEmbedEmbedder>(graph, opts));
+        return Embedder(std::make_unique<WembedEmbedder>(graph, opts));
     }
 }
 
