@@ -9,7 +9,6 @@
 
 class SprkQueries : public SpatialIndex {
    public:
-    SprkQueries(size_t dimension);
     SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension);
     ~SprkQueries() override;
 
@@ -18,8 +17,6 @@ class SprkQueries : public SpatialIndex {
     SprkQueries& operator=(SprkQueries&& other) noexcept;
     SprkQueries(const SprkQueries&) = delete;
     SprkQueries& operator=(const SprkQueries&) = delete;
-
-    //TODO: Could use an init function, but may not need it
 
     size_t query_sphere(CVecRef point, double radius, std::vector<int>& out) const override;
     size_t query_nearest(CVecRef point, unsigned int number, std::vector<int>& out) const override;
