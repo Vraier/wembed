@@ -282,12 +282,9 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
 
     this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, candidates);
 
-    if (this->opts.IndexSize < 1.0) {
-#pragma omp parallel for default(none) shared(candidates, std::cout) schedule(static)
-        for (NodeId& candidate: candidates) {
-            candidate = this->params.indexToGraphMap[candidate];
-            ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
-        }
+    for (NodeId& candidate: candidates) {
+        candidate = this->params.indexToGraphMap[candidate];
+        ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
     }
 
     return candidates;
@@ -434,11 +431,10 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-    const std::vector<std::vector<NodeId>> repellingCandidates = getAllRepellingCandidates();
-
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer) shared(repellingCandidates), reduction(+:numRepForceCalculations), schedule(runtime)
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
     for (const NodeId v : sortedNodeIDs) {
-        for (const NodeId u : repellingCandidates[v]) {
+        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
+        for (const NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
