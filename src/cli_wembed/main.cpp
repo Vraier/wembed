@@ -1,159 +1,80 @@
-#include <omp.h>
-
 #include <iostream>
 
-#include "EmbeddingIO.hpp"
-#include "GraphAlgorithms.hpp"
-#include "GraphIO.hpp"
-#include "LabelPropagation.hpp"
-#include "LayeredEmbedder.hpp"
 #include "Options.hpp"
-#include "StringManipulation.hpp"
-#include "NewWEmbedEmbedder.hpp"
-
-#ifdef EMBEDDING_USE_ANIMATION
-#include "SFMLDrawer.hpp"
-#endif
-#include "SVGDrawer.hpp"
+#include "wembed.h"
 
 void addOptions(CLI::App& app, Options& opts);
 
 int main(int argc, char* argv[]) {
-    // Parse the command line arguments
     CLI::App app("Embedder CLI");
     Options opts;
     addOptions(app, opts);
     CLI11_PARSE(app, argc, argv);
 
-    // set the seed
     if (opts.seed != -1) {
-        Rand::setSeed(opts.seed);
+        wembed::setSeed(opts.seed);
     }
 
-    // Read the graph
-    Graph inputGraph;
-    if (opts.bipartite) {
-        inputGraph = GraphIO::readBipartiteEdgeList(opts.graphPath);
-    } else {
-        inputGraph = GraphIO::readEdgeList(opts.graphPath);
-    }
+    wembed::Graph graph = wembed::graphFromEdgeListFile(opts.graphPath);
 
-    // Construct embedder
-    std::unique_ptr<EmbedderInterface> embedder;
-    if (opts.layeredEmbedding) {
-        LabelPropagation coarsener(PartitionerOptions{}, inputGraph,
-                                   std::vector<double>(inputGraph.getNumEdges() * 2, 1.0));
-        embedder = std::make_unique<LayeredEmbedder>(inputGraph, coarsener, opts.embedderOptions);
-    } else {
-        embedder = std::make_unique<NewWEmbedEmbedder>(inputGraph, opts.embedderOptions);
-    }
+    wembed::Embedder embedder = wembed::createEmbedder(graph, opts.embedderOptions);
 
-    // Read embedding 
-    if (opts.inputEmbeddingPath != "") {
-        std::vector<std::vector<double>> coords = EmbeddingIO::readCoordinatesFromFile(
+    if (!opts.inputEmbeddingPath.empty()) {
+        auto coords = wembed::readCoordinatesFromFile(
             opts.inputEmbeddingPath, opts.embeddingComment, opts.embeddingDelimiter);
-        embedder->setCoordinates(coords);
+        embedder.setCoordinates(coords);
     }
 
-#ifdef EMBEDDING_USE_ANIMATION
-    if (opts.animate) {
-        SFMLDrawer drawer;
-        while (!embedder->isFinished()) {
-            embedder->calculateStep();
-            Graph currentGraph = embedder->getCurrentGraph();
-            std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
-            std::vector<double> weights = embedder->getWeights();
-            std::vector<std::vector<double>> projection;
-            if (opts.embedderOptions.embeddingDimension >= 2) {
-                projection = Common::projectOntoPlane(coordinates);
-            } else {
-                // We can use weight as y coordinate
-                for (int i = 0; i < coordinates.size(); i++) {
-                    projection.push_back({coordinates[i][0], -weights[i]});
-                }
-            }
-            drawer.processFrame(currentGraph, projection);
-        }
-    } else {
-        embedder->calculateEmbedding();
-    }
-#else
-    embedder->calculateEmbedding();
-#endif
+    embedder.calculateEmbedding();
 
-    // Output timings
     if (opts.showTimings) {
-        LOG_INFO("Printing Timings");
-        std::vector<util::TimingResult> timings = embedder->getTimings();
-        std::cout << util::timingsToStringRepresentation(timings);
+        std::cout << wembed::timingsToString(embedder.getTimings());
     }
 
-    // Output the embedding
-    if (opts.embeddingPath != "") {
-        std::vector<std::vector<double>> coordinates = embedder->getCoordinates();
-        std::vector<double> weights = embedder->getWeights();
-        EmbeddingIO::writeCoordinates(opts.embeddingPath, coordinates, weights);
+    if (!opts.embeddingPath.empty()) {
+        embedder.writeCoordinates(opts.embeddingPath);
     }
     return 0;
 }
 
 void addOptions(CLI::App& app, Options& opts) {
     // Input / Output
-    app.add_option("-i,--graph", opts.graphPath, "Path to an edge list")->required()->check(CLI::ExistingFile);
-    app.add_flag("--bipartite", opts.bipartite, "Treat the input graph as bipartite");
+    app.add_option("-i,--graph", opts.graphPath, "Path to an edge list")
+        ->required()->check(CLI::ExistingFile);
     app.add_option("-o,--embedding", opts.embeddingPath, "Path to the output embedding file");
+    app.add_option("--init-coordinates", opts.inputEmbeddingPath,
+                   "Path to a file containing initial coordinates. If empty, coordinates are initialized randomly.");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding");
 
-    // Visualization
-#ifdef EMBEDDING_USE_ANIMATION
-    app.add_flag("--animate", opts.animate, "Animate the embedding, only avaliable if compiled with SFML");
-#endif
-
     // Embedder Options
-    app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")->capture_default_str();
-    app.add_flag("--layered", opts.layeredEmbedding, "Use layered embedding");
-    app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")->capture_default_str();
+    app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")
+        ->capture_default_str();
+    app.add_flag("--layered", opts.embedderOptions.layeredEmbedding, "Use layered embedding");
+    app.add_option("--dim", opts.embedderOptions.embeddingDimension, "Embedding dimension")
+        ->capture_default_str();
     app.add_option("--dim-hint", opts.embedderOptions.dimensionHint,
                    "Dimension hint. Negative values use dim as dimension hint.")
         ->capture_default_str();
-    app.add_option("--lp-norm", opts.embedderOptions.lpNorm, "p-norm used for distance calculations")
-        ->capture_default_str();
-    app.add_option("--init-coordinates", opts.inputEmbeddingPath,
-                   "Path to a file containing initial coordinates. If empty, coordinates are initialized randomly.");
-
-    app.add_option("--weight-type", opts.embedderOptions.weightType,
-                   "Affects the initial weights: " + util::mapToString(weightTypeMap))
-        ->capture_default_str();
-    app.add_option("--neg-samples", opts.embedderOptions.numNegativeSamples,
-                   "Number of negative samples used for the approximation. Higher number means more speed but less "
-                   "accuracy. -1 uses geometric index")
-        ->capture_default_str();
+    app.add_flag("--unit-weights", opts.embedderOptions.useUnitWeights,
+                 "Disable degree-based weights (use unit weights instead)");
     app.add_option("--index-type", opts.embedderOptions.indexType,
-                   "Type of index used for the embedding: " + util::mapToString(indexTypeMap))
-        ->capture_default_str();
-    app.add_option("--index-size", opts.embedderOptions.IndexSize,
-                   "Fraction of nodes that get inserted into the spatial index. 1.0 means all nodes are inserted")
+                   "Type of spatial index used for the embedding (1=SNN, 2=Sprk)")
         ->capture_default_str();
     app.add_option("--min-change", opts.embedderOptions.positionMinChange,
                    "Minimum change in position to stop the embedding.")
         ->capture_default_str();
-    app.add_option("--attraction", opts.embedderOptions.attractionScale, "Changes magnitude of attracting forces")
+    app.add_option("--attraction", opts.embedderOptions.attractionScale,
+                   "Changes magnitude of attracting forces")
         ->capture_default_str();
-    app.add_option("--repulsion", opts.embedderOptions.repulsionScale, "Changes magnitude of repulsing forces")
+    app.add_option("--repulsion", opts.embedderOptions.repulsionScale,
+                   "Changes magnitude of repulsing forces")
         ->capture_default_str();
-    app.add_option("--centre, --center", opts.embedderOptions.centreScale, "Changes magnitude of centre force")
+    app.add_option("--centre,--center", opts.embedderOptions.centreScale,
+                   "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01– 0.1). Default 0 disables it.")
         ->capture_default_str();
-    app.add_option("--expansion", opts.embedderOptions.expansionStretch, "Determines how much the embedding is stretched during layer expansion.")->capture_default_str();
-
-    app.add_option("--weight-speed", opts.embedderOptions.weightLearningRate, "Learning rate for weights")
+    app.add_option("--expansion", opts.embedderOptions.expansionStretch,
+                   "Determines how much the embedding is stretched during layer expansion.")
         ->capture_default_str();
-    app.add_option("--weight-penalty", opts.embedderOptions.weightPenalty,
-                   "Determines how strong unit weights are enforces")
-        ->capture_default_str();
-    app.add_flag("--dump-weights", opts.embedderOptions.dumpWeights, "Dump weights to file");
-    app.add_flag("--additive-weights", opts.embedderOptions.additiveWeights,
-                 "Use additive weights instead of multiplicative weights");
-
     app.add_option("--iterations", opts.embedderOptions.maxIterations, "Maximum number of iterations")
         ->capture_default_str();
     app.add_option("--cooling", opts.embedderOptions.coolingFactor, "Cooling during gradient descent")

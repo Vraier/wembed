@@ -24,8 +24,10 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
     void calculateAllCentreForces();
-    void attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    void repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    // Force functions return the loss contribution of this pair
+    // so the callers can accumulate it
+    double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    double repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
     void applyGravityCentre();
 
     /**

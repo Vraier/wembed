@@ -185,8 +185,8 @@ void NewWEmbedEmbedder::debug_dumpWeights() const {
     }
 }
 
-void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
-    if (v == u) return;
+double NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
+    if (v == u) return 0.0;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
@@ -198,7 +198,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     if (dist <= 0) {
         result.setToRandomUnitVector();
         this->params.force[v] += result;
-        return;
+        return 0.0;
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
 
@@ -206,17 +206,20 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
                            (invExpWeights[v] + invExpWeights[u]) :
                            (invExpWeights[v] * invExpWeights[u]);
 
+    double lossContribution = 0.0;
     if (dist * weightScaling <= this->opts.edgeLength) {
         result *= 0;
     } else {
         result *= this->opts.attractionScale * weightScaling;
+        lossContribution = dist - this->opts.edgeLength / weightScaling;
     }
 
     this->params.force[v] += result;
+    return lossContribution;
 }
 
-void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
-    if (v == u) return;
+double NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
+    if (v == u) return 0.0;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
@@ -227,7 +230,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     if (dist <= 0) {
         result.setToRandomUnitVector();
         this->params.force[v] += result;
-        return;
+        return 0.0;
     }
 
     vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
@@ -235,10 +238,12 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     // calculate weighted distance
     const double weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
                                                             : (invExpWeights[v] * invExpWeights[u]);
+    double lossContribution = 0.0;
     if (dist * weightScaling > this->opts.edgeLength) {
         result *= 0;
     } else {
         result *= this->opts.repulsionScale * weightScaling;
+        lossContribution = this->opts.edgeLength / weightScaling - dist;
     }
 
     // increase repulsion force when we use less negative samples
@@ -247,6 +252,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     }
 
     this->params.force[v] += result;
+    return lossContribution;
 }
 
 void NewWEmbedEmbedder::updateIndex() {
@@ -299,30 +305,34 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, V
 
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
-#pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph) schedule(runtime)
+    double attractLoss = 0.0;
+#pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph) reduction(+:attractLoss) schedule(runtime)
     for (const NodeId v : this->sortedNodeIDs) {
         for (const NodeId u : graph.getNeighbors(v)) {
-            attractionForce(v, u, buffer);
+            attractLoss += attractionForce(v, u, buffer);
         }
     }
+    this->params.lastAttractLoss = attractLoss;
 }
 
 void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
+    double repelLoss = 0.0;
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations,repelLoss), schedule(runtime)
     for (const NodeId v : sortedNodeIDs) {
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (const NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
-            repellingForce(v, u, forceBuffer);
+            repelLoss += repellingForce(v, u, forceBuffer);
             numRepForceCalculations++;
         }
     }
+    this->params.lastRepelLoss = repelLoss;
 }
 
 void NewWEmbedEmbedder::calculateAllCentreForces() {

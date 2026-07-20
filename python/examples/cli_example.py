@@ -1,79 +1,67 @@
 import argparse
 import wembed
 
-def main():
 
-    # parse command line arguments
-    parser = argparse.ArgumentParser(description='Process some graph embeddings.')
+def main():
+    parser = argparse.ArgumentParser(description='Compute a weighted graph embedding.')
     parser.add_argument('-i', '--input', required=True, help='Input graph file path')
     parser.add_argument('-o', '--output', required=False, help='Output embedding file path')
 
     parser.add_argument('--seed', type=int, default=1, help='Seed used during embedding. -1 uses time as seed')
-    parser.add_argument('--layered', action='store_true', help='Uses a layered embedding')
+    parser.add_argument('--layered', action='store_true', help='Use a layered embedding')
 
     parser.add_argument('--dim', type=int, default=4, help='Embedding dimensions')
-    parser.add_argument('--dim-hint', type=int, default=4, help='Embedding dimensions hint')
+    parser.add_argument('--dim-hint', type=float, default=4, help='Embedding dimensions hint')
     parser.add_argument('--iterations', type=int, default=1000, help='Maximum number of iterations')
-    parser.add_argument('--speed', type=float, default=10, help='Speed during gradient descent')
-    parser.add_argument('--cooling', type=float, default=0.99, help='Cooling during gradient descent')
+    parser.add_argument('--speed', type=float, default=10, help='Learning rate for gradient descent')
+    parser.add_argument('--cooling', type=float, default=0.99, help='Cooling factor for gradient descent')
+    parser.add_argument('--centre', type=float, default=0.0,
+                        help='Strength of centre-pull force (useful for unconnected graphs)')
 
     args = parser.parse_args()
 
-    if (args.seed != -1):
+    if args.seed != -1:
         wembed.setSeed(args.seed)
 
-    graph_file_path = args.input
-    embedding_file_path = args.output
+    graph = wembed.graphFromEdgeListFile(args.input)
 
-    # read in graph
-    graph = wembed.readEdgeList(graph_file_path)
-    if not wembed.isConnected(graph):
-        print("Graph is not connected")
-        return
+    options = wembed.Options()
+    options.embeddingDimension = args.dim
+    options.dimensionHint = args.dim_hint
+    options.maxIterations = args.iterations
+    options.learningRate = args.speed
+    options.coolingFactor = args.cooling
+    options.layeredEmbedding = args.layered
+    options.centreScale = args.centre
 
-    # set embedder options and build embedder
-    embedder_options = wembed.EmbedderOptions()
-    embedder_options.embeddingDimension = args.dim
-    embedder_options.dimensionHint = args.dim_hint
-    embedder_options.maxIterations = args.iterations
-    embedder_options.speed = args.speed
-    embedder_options.cooling = args.cooling
-
-    # construct simple or layered embedder
-    embedder = None
-    if not args.layered:
-        embedder = wembed.Embedder(graph, embedder_options)
-    else:
-        coarsen_options = wembed.PartitionerOptions()
-        edge_weights = [1] * (graph.getNumEdges() * 2)
-        coarsener = wembed.LabelPropagation(coarsen_options, graph, edge_weights)
-        embedder = wembed.LayeredEmbedder(graph, coarsener, embedder_options)
-
-    # calculate embedding
+    embedder = wembed.createEmbedder(graph, options)
     embedder.calculateEmbedding()
 
-    timings = embedder.getTimings()
-    print(wembed.timingsToString(timings))
+    print(wembed.timingsToString(embedder.getTimings()))
 
-    # write embedding to file
-    if embedding_file_path is not None:
-        wembed.writeCoordinates(embedding_file_path, embedder.getCoordinates(), embedder.getWeights())
-        
+    if args.output is not None:
+        embedder.writeCoordinates(args.output)
 
-def convert_from_networkx_graph(graph):
-    edges = list(graph.edges)
-    edge_ids = set()
 
-    for edge in edges:
-        if not isinstance(edge[0], int) or not isinstance(edge[1], int):
-            raise ValueError("Edge ids must be integers")
-        edge_ids.add(edge[0])
-        edge_ids.add(edge[1])
+def graph_from_networkx(nx_graph):
+    """Convert a networkx graph to a wembed.Graph.
 
-    if edge_ids != set(range(len(edge_ids))):
-        raise ValueError("Edge ids must be consecutive and start from 0")
+    Requires vertex IDs to be consecutive integers starting at 0.
+    """
+    edges = list(nx_graph.edges)
+    vertex_ids = set()
 
-    return wembed.Graph(edges)
+    for u, v in edges:
+        if not isinstance(u, int) or not isinstance(v, int):
+            raise ValueError("Edge endpoints must be integers")
+        vertex_ids.add(u)
+        vertex_ids.add(v)
+
+    if vertex_ids != set(range(len(vertex_ids))):
+        raise ValueError("Vertex ids must be consecutive and start from 0")
+
+    return wembed.graphFromEdges([wembed.Edge(u, v) for u, v in edges])
+
 
 if __name__ == "__main__":
     main()

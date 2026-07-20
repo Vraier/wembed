@@ -10,6 +10,15 @@
 #include "WeightedIndex.hpp"
 
 /**
+ * Loss values from the last completed force computation.
+ */
+struct EmbeddingLoss {
+    double attractive;
+    double repulsive;
+    double total;
+};
+
+/**
  * Interface for weighted embedder classes.
  */
 class EmbedderInterface {
@@ -67,6 +76,38 @@ class EmbedderInterface {
 
    public:
     virtual ~EmbedderInterface() = default;
+
+    /**
+     * Number of vertices in the current graph the embedder is operating on.
+     * For LayeredEmbedder, this changes across coarsening layers.
+     */
+    virtual int getNumVertices() const {
+        return static_cast<int>(this->currentPositions.size());
+    }
+
+    /**
+     * Dimension of the embedding space.
+     */
+    virtual int getEmbeddingDimension() const {
+        return static_cast<int>(this->currentPositions.dimension());
+    }
+
+    /**
+     * Copy coordinates row-major into a caller-owned buffer of at least
+     * getNumVertices() * getEmbeddingDimension() doubles. Zero allocation.
+     */
+    virtual void copyCoordinatesTo(double* out) const {
+        this->currentPositions.copyToFlat(out);
+    }
+
+    /**
+     * Loss from the most recent force computation
+     */
+    virtual EmbeddingLoss getLoss() const {
+        return {this->params.lastAttractLoss,
+                this->params.lastRepelLoss,
+                this->params.lastAttractLoss + this->params.lastRepelLoss};
+    }
 
     /**
      * Advances the embedding by a single gradient descent step.

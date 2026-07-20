@@ -91,9 +91,6 @@ Unit tests using google test are found in [tests](https://github.com/Vraier/wemb
 
 ## Work in progress
 
-Note that WEmbed is still quite experimental, expect major changes in the future. Some code sections that will be changed in the immediate future include:
+Note that WEmbed is still quite experimental, expect major changes in the future. See [TODOs](https://github.com/Vraier/wembed/blob/main/TODOs.md) for pending TODOs.
 
-* The repository contains some embedding code that is dead or outdated. This has to be updated or removed
-* Remove boost and SNN dependencies
-* Fix PyPi CI packaging
-* Allow embedding of unconnected graphs (add a global attracting force for that)
+
