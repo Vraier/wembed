@@ -22,7 +22,7 @@ public:
         }
     }
 
-    void querySphere(CVecRef position, const double weight, const double radius, std::vector<NodeId> output) const {
+    void querySphere(CVecRef position, const double weight, const double radius, std::vector<NodeId>& output) const {
 
         const double queryRadius = radius * Toolkit::myPow(weight * weight, 1.0 / static_cast<double>(embeddingDimension));
 

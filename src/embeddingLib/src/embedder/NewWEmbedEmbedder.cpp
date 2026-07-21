@@ -202,6 +202,8 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
 
 void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
     if (v == u) return;
+    if (currentWeights[v] < currentWeights[u]) return;
+    if (currentWeights[v] == currentWeights[u] && v > u) return;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
@@ -231,7 +233,12 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
+    candidateLocks[v].lock();
     this->params.force[v] += result;
+    candidateLocks[v].unlock();
+    candidateLocks[u].lock();
+    this->params.force[u] += result;
+    candidateLocks[u].unlock();
 }
 
 void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
