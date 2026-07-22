@@ -23,6 +23,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
     void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
+    void scatterRepulsion(NodeId v, std::vector<NodeId>& candidates, size_t threadCount);
 
     void selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points);
     void updateIndex();

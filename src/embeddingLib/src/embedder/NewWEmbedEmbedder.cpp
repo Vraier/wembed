@@ -233,12 +233,27 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
+    //TODO: Remove this,this should be done in scatter repulsion
     candidateLocks[v].lock();
     this->params.force[v] += result;
     candidateLocks[v].unlock();
     candidateLocks[u].lock();
     this->params.force[u] -= result;
     candidateLocks[u].unlock();
+}
+
+void NewWEmbedEmbedder::scatterRepulsion(NodeId v, std::vector<NodeId> &candidates,const size_t threadCount) {
+    VecList forces(threadCount * graphSize());
+    const size_t tid = omp_get_thread_num();
+
+    VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
+    //TODO: I don't know what those vectors do and how.There is no comprehensive documentation
+    for (auto& u : candidates) {
+        repellingForce(v, u, forceBuffer);
+        TmpVec<0> result(forceBuffer,0.0);
+        forces[v * threadCount + tid] += result;
+        forces[u * threadCount + tid] -= result;
+    }
 }
 
 void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
@@ -248,8 +263,8 @@ void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& poi
         params.indexToGraphMap.resize(graphSize());
         points.resize(graphSize());
 
-//#pragma omp parallel for default(none) shared(points, params) schedule(static)
-        for (size_t i = 0; i < graphSize(); i++) {
+#pragma omp parallel for default(none) shared(points, params) schedule(static)
+        for (int i = 0; i < graphSize(); i++) {
             this->params.indexToGraphMap[i] = i;
             points[i] = std::make_pair(this->currentPositions[i], i);
         }
@@ -261,7 +276,7 @@ void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& poi
         params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
         points.resize(numNodes);
 
-//#pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
+#pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
         for (int i = 0; i < numNodes; i++) {
             points[i] = std::make_pair(this->currentPositions[params.indexToGraphMap[i]], i);
         }
@@ -288,139 +303,27 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
     }
 
     this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, candidates);
-
-    for (NodeId& candidate: candidates) {
-        candidate = this->params.indexToGraphMap[candidate];
-        ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
+    if (this->opts.IndexSize < 1.0) {
+#pragma omp parallel for default(none) shared(candidates) schedule(static)
+        for (NodeId& candidate: candidates) {
+            candidate = this->params.indexToGraphMap[candidate];
+            ASSERT(candidate < graphSize() && candidate >= 0);
+        }
     }
 
     return candidates;
 }
 
-static size_t find(std::vector<int>& vec, int value) {
-    size_t l = 0;
-    size_t r = vec.size();
-    while (l < r) {
-        size_t currPos = (l + r) / 2;
-        if (vec[currPos] < value) {
-            l = currPos + 1;
-        } else if (vec[currPos] > value) {
-            r = currPos;
-        } else if (vec[currPos] == value) {
-            return currPos;
-        }
-    }
-    return vec.size();
-}
-
-static bool candidateVerification(std::vector<std::vector<int>> candidates) {
-    for (auto & candidate : candidates) {
-        std::ranges::sort(candidate);
-    }
-    bool valid = true;
-    //Check for duplicates
-    for (size_t i = 0; i < candidates.size(); i++) {
-        for (size_t j = 1; j < candidates[i].size(); j++) {
-            if (candidates[i][j - 1] == candidates[i][j]) {
-                LOG_WARNING("There is a duplicate in the candidates of node " +
-                            std::to_string(i) + ". Node " +
-                            std::to_string(j) + " appears twice");
-                valid = false;
-            }
-        }
-    }
-
-    //Check for symmetry
-    for (size_t i = 0; i < candidates.size(); i++) {
-        for (size_t j = 0; j < candidates[i].size(); j++) {
-            if (candidates[i].size() == find(candidates[candidates[i][j]], i)) {
-                LOG_WARNING("The candidates for " + std::to_string(i) + " contain " + std::to_string(j)
-                            + ", but not vice versa");
-                valid = false;
-            }
-        }
-    }
-
-    return valid;
-}
-
 std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
-    if constexpr (true) {
-        std::vector<std::vector<NodeId>> candidates(graphSize());
-        VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
-        //Stores the sizes of each candidate vector after node removal
-        //This allows to ignore all nodes that might be added to the vector by a different thread
-        std::vector<size_t> candidateSizes(graphSize());
+    //TODO: Implement negative samples
+    std::vector<std::vector<NodeId>> candidates;
+    uint32_t threadCount = std::thread::hardware_concurrency();
+    // Stage 1: for each node v, find nearby nodes that might repel it,
+    // and register v as a repeller in each of those nodes' lists.
 
-        //Get candidates for each Node
-        timer->startTiming("CandidateSearch", "Searching for repelling candidates");
-#pragma omp parallel for firstprivate(indexBuffer) shared(candidates) schedule(dynamic)
-        for (size_t v = 0; v < graphSize(); v++) {
-            const std::vector<NodeId> tmp = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
-            candidates[v] = tmp;
-        }
-        timer->stopTiming("CandidateSearch");
-
-        //Remove elements that are smaller and compute candidate sizes
-        timer->startTiming("NodeRemoval", "Remove heavier nodes");
-#pragma omp parallel for default(none) shared(candidates, candidateSizes) schedule(dynamic)
-        for (NodeId v = 0; v < graphSize(); v++) {
-            for (NodeId u = 0; u < candidates[v].size(); u++) {
-                if (currentWeights[candidates[v][u]] > currentWeights[v]) {
-                    candidates[v].erase(candidates[v].begin() + u);
-                }
-                else if (currentWeights[candidates[v][u]] == currentWeights[v] && candidates[v][u] > v) {
-                    candidates[v].erase(candidates[v].begin() + u);
-                }
-            }
-            candidateSizes[v] = candidates[v].size();
-        }
-        timer->stopTiming("NodeRemoval");
-
-        //Make things symmetric:
-        timer->startTiming("Symmetrizising", "Making the repelling candidates symmetric");
-#pragma omp parallel for default(none) shared(candidates, candidateSizes) schedule(dynamic)
-        for (int v = 0; v < graphSize(); v++) {
-            for (size_t u = 0; u < candidateSizes[v]; u++) {
-                candidateLocks[u].lock();
-                candidates[u].push_back(v);
-                candidateLocks[u].unlock();
-            }
-        }
-        timer->stopTiming("Symmetrizising");
-        //Verifying the results could be correct
-        if constexpr (false && !candidateVerification(candidates)) {
-            LOG_WARNING("No symmetric candidates");
-        }
-        return candidates;
-    } else { //TODO: NOPE, F1 score is 0.46
-        std::vector<std::vector<NodeId>> candidates(graphSize());
-        VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
-
-        timer->startTiming("CandidateSearch", "Searching for repelling candidates");
-#pragma omp parallel for default(none) shared(candidates, indexBuffer) schedule(dynamic)
-        for (NodeId v = 0; v < graphSize(); v++) {
-            const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(sortedNodeIDs[v], indexBuffer);
-
-            this->candidateLocks[v].lock();
-            candidates[v].insert(candidates[v].end(), repellingCandidates.begin(), repellingCandidates.end());
-            this->candidateLocks[v].unlock();
-
-            for (const int repellingCandidate : repellingCandidates) {
-                if (currentWeights[repellingCandidate] < currentWeights[v]) {
-                    candidateLocks[repellingCandidate].lock();
-                    candidates[repellingCandidate].push_back(v);
-                    candidateLocks[repellingCandidate].unlock();
-                }
-            }
-        }
-        timer->stopTiming("CandidateSearch");
-        //Verifying the results could be correct
-        if constexpr (false && !candidateVerification(candidates)) {
-            LOG_WARNING("No symmetric candidates");
-        }
-        return candidates;
-    }
+    // Stage 2: move each node's accumulated repeller list into its query_cache,
+    // emptying the mutex-protected list in the process.
+    return candidates;
 }
 
 void NewWEmbedEmbedder::calculateAllAttractingForces() {
@@ -442,6 +345,7 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     for (const NodeId v : sortedNodeIDs) {
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (const NodeId u : repellingCandidates) {
+            //TODO: Remove this and replace with additional attraction force between neighbors
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
