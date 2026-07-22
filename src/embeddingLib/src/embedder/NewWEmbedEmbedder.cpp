@@ -237,7 +237,7 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     this->params.force[v] += result;
     candidateLocks[v].unlock();
     candidateLocks[u].lock();
-    this->params.force[u] += result;
+    this->params.force[u] -= result;
     candidateLocks[u].unlock();
 }
 
