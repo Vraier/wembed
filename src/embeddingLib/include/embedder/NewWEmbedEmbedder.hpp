@@ -22,13 +22,12 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     void debug_dumpWeights() const;
 
     void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
-    void repellingForce(NodeId v, NodeId u, VecBuffer<1> forceBuffer);
-    void scatterRepulsion(NodeId v, std::vector<NodeId>& candidates, size_t threadCount);
+    void repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    void scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
 
     void selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points);
     void updateIndex();
     std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
-    std::vector<std::vector<NodeId>> getAllRepellingCandidates();
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
 

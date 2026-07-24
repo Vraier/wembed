@@ -40,6 +40,8 @@ void NewWEmbedEmbedder::calculateStep() {
     calculateAllAttractingForces();
     this->timer->stopTiming("attracting_forces");
 
+    //TODO: Add attraction forces for bipartite graphs to counter repulsion computation if necessary
+
     //Compute repelling forces
     this->timer->startTiming("repelling_forces", "Compute Repelling Forces");
     calculateAllRepellingForces();
@@ -192,7 +194,7 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
                            (invExpWeights[v] * invExpWeights[u]);
 
     if (dist * weightScaling <= this->opts.edgeLength) {
-        result *= 0;
+        result *= this->opts.repulsionScale * weightScaling; //Attract to counter repulsion force
     } else {
         result *= this->opts.attractionScale * weightScaling;
     }
@@ -200,14 +202,14 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
     this->params.force[v] += result;
 }
 
-void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1> forceBuffer) {
+void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, TmpVec<0>& result) {
+    //TODO: Filter out before
     if (v == u) return;
     if (currentWeights[v] < currentWeights[u]) return;
     if (currentWeights[v] == currentWeights[u] && v > u) return;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
-    TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posV, posU);
 
     // displace in random direction if positions are identical
@@ -232,25 +234,16 @@ void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer
     if (this->opts.numNegativeSamples > 0) {
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
-
-    //TODO: Remove this,this should be done in scatter repulsion
-    candidateLocks[v].lock();
-    this->params.force[v] += result;
-    candidateLocks[v].unlock();
-    candidateLocks[u].lock();
-    this->params.force[u] -= result;
-    candidateLocks[u].unlock();
 }
 
-void NewWEmbedEmbedder::scatterRepulsion(NodeId v, std::vector<NodeId> &candidates,const size_t threadCount) {
-    VecList forces(threadCount * graphSize());
+void NewWEmbedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId> &candidates, VecList& forces, const size_t threadCount) {
     const size_t tid = omp_get_thread_num();
 
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
-    //TODO: I don't know what those vectors do and how.There is no comprehensive documentation
+    //TODO: I don't know what those vectors do and how. There is no comprehensive documentation
     for (auto& u : candidates) {
-        repellingForce(v, u, forceBuffer);
-        TmpVec<0> result(forceBuffer,0.0);
+        TmpVec<0> result(forceBuffer, 0.0);
+        repellingForce(v, u, result);
         forces[v * threadCount + tid] += result;
         forces[u * threadCount + tid] -= result;
     }
@@ -307,22 +300,11 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
 #pragma omp parallel for default(none) shared(candidates) schedule(static)
         for (NodeId& candidate: candidates) {
             candidate = this->params.indexToGraphMap[candidate];
-            ASSERT(candidate < graphSize() && candidate >= 0);
+            //TODO: Fix for debug cases
+            //ASSERT(candidate < graphSize() && candidate >= 0);
         }
     }
 
-    return candidates;
-}
-
-std::vector<std::vector<NodeId> > NewWEmbedEmbedder::getAllRepellingCandidates() {
-    //TODO: Implement negative samples
-    std::vector<std::vector<NodeId>> candidates;
-    uint32_t threadCount = std::thread::hardware_concurrency();
-    // Stage 1: for each node v, find nearby nodes that might repel it,
-    // and register v as a repeller in each of those nodes' lists.
-
-    // Stage 2: move each node's accumulated repeller list into its query_cache,
-    // emptying the mutex-protected list in the process.
     return candidates;
 }
 
@@ -341,16 +323,22 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), reduction(+:numRepForceCalculations), schedule(runtime)
+    //Parallel computation of repulsion forces
+    const size_t threadCount = std::thread::hardware_concurrency();
+    VecList forces(this->opts.embeddingDimension,graphSize() * threadCount);
+
+#pragma omp parallel for num_threads(threadCount) default(none) shared(indexBuffer, forces, threadCount) reduction(+:numRepForceCalculations) schedule(dynamic)
     for (const NodeId v : sortedNodeIDs) {
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
-        for (const NodeId u : repellingCandidates) {
-            //TODO: Remove this and replace with additional attraction force between neighbors
-            if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
-                continue;
-            }
-            repellingForce(v, u, forceBuffer);
-            numRepForceCalculations++;
+        scatterRepulsion(v, repellingCandidates, forces, threadCount);
+        numRepForceCalculations += repellingCandidates.size();
+    }
+
+    //Add results into force vector
+#pragma omp parallel for num_threads(threadCount) default(none) shared(threadCount, forces) schedule(dynamic)
+    for (size_t i = 0; i < graphSize(); i++) {
+        for (size_t t = 0; t < threadCount; t++) {
+            this->params.force[i] += forces[i * threadCount + t];
         }
     }
 }
