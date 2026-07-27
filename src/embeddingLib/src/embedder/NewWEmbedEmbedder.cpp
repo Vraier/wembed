@@ -203,11 +203,6 @@ void NewWEmbedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffe
 }
 
 void NewWEmbedEmbedder::repellingForce(const NodeId v, const NodeId u, TmpVec<0>& result) {
-    //TODO: Filter out before
-    if (v == u) return;
-    if (currentWeights[v] < currentWeights[u]) return;
-    if (currentWeights[v] == currentWeights[u] && v > u) return;
-
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
     const double dist = vectorOperations::calculateLPNorm(posV, posU);
@@ -296,13 +291,23 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
     }
 
     this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, candidates);
+
     if (this->opts.IndexSize < 1.0) {
-#pragma omp parallel for default(none) shared(candidates) schedule(static)
         for (NodeId& candidate: candidates) {
             candidate = this->params.indexToGraphMap[candidate];
-            //TODO: Fix for debug cases
-            //ASSERT(candidate < graphSize() && candidate >= 0);
+            ASSERT(candidate < graphSize() && candidate >= 0);
         }
+    }
+
+    //Filter candidates
+    for (size_t i = 0; i < candidates.size(); i++) {
+        const NodeId u = candidates[i];
+        if (currentWeights[v] > currentWeights[u]) continue;
+        if (currentWeights[v] == currentWeights[u] && v <= u) continue;
+
+        std::swap(candidates[i], candidates[candidates.size() - 1]);
+        candidates.resize(candidates.size() - 1);
+        i--; //Look at candidate again
     }
 
     return candidates;
