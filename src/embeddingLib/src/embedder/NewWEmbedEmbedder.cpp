@@ -1,4 +1,5 @@
 #include <fstream>
+#include <thread>
 
 #include "NewWEmbedEmbedder.hpp"
 #include "VectorOperations.hpp"

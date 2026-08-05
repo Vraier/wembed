@@ -24,6 +24,5 @@ class SprkQueries : public SpatialIndex {
 
    private:
     SprkHandle* handle_;
-    std::vector<NodeId> id_translation;
     size_t dimension;
 };
