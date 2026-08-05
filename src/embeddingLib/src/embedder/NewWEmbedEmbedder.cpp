@@ -1,4 +1,5 @@
 #include <fstream>
+#include <thread>
 
 #include "NewWEmbedEmbedder.hpp"
 #include "VectorOperations.hpp"
@@ -290,24 +291,24 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
         return candidates;
     }
 
-    this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, candidates);
+    std::vector<uint64_t> queryResults;
+    this->params.weightedIndex.querySphere(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength, queryResults);
 
     if (this->opts.IndexSize < 1.0) {
-        for (NodeId& candidate: candidates) {
-            candidate = this->params.indexToGraphMap[candidate];
-            ASSERT(candidate < graphSize() && candidate >= 0);
+        for (uint64_t& r: queryResults) {
+            r = this->params.indexToGraphMap[r];
+            ASSERT(r < graphSize());
         }
     }
 
     //Filter candidates
-    for (size_t i = 0; i < candidates.size(); i++) {
-        const NodeId u = candidates[i];
-        if (currentWeights[v] > currentWeights[u]) continue;
-        if (currentWeights[v] == currentWeights[u] && v <= u) continue;
+    candidates.reserve(queryResults.size());
+    for (size_t i = 0; i < queryResults.size(); i++) {
+        const NodeId u = queryResults[i];
+        if (currentWeights[v] < currentWeights[u]) continue;
+        if (currentWeights[v] == currentWeights[u] && v > u) continue;
 
-        std::swap(candidates[i], candidates[candidates.size() - 1]);
-        candidates.resize(candidates.size() - 1);
-        i--; //Look at candidate again
+        candidates.push_back(u);
     }
 
     return candidates;
