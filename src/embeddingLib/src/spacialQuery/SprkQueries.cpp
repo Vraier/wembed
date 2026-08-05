@@ -55,7 +55,9 @@ size_t SprkQueries::query_sphere(CVecRef point, double radius, std::vector<uint6
         sprk_query_radius(handle_, query.data(), radius, &ids, &count);
 
         out.resize(count);
-        std::memcpy(out.data(), ids, count * sizeof(uint64_t));
+        for (size_t i = 0; i < count; ++i) {
+            out[i] = ids[i];
+        }
         sprk_free_results(ids, count);
     }
     return out.size();
