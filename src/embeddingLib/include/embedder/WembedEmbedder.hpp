@@ -1,22 +1,39 @@
 #pragma once
 
+#include <memory>
+
 #include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
+#include "Optimizer.hpp"
+#include "SimpleOptimizer.hpp"
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
 
-class NewWEmbedEmbedder : public EmbedderInterface {
+class WembedEmbedder : public EmbedderInterface {
 
     std::shared_ptr<util::Timer> timer;
 
     uint32_t numRepForceCalculations = 0;
 
     std::vector<double> invExpWeights;
-    AdamOptimizer posOptimizer;
-    AdamOptimizer weightOptimizer;
+    std::unique_ptr<Optimizer> posOptimizer;
 
-    void debug_dumpWeights() const;
+    static std::unique_ptr<Optimizer> makePosOptimizer(const EmbedderOptions &opts, uint32_t numVertices) {
+        switch (opts.optimizerType) {
+            case OptimizerType::Simple:
+                return std::make_unique<SimpleOptimizer>(opts.embeddingDimension, numVertices,
+                                                         opts.learningRate, opts.coolingFactor,
+                                                         opts.simpleOptMaxDisplacement);
+            case OptimizerType::Adam:
+                return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices,
+                                                       opts.learningRate, opts.coolingFactor,
+                                                       0.9, 0.999, 1e-8);
+        }
+        return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices,
+                                               opts.learningRate, opts.coolingFactor,
+                                               0.9, 0.999, 1e-8);
+    }
 
     /**
      * Functions to compute the forces between two vertices
@@ -44,40 +61,32 @@ class NewWEmbedEmbedder : public EmbedderInterface {
 
 
     public:
-    NewWEmbedEmbedder(const Graph& g,
+    WembedEmbedder(const Graph& g,
                       const EmbedderOptions &opts,
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
-                        posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
-                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
+                        posOptimizer(makePosOptimizer(opts, g.getNumVertices()))
     {
 
-        NewWEmbedEmbedder::setCoordinates(constructRandomCoordinates());
+        WembedEmbedder::setCoordinates(constructRandomCoordinates());
 
         switch (opts.weightType) {
             case WeightType::Degree:
-                NewWEmbedEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
+                WembedEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
                                                              opts.embeddingDimension,
                                                              constructDegreeWeights(g)));
                 break;
             case WeightType::Unit:
-                NewWEmbedEmbedder::setWeights(constructUnitWeights(graphSize()));
+                WembedEmbedder::setWeights(constructUnitWeights(graphSize()));
                 break;
-            default:
-                LOG_ERROR("Weight type not supported");
-        }
-        if (opts.weightLearningRate > 0) {
-            LOG_WARNING("There is no weight learning for this type of embedder");
-        }
-        if (opts.lpNorm != 2) {
-            LOG_WARNING("Currently lpNorm = 2 is the only supported lpNorm");
         }
     }
 
-    //TODO: Add Python Bindings?
-    virtual ~NewWEmbedEmbedder() override = default;
+    virtual ~WembedEmbedder() override = default;
+    WembedEmbedder(WembedEmbedder&&) = default;
+    WembedEmbedder& operator=(WembedEmbedder&&) = default;
     virtual void calculateStep() override;
     virtual bool isFinished() override;
     virtual void calculateEmbedding() override;

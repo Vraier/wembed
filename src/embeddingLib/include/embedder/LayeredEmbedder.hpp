@@ -8,7 +8,7 @@
 #include "GraphHierarchy.hpp"
 #include "LabelPropagation.hpp"
 #include "Timings.hpp"
-#include "NewWEmbedEmbedder.hpp"
+#include "WembedEmbedder.hpp"
 #include "WeightedIndex.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
@@ -16,7 +16,7 @@ class LayeredEmbedder : public EmbedderInterface {
     using Timer = util::Timer;
 
    public:
-    LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
+    LayeredEmbedder(const Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
         : EmbedderInterface(g, opts),
           timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
@@ -53,5 +53,5 @@ class LayeredEmbedder : public EmbedderInterface {
     bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
-    NewWEmbedEmbedder currentEmbedder;
+    WembedEmbedder currentEmbedder;
 };

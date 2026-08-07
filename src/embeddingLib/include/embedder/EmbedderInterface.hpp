@@ -76,6 +76,10 @@ class EmbedderInterface {
 
    public:
     virtual ~EmbedderInterface() = default;
+    EmbedderInterface(const EmbedderInterface&) = delete;
+    EmbedderInterface& operator=(const EmbedderInterface&) = delete;
+    EmbedderInterface(EmbedderInterface&&) = default;
+    EmbedderInterface& operator=(EmbedderInterface&&) = default;
 
     /**
      * Number of vertices in the current graph the embedder is operating on.

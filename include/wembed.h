@@ -26,6 +26,11 @@ enum SpatialIndex : int32_t {
     IndexSprk = 2,
 };
 
+enum OptimizerType : int32_t {
+    OptimizerSimple = 0,
+    OptimizerAdam = 1,
+};
+
 // edge type. Used in place of std::pair<NodeId, NodeId>.
 struct Edge {
     NodeId src;
@@ -63,10 +68,12 @@ struct Options {
     double expansionStretch = 1.0;               // stretch applied during layer expansion
 
     // Gradient descent parameters
+    OptimizerType optimizerType = OptimizerAdam;
     double coolingFactor = 0.99;                 // lower = faster cooldown
     double learningRate = 10.0;
     int32_t maxIterations = 1000;
     double positionMinChange = 1e-4;             // halt threshold on position change
+    double simpleOptMaxDisplacement = 1.0;       // per-step cap (only used when optimizerType == OptimizerSimple)
 };
 
 class Graph {
