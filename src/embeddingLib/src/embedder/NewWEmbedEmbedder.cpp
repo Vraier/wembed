@@ -236,7 +236,7 @@ void NewWEmbedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeI
     const size_t tid = omp_get_thread_num();
 
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
-    //TODO: I don't know what those vectors do and how. There is no comprehensive documentation
+
     for (auto& u : candidates) {
         TmpVec<0> result(forceBuffer, 0.0);
         repellingForce(v, u, result);
@@ -303,8 +303,8 @@ std::vector<NodeId> NewWEmbedEmbedder::getRepellingCandidatesForNode(NodeId v, [
 
     //Filter candidates
     candidates.reserve(queryResults.size());
-    for (size_t i = 0; i < queryResults.size(); i++) {
-        const NodeId u = queryResults[i];
+    for (const uint64_t queryResult : queryResults) {
+        const auto u = static_cast<NodeId>(queryResult);
         if (currentWeights[v] < currentWeights[u]) continue;
         if (currentWeights[v] == currentWeights[u] && v > u) continue;
 
@@ -349,14 +349,13 @@ void NewWEmbedEmbedder::calculateAllRepellingForces() {
     }
 }
 
-//TODO: This could be moved somewhere else
 std::vector<NodeId> NewWEmbedEmbedder::sampleRandomNoise(const int32_t numNodes) const {
     return Rand::randomSample(static_cast<int32_t>(graphSize()), numNodes);
 }
 
 std::vector<double> NewWEmbedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
                                                    const std::vector<double>& weights) {
-    const int N = weights.size();
+    const auto N = static_cast<int>(weights.size());
     std::vector<double> rescaledWeights(N);
 
     for (NodeId v = 0; v < N; v++) {
