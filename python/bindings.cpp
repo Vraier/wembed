@@ -87,6 +87,7 @@ PYBIND11_MODULE(wembed, m) {
         .def("setWeights", &wembed::Embedder::setWeights)
         .def("getTimings", &wembed::Embedder::getTimings)
         .def("getLoss", &wembed::Embedder::getLoss)
+        .def("getCurrentLearningRate", &wembed::Embedder::getCurrentLearningRate)
         .def("writeCoordinates", &wembed::Embedder::writeCoordinates,
              py::arg("filePath"), py::arg("writeWeights") = true);
 

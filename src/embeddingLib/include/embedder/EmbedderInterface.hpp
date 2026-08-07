@@ -114,6 +114,16 @@ class EmbedderInterface {
     }
 
     /**
+     * Effective learning rate at the current step (after cooling has been applied).
+     * Matches what the underlying optimizer used in its most recent update.
+     */
+    virtual double getCurrentLearningRate() const {
+        return this->opts.learningRate *
+               Toolkit::myPow(this->opts.coolingFactor,
+                              static_cast<double>(this->params.currentIteration));
+    }
+
+    /**
      * Advances the embedding by a single gradient descent step.
      */
     virtual void calculateStep() = 0;

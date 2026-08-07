@@ -39,6 +39,7 @@ class LayeredEmbedder : public EmbedderInterface {
     int getEmbeddingDimension() const override { return currentEmbedder.getEmbeddingDimension(); }
     void copyCoordinatesTo(double* out) const override { currentEmbedder.copyCoordinatesTo(out); }
     EmbeddingLoss getLoss() const override { return currentEmbedder.getLoss(); }
+    double getCurrentLearningRate() const override { return currentEmbedder.getCurrentLearningRate(); }
 
    private:
     std::shared_ptr<Timer> timer;

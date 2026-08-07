@@ -145,6 +145,9 @@ class Embedder {
     // Loss from the most recent step.
     Loss getLoss() const;
 
+    // Effective learning rate at the current step (after cooling has been applied).
+    double getCurrentLearningRate() const;
+
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;
 
    private:

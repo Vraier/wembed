@@ -142,6 +142,10 @@ Loss Embedder::getLoss() const {
     return {internal.attractive, internal.repulsive, internal.total};
 }
 
+double Embedder::getCurrentLearningRate() const {
+    return _embedder->getCurrentLearningRate();
+}
+
 void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) const {
     if (writeWeights) {
         EmbeddingIO::writeCoordinates(filePath, _embedder->getCoordinates(), _embedder->getWeights());
