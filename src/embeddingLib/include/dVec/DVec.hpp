@@ -272,7 +272,12 @@ class VecRefImpl {
     // copying a VecRef is error-prone and thus forbidden
     VecRefImpl(const Self&) = delete;
 
-    VecRefImpl(Self&& other) : VecRefImpl(std::move(other)) {}
+    VecRefImpl(Self&& other) : coord(other.coord) {
+        if constexpr (ASSERTIONS_ACTIVE) {
+            moveRefCount(other);
+        }
+        other.moveOut();
+    }
 
     ~VecRefImpl() {
         if constexpr (ASSERTIONS_ACTIVE) {

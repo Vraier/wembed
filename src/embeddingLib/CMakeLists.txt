@@ -21,10 +21,9 @@ set(HEADERS
         include/partition/LabelPropagation.hpp
         include/partition/GraphHierarchy.hpp
 
-        include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
-        include/spacialQuery/SNNQueries.hpp
         include/spacialQuery/SprkQueries.hpp
+        include/spacialQuery/WeightedIndex.hpp
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
@@ -53,8 +52,6 @@ set(SOURCES
         src/partition/LabelPropagation.cpp
         src/partition/GraphHierarchy.cpp
 
-        src/spacialQuery/WeightedIndex.cpp
-        src/spacialQuery/SNNQueries.cpp
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder

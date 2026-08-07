@@ -7,7 +7,6 @@
 #include "Graph.hpp"
 #include "Timings.hpp"
 #include "VecList.hpp"
-#include "WeightedIndex.hpp"
 
 /**
  * Interface for weighted embedder classes.

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <cstddef>
-
 #include "Graph.hpp"
+#include "SprkQueries.hpp"
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
 
@@ -14,13 +13,13 @@ struct EmbedderParameters {
     bool insignificantPosChange = false;
 
     VecList force;
+    WeightedIndex weightedIndex;
     std::vector<NodeId> indexToGraphMap;
-    WeightedIndex currentWeightedIndex;
 
     explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension, const IndexType indexType)
                               : force(dimension, graphSize),
-                                indexToGraphMap(graphSize),
-                                currentWeightedIndex(indexType, dimension)
+                                weightedIndex(indexType, dimension),
+                                indexToGraphMap(graphSize)
     {
 
     }

@@ -1,10 +1,11 @@
 #pragma once
 
+#include <mutex>
+
 #include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "VecList.hpp"
-#include "WeightedIndex.hpp"
 
 class NewWEmbedEmbedder : public EmbedderInterface {
 
@@ -16,30 +17,27 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     AdamOptimizer posOptimizer;
     AdamOptimizer weightOptimizer;
 
+    std::vector<std::mutex> candidateLocks;
+
     void debug_dumpWeights() const;
 
-    /**
-     * Functions to compute the forces between two vertices
-     */
+    void attractionForce(NodeId v, NodeId u, VecBuffer<1>& buffer);
+    void repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    void scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+
+    void selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points);
+    void updateIndex();
+    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
-    void attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    void repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-
-    /**
-     * Computes all nodes to do a repulsion force computation with node v
-     */
-    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
-
-    /**
-     * Updates spacial data structure
-     */
-    void updateIndex();
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
 
 
     public:
+    NewWEmbedEmbedder(NewWEmbedEmbedder& embedder) = delete;
+    NewWEmbedEmbedder operator=(NewWEmbedEmbedder& embedder) = delete;
+
     NewWEmbedEmbedder(const Graph& g,
                       const EmbedderOptions &opts,
                       const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>())
@@ -47,7 +45,8 @@ class NewWEmbedEmbedder : public EmbedderInterface {
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
                         posOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.learningRate, opts.coolingFactor, 0.9, 0.999, 1e-8),
-                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8)
+                        weightOptimizer(opts.embeddingDimension, g.getNumVertices(), opts.weightLearningRate,opts.coolingFactor, 0.9, 0.999, 1e-8),
+                        candidateLocks(g.getNumVertices())
     {
 
         NewWEmbedEmbedder::setCoordinates(constructRandomCoordinates());
@@ -85,7 +84,7 @@ class NewWEmbedEmbedder : public EmbedderInterface {
     virtual void setWeights(const std::vector<double>& weights) override;
 
     [[nodiscard]] static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
-                                                        const std::vector<double>& weights);
+                                                const std::vector<double>& weights);
     [[nodiscard]] static std::vector<double> constructDegreeWeights(const Graph& g);
     [[nodiscard]] static std::vector<double> constructUnitWeights(int N);
 };
