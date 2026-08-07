@@ -4,7 +4,6 @@ add_subdirectory(utilLib)
 add_subdirectory(embeddingLib)
 add_subdirectory(evaluationLib)
 add_subdirectory(drawLib)
-add_subdirectory(SNN)
 add_subdirectory(sprk)
 
 # Executables

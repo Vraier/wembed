@@ -6,7 +6,6 @@ set(TEST_FILES
     #TestHierarchy.cpp
     TestMetrics.cpp
     TestTimings.cpp
-    TestSNNQueries.cpp
 )
 
 add_executable(UnitTests ${TEST_FILES})

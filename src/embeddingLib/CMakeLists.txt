@@ -74,5 +74,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/embeddingIO
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
-target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX snn sprk_ffi)
+target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX sprk_ffi)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
