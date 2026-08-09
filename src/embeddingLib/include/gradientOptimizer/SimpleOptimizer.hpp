@@ -4,19 +4,16 @@
 
 class SimpleOptimizer : public Optimizer {
    public:
-    SimpleOptimizer(int dimension, int numNodes, double learningRate, double coolingFactor, double maxDisplacement);
+    SimpleOptimizer(int dimension, int numNodes, double maxDisplacement);
     ~SimpleOptimizer();
 
-    void update(VecList& parameters, const VecList& gradients) override;
+    void update(VecList& parameters, const VecList& gradients, double learningRate) override;
     void reset() override;
 
    private:
     int dimension;
     int numNodes;
-    double learningRate;
-    double coolingFactor;
     double maxDisplacement;
 
     VecList tmpGradient;
-    int t;      // Time step
 };

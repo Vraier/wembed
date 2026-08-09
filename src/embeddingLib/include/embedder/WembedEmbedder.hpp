@@ -3,8 +3,10 @@
 #include <memory>
 
 #include "AdamOptimizer.hpp"
+#include "ConvergenceMonitor.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
+#include "LRScheduler.hpp"
 #include "Optimizer.hpp"
 #include "SimpleOptimizer.hpp"
 #include "VecList.hpp"
@@ -18,21 +20,20 @@ class WembedEmbedder : public EmbedderInterface {
 
     std::vector<double> invExpWeights;
     std::unique_ptr<Optimizer> posOptimizer;
+    // heap-owned and declared before the scheduler: LossAdaptive holds a reference to the monitor,
+    // which stays valid when the embedder is moved (LayeredEmbedder moves it on layer expansion)
+    std::unique_ptr<ConvergenceMonitor> convergenceMonitor;
+    std::unique_ptr<LRScheduler> lrScheduler;
 
     static std::unique_ptr<Optimizer> makePosOptimizer(const EmbedderOptions &opts, uint32_t numVertices) {
         switch (opts.optimizerType) {
             case OptimizerType::Simple:
                 return std::make_unique<SimpleOptimizer>(opts.embeddingDimension, numVertices,
-                                                         opts.learningRate, opts.coolingFactor,
                                                          opts.simpleOptMaxDisplacement);
             case OptimizerType::Adam:
-                return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices,
-                                                       opts.learningRate, opts.coolingFactor,
-                                                       0.9, 0.999, 1e-8);
+                return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices, 0.9, 0.999, 1e-8);
         }
-        return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices,
-                                               opts.learningRate, opts.coolingFactor,
-                                               0.9, 0.999, 1e-8);
+        return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices, 0.9, 0.999, 1e-8);
     }
 
     /**
@@ -67,7 +68,9 @@ class WembedEmbedder : public EmbedderInterface {
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
-                        posOptimizer(makePosOptimizer(opts, g.getNumVertices()))
+                        posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
+                        convergenceMonitor(std::make_unique<ConvergenceMonitor>(opts.stopRelTol, opts.stopPatience)),
+                        lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
     {
 
         WembedEmbedder::setCoordinates(constructRandomCoordinates());

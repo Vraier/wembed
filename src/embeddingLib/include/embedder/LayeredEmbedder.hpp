@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "GraphHierarchy.hpp"
@@ -51,7 +50,6 @@ class LayeredEmbedder : public EmbedderInterface {
 
     int currentIteration = 0;
     int currentLayer;
-    bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
     WembedEmbedder currentEmbedder;

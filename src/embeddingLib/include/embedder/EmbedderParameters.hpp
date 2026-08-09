@@ -11,7 +11,6 @@
  */
 struct EmbedderParameters {
     size_t currentIteration = 0;
-    bool insignificantPosChange = false;
 
     VecList force;
     std::vector<NodeId> indexToGraphMap;
@@ -20,6 +19,9 @@ struct EmbedderParameters {
     // Loss accumulated during the last force computation.
     double lastAttractLoss = 0.0;
     double lastRepelLoss = 0.0;
+
+    // Learning rate the optimizer used in the most recent step.
+    double lastLearningRate = 0.0;
 
     explicit EmbedderParameters(const uint32_t graphSize, const int32_t dimension, const IndexType indexType)
                               : force(dimension, graphSize),

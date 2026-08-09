@@ -171,6 +171,14 @@ static ::OptimizerType toInternalOptimizerType(OptimizerType opt) {
     return ::OptimizerType::Adam;
 }
 
+static LRScheduleType toInternalLRScheduleType(LRSchedule schedule) {
+    switch (schedule) {
+        case LRExponentialCooling: return LRScheduleType::ExponentialCooling;
+        case LRLossAdaptive:       return LRScheduleType::LossAdaptive;
+    }
+    return LRScheduleType::ExponentialCooling;
+}
+
 Embedder createEmbedder(const Graph& g, const Options& options) {
     EmbedderOptions opts;
     opts.embeddingDimension = options.embeddingDimension;
@@ -183,11 +191,18 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.edgeLength = options.edgeLength;
     opts.expansionStretch = options.expansionStretch;
     opts.optimizerType = toInternalOptimizerType(options.optimizerType);
-    opts.coolingFactor = options.coolingFactor;
-    opts.learningRate = options.learningRate;
     opts.maxIterations = options.maxIterations;
-    opts.positionMinChange = options.positionMinChange;
     opts.simpleOptMaxDisplacement = options.simpleOptMaxDisplacement;
+    opts.lrScheduleType = toInternalLRScheduleType(options.lrSchedule);
+    opts.learningRate = options.learningRate;
+    opts.warmupSteps = options.warmupSteps;
+    opts.coolingFactor = options.coolingFactor;
+    opts.decayFactor = options.decayFactor;
+    opts.plateauPatience = options.plateauPatience;
+    opts.growthFactor = options.growthFactor;
+    opts.growthRelTol = options.growthRelTol;
+    opts.stopRelTol = options.stopRelTol;
+    opts.stopPatience = options.stopPatience;
 
     const auto& graph = *g._graph;
     if (options.layeredEmbedding) {

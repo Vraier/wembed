@@ -16,15 +16,7 @@ void WembedEmbedder::calculateStep() {
 
     //Abort in the case of the first hierarchy layer
     if (graphSize() <= 1) {
-        this->params.insignificantPosChange = true;
         return;
-    }
-
-    //TODO: optimize storing of old positions (Implement std::move for VecLists)
-    VecList oldPositions(this->currentPositions.dimension(), this->currentPositions.size());
-#pragma omp parallel for default(none) shared(oldPositions) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        oldPositions[i] = this->currentPositions[i];
     }
 
     //Rebuild indices
@@ -51,41 +43,27 @@ void WembedEmbedder::calculateStep() {
 
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
-    this->posOptimizer->update(this->currentPositions, this->params.force);
+    const double learningRate = this->lrScheduler->learningRate(static_cast<int>(this->params.currentIteration));
+    this->params.lastLearningRate = learningRate;
+    this->posOptimizer->update(this->currentPositions, this->params.force, learningRate);
     this->timer->stopTiming("apply_forces");
 
     this->timer->startTiming("gravity", "Move graph towards centre");
     applyGravityCentre();
     this->timer->stopTiming("gravity");
 
-    //calculate change in positions
-    this->timer->startTiming("position_change", "Change in Positions");
-    VecBuffer<1> buffer(this->opts.embeddingDimension);
-    double sumNormDiffSquared = 0.0;
-
-#pragma omp parallel for default(none) firstprivate(buffer) shared(oldPositions, currentPositions) reduction(+:sumNormDiffSquared) schedule(static)
-    for (size_t v = 0; v < graphSize(); v++) {
-        TmpVec<0> tmpVec(buffer);
-        tmpVec = oldPositions[v] - currentPositions[v];
-        sumNormDiffSquared += tmpVec.sqNorm();
-    }
-
-    const double averageNormDiff = sumNormDiffSquared / graphSize();
+    this->convergenceMonitor->observe(this->params.lastAttractLoss + this->params.lastRepelLoss);
 
     if (this->params.currentIteration == 1 || (this->params.currentIteration > 0 && this->params.currentIteration % 10 == 0)) {
-        std::cout << "(Iteration " << this->params.currentIteration << ": #rep forces " << numRepForceCalculations
-                  << ", relative pos change: " << averageNormDiff << ")" << std::endl;
+        std::cout << "(Iteration " << this->params.currentIteration << ": loss: "
+                  << this->params.lastAttractLoss + this->params.lastRepelLoss << ")" << std::endl;
     }
-
-    if (averageNormDiff < this->opts.positionMinChange) {
-        this->params.insignificantPosChange = true;
-    }
-
-    this->timer->stopTiming("position_change");
 }
 
 bool WembedEmbedder::isFinished() {
-    return this->params.currentIteration >= this->opts.maxIterations || this->params.insignificantPosChange;
+    if (this->params.currentIteration >= this->opts.maxIterations) return true;
+    if (graphSize() <= 1) return true;
+    return this->convergenceMonitor->converged();
 }
 
 void WembedEmbedder::calculateEmbedding() {

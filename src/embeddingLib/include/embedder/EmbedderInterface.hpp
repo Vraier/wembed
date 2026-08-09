@@ -42,7 +42,7 @@ class EmbedderInterface {
                           opts(opts),
                           params(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
     {
-
+        params.lastLearningRate = opts.learningRate;
     }
 
     /**
@@ -114,13 +114,11 @@ class EmbedderInterface {
     }
 
     /**
-     * Effective learning rate at the current step (after cooling has been applied).
-     * Matches what the underlying optimizer used in its most recent update.
+     * Learning rate the optimizer used in the most recent step
+     * (before the first step: the initial learning rate).
      */
     virtual double getCurrentLearningRate() const {
-        return this->opts.learningRate *
-               Toolkit::myPow(this->opts.coolingFactor,
-                              static_cast<double>(this->params.currentIteration));
+        return this->params.lastLearningRate;
     }
 
     /**

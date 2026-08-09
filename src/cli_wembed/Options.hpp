@@ -15,6 +15,8 @@ struct Options {
     std::string embeddingComment = "%";
     std::string embeddingDelimiter = ",";
 
+    std::string tracePath;
+
     bool showTimings = false;
 
     wembed::Options embedderOptions;

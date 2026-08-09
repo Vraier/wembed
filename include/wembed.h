@@ -31,6 +31,11 @@ enum OptimizerType : int32_t {
     OptimizerAdam = 1,
 };
 
+enum LRSchedule : int32_t {
+    LRExponentialCooling = 0,
+    LRLossAdaptive = 1,
+};
+
 // edge type. Used in place of std::pair<NodeId, NodeId>.
 struct Edge {
     NodeId src;
@@ -69,11 +74,27 @@ struct Options {
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerAdam;
-    double coolingFactor = 0.99;                 // lower = faster cooldown
-    double learningRate = 10.0;
     int32_t maxIterations = 1000;
-    double positionMinChange = 1e-4;             // halt threshold on position change
     double simpleOptMaxDisplacement = 1.0;       // per-step cap (only used when optimizerType == OptimizerSimple)
+
+    // Learning rate schedule. Every parameter states which schedules read it.
+    LRSchedule lrSchedule = LRExponentialCooling;
+    double learningRate = 10.0;                  // initial learning rate (both schedules)
+    int32_t warmupSteps = 0;                     // linear LR ramp-up over the first steps (both schedules)
+    double coolingFactor = 0.99;                 // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
+    double decayFactor = 0.5;                    // multiplicative drop on a decay event (LRLossAdaptive only)
+    int32_t plateauPatience = 10;                // stagnant steps in a row before a decay event (LRLossAdaptive only)
+    double growthFactor = 1.05;                  // multiplicative growth after a significant new best loss
+                                                 // (LRLossAdaptive only; 1.0 disables growth)
+    double growthRelTol = 3e-2;                  // relative loss improvement over the best-so-far that triggers
+                                                 // an LR increase (LRLossAdaptive only)
+
+    // Loss stagnation stopping criterion (maxIterations always applies as a hard cap).
+    double stopRelTol = 3e-2;                    // relative loss improvement below which a step counts as stagnant
+                                                 // (also feeds the stagnation counter that times LRLossAdaptive's decay events)
+    int32_t stopPatience = 50;                   // stagnant steps in a row before stopping.
+                                                 // When combined with LRLossAdaptive keep this >= 3 * plateauPatience
+                                                 // so the schedule gets a few decay events before the embedding stops.
 };
 
 class Graph {
@@ -145,7 +166,8 @@ class Embedder {
     // Loss from the most recent step.
     Loss getLoss() const;
 
-    // Effective learning rate at the current step (after cooling has been applied).
+    // Learning rate the optimizer used in the most recent step
+    // (before the first step: the initial learning rate).
     double getCurrentLearningRate() const;
 
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;

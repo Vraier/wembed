@@ -21,6 +21,11 @@ PYBIND11_MODULE(wembed, m) {
         .value("OptimizerAdam", wembed::OptimizerAdam)
         .export_values();
 
+    py::enum_<wembed::LRSchedule>(m, "LRSchedule")
+        .value("LRExponentialCooling", wembed::LRExponentialCooling)
+        .value("LRLossAdaptive", wembed::LRLossAdaptive)
+        .export_values();
+
     py::class_<wembed::Edge>(m, "Edge")
         .def(py::init<wembed::NodeId, wembed::NodeId>(), py::arg("src"), py::arg("dst"))
         .def_readwrite("src", &wembed::Edge::src)
@@ -57,11 +62,18 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("edgeLength", &wembed::Options::edgeLength)
         .def_readwrite("expansionStretch", &wembed::Options::expansionStretch)
         .def_readwrite("optimizerType", &wembed::Options::optimizerType)
-        .def_readwrite("coolingFactor", &wembed::Options::coolingFactor)
-        .def_readwrite("learningRate", &wembed::Options::learningRate)
         .def_readwrite("maxIterations", &wembed::Options::maxIterations)
-        .def_readwrite("positionMinChange", &wembed::Options::positionMinChange)
-        .def_readwrite("simpleOptMaxDisplacement", &wembed::Options::simpleOptMaxDisplacement);
+        .def_readwrite("simpleOptMaxDisplacement", &wembed::Options::simpleOptMaxDisplacement)
+        .def_readwrite("lrSchedule", &wembed::Options::lrSchedule)
+        .def_readwrite("learningRate", &wembed::Options::learningRate)
+        .def_readwrite("warmupSteps", &wembed::Options::warmupSteps)
+        .def_readwrite("coolingFactor", &wembed::Options::coolingFactor)
+        .def_readwrite("decayFactor", &wembed::Options::decayFactor)
+        .def_readwrite("plateauPatience", &wembed::Options::plateauPatience)
+        .def_readwrite("growthFactor", &wembed::Options::growthFactor)
+        .def_readwrite("growthRelTol", &wembed::Options::growthRelTol)
+        .def_readwrite("stopRelTol", &wembed::Options::stopRelTol)
+        .def_readwrite("stopPatience", &wembed::Options::stopPatience);
 
     py::class_<wembed::Graph>(m, "Graph")
         .def("getNumVertices", &wembed::Graph::getNumVertices)
