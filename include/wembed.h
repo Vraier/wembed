@@ -80,13 +80,13 @@ struct Options {
     // Learning rate schedule. Every parameter states which schedules read it.
     LRSchedule lrSchedule = LRExponentialCooling;
     double learningRate = 10.0;                  // initial learning rate (both schedules)
-    int32_t warmupSteps = 0;                     // linear LR ramp-up over the first steps (both schedules)
+    int32_t warmupSteps = 20;                    // linear LR ramp-up over the first steps (both schedules)
     double coolingFactor = 0.99;                 // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
     double decayFactor = 0.5;                    // multiplicative drop on a decay event (LRLossAdaptive only)
-    int32_t plateauPatience = 10;                // stagnant steps in a row before a decay event (LRLossAdaptive only)
+    int32_t plateauPatience = 20;                // stagnant steps in a row before a decay event (LRLossAdaptive only)
     double growthFactor = 1.05;                  // multiplicative growth after a significant new best loss
                                                  // (LRLossAdaptive only; 1.0 disables growth)
-    double growthRelTol = 3e-2;                  // relative loss improvement over the best-so-far that triggers
+    double growthRelTol = 3e-3;                  // relative loss improvement over the best-so-far that triggers
                                                  // an LR increase (LRLossAdaptive only)
 
     // Loss stagnation stopping criterion (maxIterations always applies as a hard cap).

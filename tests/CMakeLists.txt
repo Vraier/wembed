@@ -1,5 +1,6 @@
 set(TEST_FILES
     TestDVec.cpp
+    TestDeterminism.cpp
     TestGraph.cpp
     TestGraphAlgorithm.cpp
     TestGeometricGraphSampler.cpp

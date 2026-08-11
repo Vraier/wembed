@@ -19,6 +19,10 @@ class WembedEmbedder : public EmbedderInterface {
     uint32_t numRepForceCalculations = 0;
 
     std::vector<double> invExpWeights;
+    // per-node loss contribution of the last force computation; each node is
+    // written by exactly one thread, then reduced deterministically (so the
+    // stopping-criterion signal does not depend on thread count)
+    std::vector<double> lossPerNode;
     std::unique_ptr<Optimizer> posOptimizer;
     // heap-owned and declared before the scheduler: LossAdaptive holds a reference to the monitor,
     // which stays valid when the embedder is moved (LayeredEmbedder moves it on layer expansion)
@@ -68,6 +72,7 @@ class WembedEmbedder : public EmbedderInterface {
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
+                        lossPerNode(g.getNumVertices()),
                         posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
                         convergenceMonitor(std::make_unique<ConvergenceMonitor>(opts.stopRelTol, opts.stopPatience)),
                         lrScheduler(makeLRScheduler(opts, *convergenceMonitor))

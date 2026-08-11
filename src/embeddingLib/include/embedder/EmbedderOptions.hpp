@@ -50,14 +50,14 @@ struct EmbedderOptions {
     // Every parameter states which schedules read it.
     LRScheduleType lrScheduleType = LRScheduleType::ExponentialCooling;
     double learningRate = 10;     // initial learning rate (both schedules)
-    int warmupSteps = 0;          // linear LR ramp-up over the first steps (both schedules)
+    int warmupSteps = 20;         // linear LR ramp-up over the first steps (both schedules)
     double coolingFactor = 0.99;  // per-step multiplicative decay (ExponentialCooling only);
                                   // strong influence on runtime but increases quality
     double decayFactor = 0.5;     // multiplicative drop on a decay event (LossAdaptive only)
-    int plateauPatience = 10;     // stagnant steps in a row before a decay event (LossAdaptive only)
+    int plateauPatience = 20;     // stagnant steps in a row before a decay event (LossAdaptive only)
     double growthFactor = 1.05;   // multiplicative growth after a significant new best loss
                                   // (LossAdaptive only; 1.0 disables growth)
-    double growthRelTol = 3e-2;   // relative loss improvement over the best-so-far that triggers
+    double growthRelTol = 3e-3;   // relative loss improvement over the best-so-far that triggers
                                   // an LR increase (LossAdaptive only)
 
     // Loss stagnation stopping criterion (maxIterations always applies as a hard cap).

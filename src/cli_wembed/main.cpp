@@ -117,27 +117,40 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Per-step displacement cap for the Simple optimizer")
         ->capture_default_str()->group(embedding);
 
+    // Defaults below are backed by a tuning study over GIRG + internet + amazon graphs at dims 2/4/6.
     const std::string schedule = "Learning rate schedule";
+    // robust default schedule; ties tuned adaptive on quality with the flattest response
     app.add_option("--lr-schedule", eo.lrSchedule,
                    "Learning rate schedule (0=ExponentialCooling, 1=LossAdaptive)")
         ->capture_default_str()->group(schedule);
+    // good default initial LR for the cooling default;
+    // note: adaptive-with-growth prefers lower (~2-5), plain adaptive prefers higher (~20-40)
     app.add_option("--speed", eo.learningRate, "Initial learning rate (both schedules)")
         ->capture_default_str()->group(schedule);
+    // warmup 0 consistently underperforms; 20-50 steps is the robust sweet spot for both schedules
     app.add_option("--warmup-steps", eo.warmupSteps,
                    "Linear learning rate ramp-up over the first steps (both schedules)")
         ->capture_default_str()->group(schedule);
+    // 0.99 dominates 0.98 on robustness across dims/graphs
     app.add_option("--cooling", eo.coolingFactor, "Per-step multiplicative learning rate decay (schedule 0 only)")
         ->capture_default_str()->group(schedule);
+    // decay-factor 0.5 + patience 20 is the flattest, most hyperparameter-robust plateau cell
+    // (far from the collapse/blow-up cliffs)
     app.add_option("--decay-factor", eo.decayFactor,
                    "Multiplicative learning rate drop on a decay event (schedule 1 only)")
         ->capture_default_str()->group(schedule);
+    // see decay-factor note: patience 20 with decay 0.5 is the robust plateau cell
     app.add_option("--plateau-patience", eo.plateauPatience,
                    "Stagnant steps in a row before a decay event (schedule 1 only)")
         ->capture_default_str()->group(schedule);
+    // gentle growth is safe and mildly helpful; values >1.1 fall off a cliff,
+    // >=1.2 is dangerous - do not raise the default
     app.add_option("--growth-factor", eo.growthFactor,
                    "Multiplicative learning rate growth after a significant new best loss "
                    "(schedule 1 only; 1.0 disables growth)")
         ->capture_default_str()->group(schedule);
+    // with gentle growth (factor 1.05), a 3e-3 trigger threshold is the robust setting;
+    // larger thresholds lose the low-dim benefit
     app.add_option("--growth-rel-tol", eo.growthRelTol,
                    "Relative loss improvement over the best-so-far that triggers an LR increase (schedule 1 only)")
         ->capture_default_str()->group(schedule);
