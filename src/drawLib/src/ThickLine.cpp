@@ -85,7 +85,10 @@ void Thick_Line::add_point(sf::Vector2f f_pt)
     if (_last_dot == 0)
     {
         sf::Vector2f previous_point{mid_point(_shape[1].position, _shape[0].position)};
-        sf::Vector2f offset = _thickness * normal_vector(unit_vector(f_pt - previous_point)) / 2.f;
+        sf::Vector2f normal = (f_pt - previous_point !=  sf::Vector2f(0.f, 0.f))
+                                ? normal_vector(unit_vector(f_pt - previous_point))
+                                : sf::Vector2f(0.f, 0.f);
+        sf::Vector2f offset = _thickness * normal / 2.f;
         _shape[0].position = previous_point - offset;
         _shape[1].position = previous_point + offset;
         add_point_with_offset(f_pt, offset);

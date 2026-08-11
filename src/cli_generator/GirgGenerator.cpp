@@ -44,22 +44,27 @@ std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> GirgGen
     auto edges = girgs::generateEdges(girgWeights, girgPositions, alpha, sSeed);
 
     Graph unconnected(edges);
-    auto graphAndMap = GraphAlgo::getLargestComponentWithMapping(unconnected);
-    Graph connected = graphAndMap.first;
-    std::vector<NodeId> connectedToUnconnected = graphAndMap.second;
 
-    // map coordinates and weights to connected graph
-    const int conN = connected.getNumVertices();
-    std::vector<std::vector<double>> coords(conN, std::vector<double>(dim));
-    std::vector<double> weights(conN);
-    for (NodeId v = 0; v < conN; v++) {
-        for (int i = 0; i < options.genDimension; i++) {
-            coords[v][i] = girgPositions[connectedToUnconnected[v]][i];
+    if (!options.unconnected) {
+        auto graphAndMap = GraphAlgo::getLargestComponentWithMapping(unconnected);
+        Graph connected = graphAndMap.first;
+        std::vector<NodeId> connectedToUnconnected = graphAndMap.second;
+
+        // map coordinates and weights to connected graph
+        const int conN = connected.getNumVertices();
+        std::vector<std::vector<double>> coords(conN, std::vector<double>(dim));
+        std::vector<double> weights(conN);
+        for (NodeId v = 0; v < conN; v++) {
+            for (int i = 0; i < options.genDimension; i++) {
+                coords[v][i] = girgPositions[connectedToUnconnected[v]][i];
+            }
+            weights[v] = girgWeights[connectedToUnconnected[v]];
         }
-        weights[v] = girgWeights[connectedToUnconnected[v]];
+
+        LOG_INFO("Finished construction");
+        return std::make_tuple(connected, coords, weights);
     }
 
     LOG_INFO("Finished construction");
-
-    return std::make_tuple(connected, coords, weights);
+    return std::make_tuple(unconnected, girgPositions, girgWeights);
 }

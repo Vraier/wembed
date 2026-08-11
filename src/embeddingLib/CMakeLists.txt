@@ -28,7 +28,7 @@ set(HEADERS
         # Embedder
         include/embedder/EmbedderOptions.hpp
         include/embedder/EmbedderParameters.hpp
-        include/embedder/NewWEmbedEmbedder.hpp
+        include/embedder/WembedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
@@ -55,7 +55,7 @@ set(SOURCES
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder
-        src/embedder/NewWEmbedEmbedder.cpp
+        src/embedder/WembedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
         
         src/gradientOptimizer/AdamOptimizer.cpp
@@ -74,5 +74,5 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/embeddingIO
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
-target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX sprk_ffi)
+target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX sprk_ffi-static)
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

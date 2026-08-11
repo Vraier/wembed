@@ -1,28 +1,21 @@
 #pragma once
 
+#include <string>
 #include <CLI/CLI.hpp>
-#include "EmbedderOptions.hpp"
-#include "GraphIO.hpp"
+#include "wembed.h"
 
 struct Options {
     int seed = -1;
 
     // Input / Output
-    std::string graphPath = "";
-    bool bipartite = false;
+    std::string graphPath;
+    std::string embeddingPath;
 
-    std::string embeddingPath = "";
-
-    std::string inputEmbeddingPath = "";
+    std::string inputEmbeddingPath;
     std::string embeddingComment = "%";
     std::string embeddingDelimiter = ",";
 
     bool showTimings = false;
 
-    // Visualization
-    bool animate = false;
-
-    // Embedder Options
-    bool layeredEmbedding = false;
-    EmbedderOptions embedderOptions;
+    wembed::Options embedderOptions;
 };

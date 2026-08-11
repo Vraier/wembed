@@ -15,4 +15,5 @@ struct Options {
     int genDimension = 2;
     double temperature = 0.1;
     bool torus = false;  // embed on torus
+    bool unconnected = false;
 };

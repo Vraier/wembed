@@ -6,22 +6,21 @@
 #include "EmbedderOptions.hpp"
 #include "GraphHierarchy.hpp"
 #include "LabelPropagation.hpp"
-#include "NewWEmbedEmbedder.hpp"
 #include "Timings.hpp"
+#include "WembedEmbedder.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
     //TODO: remove redundant variables
     using Timer = util::Timer;
 
    public:
-
-    LayeredEmbedder(Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
+    LayeredEmbedder(const Graph &g, LabelPropagation &coarsener, EmbedderOptions opts)
         : EmbedderInterface(g, opts),
           timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
           currentLayer(hierarchy->getNumLayers() - 1)
     {
-        currentEmbedder = std::make_unique<NewWEmbedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
+        currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
     }
 
     virtual void calculateStep();
@@ -36,6 +35,12 @@ class LayeredEmbedder : public EmbedderInterface {
     virtual std::vector<util::TimingResult> getTimings();
     virtual Graph getCurrentGraph();
 
+    int getNumVertices() const override { return currentEmbedder->getNumVertices(); }
+    int getEmbeddingDimension() const override { return currentEmbedder->getEmbeddingDimension(); }
+    void copyCoordinatesTo(double* out) const override { currentEmbedder->copyCoordinatesTo(out); }
+    EmbeddingLoss getLoss() const override { return currentEmbedder->getLoss(); }
+    double getCurrentLearningRate() const override { return currentEmbedder->getCurrentLearningRate(); }
+
    private:
     std::shared_ptr<Timer> timer;
 
@@ -49,5 +54,5 @@ class LayeredEmbedder : public EmbedderInterface {
     bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
-    std::unique_ptr<NewWEmbedEmbedder> currentEmbedder;
+    std::unique_ptr<WembedEmbedder> currentEmbedder;
 };
