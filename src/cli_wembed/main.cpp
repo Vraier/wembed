@@ -58,7 +58,7 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_flag("--unit-weights", opts.embedderOptions.useUnitWeights,
                  "Disable degree-based weights (use unit weights instead)");
     app.add_option("--index-type", opts.embedderOptions.indexType,
-                   "Type of spatial index used for the embedding (1=SNN, 2=Sprk)")
+                   "Type of spatial index used for the embedding (2=Sprk)")
         ->capture_default_str();
     app.add_option("--min-change", opts.embedderOptions.positionMinChange,
                    "Minimum change in position to stop the embedding.")
