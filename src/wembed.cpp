@@ -79,7 +79,7 @@ Embedder::Embedder(std::unique_ptr<impl::EmbedderInterface>&& embedder):
     _embedder(std::move(embedder)) { }
 
 Embedder::~Embedder() = default;
-Embedder::Embedder(Embedder&& other) noexcept = default;
+Embedder::Embedder(Embedder&& other) = default;
 Embedder& Embedder::operator=(Embedder&& other) = default;
 
 void Embedder::calculateStep() {

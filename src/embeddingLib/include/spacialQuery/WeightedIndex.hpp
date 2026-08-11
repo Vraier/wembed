@@ -11,7 +11,7 @@ public:
 
     }
 
-    void updateIndex (std::vector<std::pair<CVecRef, NodeId>> points) {
+    void updateIndex (std::vector<CVecRef> points) {
         switch (type) {
             case IndexType::Sprk:
                 index = std::make_shared<SprkQueries>(std::move(points), embeddingDimension);

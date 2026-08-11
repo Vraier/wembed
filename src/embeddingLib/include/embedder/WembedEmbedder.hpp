@@ -59,7 +59,7 @@ class WembedEmbedder : public EmbedderInterface {
     /**
      * Updates spacial data structure
      */
-    void selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points);
+    void selectNodes(std::vector<CVecRef>& points);
     void updateIndex();
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;

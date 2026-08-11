@@ -10,7 +10,7 @@
 class SprkQueries : public SpatialIndex {
    public:
     //TODO: Remove passing of NodeIDs entirely?
-    SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension);
+    SprkQueries(const std::vector<CVecRef>& points, size_t dimension);
     ~SprkQueries() override;
 
     // Move-only (handle cannot be shared)

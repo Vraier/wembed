@@ -234,7 +234,7 @@ double WembedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId
     return lossContribution;
 }
 
-void WembedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
+void WembedEmbedder::selectNodes(std::vector<CVecRef>& points) {
 
     if (this->opts.IndexSize >= 1.0) {
 
@@ -244,7 +244,7 @@ void WembedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points
 #pragma omp parallel for default(none) shared(points, params) schedule(static)
         for (int i = 0; i < graphSize(); i++) {
             this->params.indexToGraphMap[i] = i;
-            points[i] = std::make_pair(this->currentPositions[i], i);
+            points[i] = this->currentPositions[i];
         }
 
     } else {
@@ -256,7 +256,7 @@ void WembedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points
 
 #pragma omp parallel for default(none) shared(numNodes, points, params) schedule(static)
         for (int i = 0; i < numNodes; i++) {
-            points[i] = std::make_pair(this->currentPositions[params.indexToGraphMap[i]], i);
+            points[i] = this->currentPositions[params.indexToGraphMap[i]];
         }
 
     }
@@ -267,7 +267,7 @@ void WembedEmbedder::updateIndex() {
         return; //we are not using a geometric index
     }
 
-    std::vector<std::pair<CVecRef, NodeId>> points;
+    std::vector<CVecRef> points;
     selectNodes(points);
     params.weightedIndex.updateIndex(points);
 }

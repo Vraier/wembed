@@ -2,17 +2,16 @@
 
 #include <stdexcept>
 
-SprkQueries::SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension)
+SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimension)
     : handle_(nullptr),
       dimension(dimension) {
     ASSERT(dimension >= 2);
     if (!points.empty()) {
-        size_t rows = points.size();
+        const size_t rows = points.size();
         std::vector<float> data(rows * dimension);
         for (size_t i = 0; i < rows; ++i) {
-            auto [p, id] = points[i];
+            auto p = points[i];
             ASSERT(p.dimension() == dimension);
-            ASSERT(id == i);
             for (size_t j = 0; j < dimension; ++j) {
                 data[i * dimension + j] = static_cast<float>(p[j]);
             }
