@@ -46,9 +46,9 @@ class WembedEmbedder : public EmbedderInterface {
     void calculateAllCentreForces();
     // Force functions return the loss contribution of this pair
     // so the callers can accumulate it
-    void attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    void repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    void scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+    double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    double repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    double scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
     void applyGravityCentre();
 
     /**

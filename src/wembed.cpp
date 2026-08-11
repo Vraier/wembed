@@ -79,7 +79,7 @@ Embedder::Embedder(std::unique_ptr<impl::EmbedderInterface>&& embedder):
     _embedder(std::move(embedder)) { }
 
 Embedder::~Embedder() = default;
-Embedder::Embedder(Embedder&& other) = default;
+Embedder::Embedder(Embedder&& other) noexcept = default;
 Embedder& Embedder::operator=(Embedder&& other) = default;
 
 void Embedder::calculateStep() {
@@ -157,7 +157,6 @@ void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) 
 
 static IndexType toInternalIndexType(SpatialIndex idx) {
     switch (idx) {
-        case IndexSNN:  return IndexType::SNN;
         case IndexSprk: return IndexType::Sprk;
     }
     return IndexType::Sprk;

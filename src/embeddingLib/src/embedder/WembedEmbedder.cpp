@@ -173,25 +173,22 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
                            (invExpWeights[v] + invExpWeights[u]) :
                            (invExpWeights[v] * invExpWeights[u]);
 
-    double lossContribution = 0.0;
+    const double lossContribution = dist - this->opts.edgeLength / weightScaling;
     if (dist * weightScaling <= this->opts.edgeLength) {
         result *= this->opts.repulsionScale * weightScaling; //Attract to counter repulsion force
-        //TODO: Do I need loss contribution here as well?
     } else {
         result *= this->opts.attractionScale * weightScaling;
-        lossContribution = dist - this->opts.edgeLength / weightScaling;
     }
 
     this->params.force[v] += result;
     return lossContribution;
 }
 
-double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
+double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, TmpVec<0>& result) {
     if (v == u) return 0.0;
 
     const CVecRef posV = currentPositions[v];
     const CVecRef posU = currentPositions[u];
-    TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posV, posU);
 
     // displace in random direction if positions are identical
@@ -222,20 +219,22 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
 }
 
 
-void NewWEmbedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId> &candidates, VecList& forces, const size_t threadCount) {
+double WembedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId> &candidates, VecList& forces, const size_t threadCount) {
     const size_t tid = omp_get_thread_num();
 
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
 
+    double lossContribution = 0.0;
     for (auto& u : candidates) {
         TmpVec<0> result(forceBuffer, 0.0);
-        repellingForce(v, u, result);
+        lossContribution += repellingForce(v, u, result);
         forces[v * threadCount + tid] += result;
         forces[u * threadCount + tid] -= result;
     }
+    return lossContribution;
 }
 
-void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
+void WembedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& points) {
 
     if (this->opts.IndexSize >= 1.0) {
 
@@ -263,7 +262,7 @@ void NewWEmbedEmbedder::selectNodes(std::vector<std::pair<CVecRef, NodeId>>& poi
     }
 }
 
-void NewWEmbedEmbedder::updateIndex() {
+void WembedEmbedder::updateIndex() {
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
@@ -314,6 +313,7 @@ void WembedEmbedder::calculateAllAttractingForces() {
         }
     }
     this->params.lastAttractLoss = attractLoss;
+    this->params.lastRepelLoss = attractLoss; //Counter repulsion computation for neighbours
 }
 
 void WembedEmbedder::calculateAllRepellingForces() {
@@ -326,10 +326,10 @@ void WembedEmbedder::calculateAllRepellingForces() {
     const size_t threadCount = std::thread::hardware_concurrency();
     VecList forces(this->opts.embeddingDimension,graphSize() * threadCount);
 
-#pragma omp parallel for num_threads(threadCount) default(none) shared(indexBuffer, forces, threadCount) reduction(+:numRepForceCalculations) schedule(dynamic)
+#pragma omp parallel for num_threads(threadCount) default(none) shared(indexBuffer, forces, threadCount) reduction(+:numRepForceCalculations) reduction(+:repelLoss) schedule(dynamic)
     for (const NodeId v : sortedNodeIDs) {
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
-        scatterRepulsion(v, repellingCandidates, forces, threadCount);
+        repelLoss += scatterRepulsion(v, repellingCandidates, forces, threadCount);
         numRepForceCalculations += repellingCandidates.size();
     }
 
@@ -340,32 +340,13 @@ void WembedEmbedder::calculateAllRepellingForces() {
             this->params.force[i] += forces[i * threadCount + t];
         }
     }
+    this->params.lastRepelLoss += repelLoss;
 }
 
 void WembedEmbedder::calculateAllCentreForces() {
 #pragma omp parallel for default(none) shared(sortedNodeIDs, opts, params, currentPositions) schedule(static)
     for (const NodeId v : this->sortedNodeIDs) {
         this->params.force[v] += -1.0 * this->opts.centreScale * this->currentPositions[v];
-    }
-}
-
-void WembedEmbedder::applyGravityCentre() {
-    std::vector<double> dimGravity(this->opts.embeddingDimension);
-    for (int dim = 0; dim < this->opts.embeddingDimension; dim++) {
-        double dimensionSum = 0.0;
-#pragma omp parallel for default(none) shared(dim) reduction(+:dimensionSum) schedule(static)
-        for (size_t v = 0; v < graphSize(); v++) {
-            dimensionSum += this->currentPositions[v][dim];
-        }
-        dimGravity[dim] = dimensionSum / static_cast<double>(graphSize());
-    }
-    // Wrap the centroid in a single-row VecList so we can use VecRef arithmetic below.
-    // TODO: this can be a temp vec probably
-    VecList gravityCentre({dimGravity});
-
-#pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        this->currentPositions[i] -= gravityCentre[0];
     }
 }
 
