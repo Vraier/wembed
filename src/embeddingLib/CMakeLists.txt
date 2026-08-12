@@ -28,12 +28,15 @@ set(HEADERS
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
-        include/embedder/EmbedderParameters.hpp
+        include/embedder/EmbedderState.hpp
+        include/embedder/ConvergenceMonitor.hpp
+        include/embedder/DisplacementMonitor.hpp
         include/embedder/WembedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
         include/gradientOptimizer/SimpleOptimizer.hpp
+        include/gradientOptimizer/LRScheduler.hpp
 )
 
 set(SOURCES
@@ -58,11 +61,14 @@ set(SOURCES
         src/spacialQuery/SprkQueries.cpp
 
         # Embedder
+        src/embedder/ConvergenceMonitor.cpp
+        src/embedder/DisplacementMonitor.cpp
         src/embedder/WembedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
-        
+
         src/gradientOptimizer/AdamOptimizer.cpp
         src/gradientOptimizer/SimpleOptimizer.cpp
+        src/gradientOptimizer/LRScheduler.cpp
 )
 
 add_library(${target} STATIC ${HEADERS} ${SOURCES})

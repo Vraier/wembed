@@ -26,6 +26,11 @@ PYBIND11_MODULE(wembed, m) {
         .value("LRLossAdaptive", wembed::LRLossAdaptive)
         .export_values();
 
+    py::enum_<wembed::StopCriterion>(m, "StopCriterion")
+        .value("StopDisplacement", wembed::StopDisplacement)
+        .value("StopLoss", wembed::StopLoss)
+        .export_values();
+
     py::class_<wembed::Edge>(m, "Edge")
         .def(py::init<wembed::NodeId, wembed::NodeId>(), py::arg("src"), py::arg("dst"))
         .def_readwrite("src", &wembed::Edge::src)
@@ -67,13 +72,19 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("lrSchedule", &wembed::Options::lrSchedule)
         .def_readwrite("learningRate", &wembed::Options::learningRate)
         .def_readwrite("warmupSteps", &wembed::Options::warmupSteps)
-        .def_readwrite("coolingFactor", &wembed::Options::coolingFactor)
-        .def_readwrite("decayFactor", &wembed::Options::decayFactor)
-        .def_readwrite("plateauPatience", &wembed::Options::plateauPatience)
-        .def_readwrite("growthFactor", &wembed::Options::growthFactor)
-        .def_readwrite("growthRelTol", &wembed::Options::growthRelTol)
-        .def_readwrite("stopRelTol", &wembed::Options::stopRelTol)
-        .def_readwrite("stopPatience", &wembed::Options::stopPatience);
+        .def_readwrite("lrCoolingFactor", &wembed::Options::lrCoolingFactor)
+        .def_readwrite("lrDecayFactor", &wembed::Options::lrDecayFactor)
+        .def_readwrite("lrDecayThreshold", &wembed::Options::lrDecayThreshold)
+        .def_readwrite("lrAdaptPatience", &wembed::Options::lrAdaptPatience)
+        .def_readwrite("lrGrowthFactor", &wembed::Options::lrGrowthFactor)
+        .def_readwrite("lrGrowthThreshold", &wembed::Options::lrGrowthThreshold)
+        .def_readwrite("stopCriterion", &wembed::Options::stopCriterion)
+        .def_readwrite("stopDisplacementTol", &wembed::Options::stopDisplacementTol)
+        .def_readwrite("stopDisplacementPatience", &wembed::Options::stopDisplacementPatience)
+        .def_readwrite("lossSmoothingFactor", &wembed::Options::lossSmoothingFactor)
+        .def_readwrite("lossRateWindow", &wembed::Options::lossRateWindow)
+        .def_readwrite("stopLossTol", &wembed::Options::stopLossTol)
+        .def_readwrite("stopLossPatience", &wembed::Options::stopLossPatience);
 
     py::class_<wembed::Graph>(m, "Graph")
         .def("getNumVertices", &wembed::Graph::getNumVertices)
@@ -100,6 +111,8 @@ PYBIND11_MODULE(wembed, m) {
         .def("getTimings", &wembed::Embedder::getTimings)
         .def("getLoss", &wembed::Embedder::getLoss)
         .def("getCurrentLearningRate", &wembed::Embedder::getCurrentLearningRate)
+        .def("getLastRelDisplacement", &wembed::Embedder::getLastRelDisplacement)
+        .def("getLastRelLossImprovement", &wembed::Embedder::getLastRelLossImprovement)
         .def("writeCoordinates", &wembed::Embedder::writeCoordinates,
              py::arg("filePath"), py::arg("writeWeights") = true);
 

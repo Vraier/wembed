@@ -39,6 +39,8 @@ class LayeredEmbedder : public EmbedderInterface {
     void copyCoordinatesTo(double* out) const override { currentEmbedder.copyCoordinatesTo(out); }
     EmbeddingLoss getLoss() const override { return currentEmbedder.getLoss(); }
     double getCurrentLearningRate() const override { return currentEmbedder.getCurrentLearningRate(); }
+    double getLastRelDisplacement() const override { return currentEmbedder.getLastRelDisplacement(); }
+    double getLastRelLossImprovement() const override { return currentEmbedder.getLastRelLossImprovement(); }
 
    private:
     std::shared_ptr<Timer> timer;

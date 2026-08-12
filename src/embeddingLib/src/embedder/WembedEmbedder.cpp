@@ -13,12 +13,16 @@
 void WembedEmbedder::calculateStep() {
 
     //Increase current step
-    params.nextStep();
+    state.nextStep();
 
     //Abort in the case of the first hierarchy layer
     if (graphSize() <= 1) {
         return;
     }
+
+    //Snapshot the positions so we can measure how far the nodes move this step.
+    //state.currentPositions still holds the (recentred) positions from the previous step.
+    this->previousPositions = this->state.currentPositions;
 
     //Rebuild indices
     this->timer->startTiming("index", "Construct spacial index");
@@ -44,38 +48,46 @@ void WembedEmbedder::calculateStep() {
 
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
-    const double learningRate = this->lrScheduler->learningRate(static_cast<int>(this->params.currentIteration));
-    this->params.lastLearningRate = learningRate;
-    this->posOptimizer->update(this->currentPositions, this->params.force, learningRate);
+    const double learningRate = this->lrScheduler->learningRate(static_cast<int>(this->state.currentIteration));
+    this->state.lastLearningRate = learningRate;
+    this->posOptimizer->update(this->state.currentPositions, this->state.force, learningRate);
     this->timer->stopTiming("apply_forces");
 
     this->timer->startTiming("gravity", "Move graph towards centre");
     applyGravityCentre();
     this->timer->stopTiming("gravity");
 
-    this->convergenceMonitor->observe(this->params.lastAttractLoss + this->params.lastRepelLoss);
+    observeDisplacement();
+    this->convergenceMonitor->observe(this->state.lastAttractLoss + this->state.lastRepelLoss);
+    this->state.lastRelLossImprovement = this->convergenceMonitor->relImprovement();
 
-    if (this->params.currentIteration == 1 || (this->params.currentIteration > 0 && this->params.currentIteration % 10 == 0)) {
-        std::cout << "(Iteration " << this->params.currentIteration << ": loss: "
-                  << this->params.lastAttractLoss + this->params.lastRepelLoss << ")" << std::endl;
-    }
+    // if (this->state.currentIteration == 1 || (this->state.currentIteration > 0 && this->state.currentIteration % 10 == 0)) {
+    //    std::cout << "(Iteration " << this->state.currentIteration << ": loss: "
+    //              << this->state.lastAttractLoss + this->state.lastRepelLoss << ")" << std::endl;
+    // S}
 }
 
 bool WembedEmbedder::isFinished() {
-    if (this->params.currentIteration >= this->opts.maxIterations) return true;
+    if (this->state.currentIteration >= this->opts.maxIterations) return true;
     if (graphSize() <= 1) return true;
+    switch (this->opts.stopCriterion) {
+        case StopCriterionType::Displacement:
+            return this->displacementMonitor->converged();
+        case StopCriterionType::Loss:
+            return this->convergenceMonitor->converged();
+    }
     return this->convergenceMonitor->converged();
 }
 
 void WembedEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
-    this->params.currentIteration = 0;
+    this->state.currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << this->params.currentIteration);
+    LOG_INFO("Finished calculating embedding in iteration " << this->state.currentIteration);
 }
 
 Graph WembedEmbedder::getCurrentGraph() {
@@ -83,11 +95,11 @@ Graph WembedEmbedder::getCurrentGraph() {
 }
 
 std::vector<std::vector<double> > WembedEmbedder::getCoordinates() {
-    return this->currentPositions.convertToVector();
+    return this->state.currentPositions.convertToVector();
 }
 
 std::vector<double> WembedEmbedder::getWeights() {
-    return this->currentWeights;
+    return this->state.currentWeights;
 }
 
 std::vector<util::TimingResult> WembedEmbedder::getTimings() {
@@ -106,7 +118,7 @@ void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coo
         ASSERT(coordinates[i].size() == coordDim,
                "coordinates[" << i << "].size()=" << coordinates[i].size() << ", dim=" << coordDim);
         for (int d = 0; d < std::min(this->opts.embeddingDimension, coordDim); d++) {
-            currentPositions[i][d] = coordinates[i][d];
+            state.currentPositions[i][d] = coordinates[i][d];
         }
     }
 }
@@ -114,12 +126,12 @@ void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coo
 void WembedEmbedder::setWeights(const std::vector<double> &weights) {
     ASSERT(graphSize() == weights.size());
 
-    this->currentWeights = weights;
+    this->state.currentWeights = weights;
     sortNodes();
 
-#pragma omp parallel for default(none) shared(invExpWeights, currentWeights) schedule(static)
+#pragma omp parallel for default(none) shared(invExpWeights, state) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
-        invExpWeights[i] = 1.0 / Toolkit::myPow(currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
+        invExpWeights[i] = 1.0 / Toolkit::myPow(state.currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
     }
 }
 
@@ -133,17 +145,17 @@ void WembedEmbedder::setWeights(const std::vector<double> &weights) {
 double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
     if (v == u) return 0.0;
 
-    const CVecRef posV = currentPositions[v];
-    const CVecRef posU = currentPositions[u];
+    const CVecRef posV = state.currentPositions[v];
+    const CVecRef posU = state.currentPositions[u];
 
     TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posU, posV);
 
     //displace in random direction if positions are identical
     if (dist <= 0) {
-        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(params.currentIteration));
+        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
         result.setToRandomUnitVector(gen);
-        this->params.force[v] += result;
+        this->state.force[v] += result;
         return 0.0;
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
@@ -160,23 +172,23 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
         lossContribution = dist - this->opts.edgeLength / weightScaling;
     }
 
-    this->params.force[v] += result;
+    this->state.force[v] += result;
     return lossContribution;
 }
 
 double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
     if (v == u) return 0.0;
 
-    const CVecRef posV = currentPositions[v];
-    const CVecRef posU = currentPositions[u];
+    const CVecRef posV = state.currentPositions[v];
+    const CVecRef posU = state.currentPositions[u];
     TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posV, posU);
 
     // displace in random direction if positions are identical (see attractionForce)
     if (dist <= 0) {
-        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(params.currentIteration));
+        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
         result.setToRandomUnitVector(gen);
-        this->params.force[v] += result;
+        this->state.force[v] += result;
         return 0.0;
     }
 
@@ -198,7 +210,7 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
         result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
     }
 
-    this->params.force[v] += result;
+    this->state.force[v] += result;
     return lossContribution;
 }
 
@@ -209,26 +221,26 @@ void WembedEmbedder::updateIndex() {
 
     //calculate new indices
     if (this->opts.IndexSize >= 1.0) {
-        params.indexToGraphMap.resize(graphSize());
-        std::iota(params.indexToGraphMap.begin(), params.indexToGraphMap.end(), 0);
+        state.indexToGraphMap.resize(graphSize());
+        std::iota(state.indexToGraphMap.begin(), state.indexToGraphMap.end(), 0);
         const std::vector<double> weightBuckets =
-            WeightedIndex::getDoublingWeightBuckets(this->currentWeights, this->opts.doublingFactor);
-        params.currentWeightedIndex.updateIndices(this->currentPositions, this->currentWeights, weightBuckets);
+            WeightedIndex::getDoublingWeightBuckets(this->state.currentWeights, this->opts.doublingFactor);
+        state.currentWeightedIndex.updateIndices(this->state.currentPositions, this->state.currentWeights, weightBuckets);
     } else {
         //Only insert a fraction of nodes into the index
         const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
-        params.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
+        state.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
         VecList positions(this->opts.embeddingDimension, numNodes);
         std::vector<double> weights(numNodes);
 
-#pragma omp parallel for default(none) shared(numNodes, positions, weights, params) schedule(static)
+#pragma omp parallel for default(none) shared(numNodes, positions, weights, state) schedule(static)
         for (size_t i = 0; i < numNodes; i++) {
-            positions[i] = this->currentPositions[params.indexToGraphMap[i]];
-            weights[i] = this->currentWeights[params.indexToGraphMap[i]];
+            positions[i] = this->state.currentPositions[state.indexToGraphMap[i]];
+            weights[i] = this->state.currentWeights[state.indexToGraphMap[i]];
         }
 
         const std::vector<double> weightBuckets = WeightedIndex::getDoublingWeightBuckets(weights, this->opts.doublingFactor);
-        params.currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
+        state.currentWeightedIndex.updateIndices(positions, weights, weightBuckets);
     }
 }
 
@@ -241,10 +253,10 @@ std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
         return candidates;
     }
 
-    this->params.currentWeightedIndex.getNodesWithinWeightedDistance(this->currentPositions[v], this->currentWeights[v], this->opts.edgeLength,
+    this->state.currentWeightedIndex.getNodesWithinWeightedDistance(this->state.currentPositions[v], this->state.currentWeights[v], this->opts.edgeLength,
                                                        candidates, buffer);
     for (NodeId& candidate: candidates) {
-        candidate = this->params.indexToGraphMap[candidate];
+        candidate = this->state.indexToGraphMap[candidate];
         ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
     }
     return candidates;
@@ -252,15 +264,15 @@ std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
 
 void WembedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
-#pragma omp parallel for default(none) firstprivate(buffer) shared(sortedNodeIDs, graph, lossPerNode) schedule(runtime)
-    for (const NodeId v : this->sortedNodeIDs) {
+#pragma omp parallel for default(none) firstprivate(buffer) shared(state, graph, lossPerNode) schedule(runtime)
+    for (const NodeId v : this->state.sortedNodeIDs) {
         double nodeLoss = 0.0;
         for (const NodeId u : graph.getNeighbors(v)) {
             nodeLoss += attractionForce(v, u, buffer);
         }
         this->lossPerNode[v] = nodeLoss;
     }
-    this->params.lastAttractLoss =
+    this->state.lastAttractLoss =
         util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
 }
 
@@ -269,8 +281,8 @@ void WembedEmbedder::calculateAllRepellingForces() {
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), shared(sortedNodeIDs, graph, lossPerNode), reduction(+:numRepForceCalculations), schedule(runtime)
-    for (const NodeId v : sortedNodeIDs) {
+#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), shared(state, graph, lossPerNode), reduction(+:numRepForceCalculations), schedule(runtime)
+    for (const NodeId v : state.sortedNodeIDs) {
         double nodeLoss = 0.0;
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
         for (const NodeId u : repellingCandidates) {
@@ -282,14 +294,14 @@ void WembedEmbedder::calculateAllRepellingForces() {
         }
         this->lossPerNode[v] = nodeLoss;
     }
-    this->params.lastRepelLoss =
+    this->state.lastRepelLoss =
         util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
 }
 
 void WembedEmbedder::calculateAllCentreForces() {
-#pragma omp parallel for default(none) shared(sortedNodeIDs, opts, params, currentPositions) schedule(static)
-    for (const NodeId v : this->sortedNodeIDs) {
-        this->params.force[v] += -1.0 * this->opts.centreScale * this->currentPositions[v];
+#pragma omp parallel for default(none) shared(state, opts) schedule(static)
+    for (const NodeId v : this->state.sortedNodeIDs) {
+        this->state.force[v] += -1.0 * this->opts.centreScale * this->state.currentPositions[v];
     }
 }
 
@@ -298,7 +310,7 @@ void WembedEmbedder::applyGravityCentre() {
     std::vector<double> dimGravity(dim, 0.0);
     for (int d = 0; d < dim; d++) {
         dimGravity[d] = util::deterministicSum(
-                            graphSize(), [this, d](std::size_t v) { return this->currentPositions[static_cast<int>(v)][d]; }) /
+                            graphSize(), [this, d](std::size_t v) { return this->state.currentPositions[static_cast<int>(v)][d]; }) /
                         static_cast<double>(graphSize());
     }
     // Wrap the centroid in a single-row VecList so we can use VecRef arithmetic below.
@@ -307,8 +319,41 @@ void WembedEmbedder::applyGravityCentre() {
 
 #pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
-        this->currentPositions[i] -= gravityCentre[0];
+        this->state.currentPositions[i] -= gravityCentre[0];
     }
+}
+
+void WembedEmbedder::observeDisplacement() {
+    const int dim = this->opts.embeddingDimension;
+    const std::size_t n = graphSize();
+
+    // Per-node movement since the snapshot and squared distance from the centre.
+    // Each node is written by exactly one thread, then reduced deterministically,
+    // so the resulting relative displacement is independent of the thread count.
+#pragma omp parallel for default(none) firstprivate(dim, n) \
+    shared(perNodeDisplacement, perNodeRadiusSq, state, previousPositions) schedule(static)
+    for (std::size_t v = 0; v < n; v++) {
+        const CVecRef pos = this->state.currentPositions[v];
+        const CVecRef prev = this->previousPositions[v];
+        this->perNodeDisplacement[v] = vectorOperations::calculateLPNorm(pos, prev);
+        double radiusSq = 0.0;
+        for (int d = 0; d < dim; d++) {
+            radiusSq += pos[d] * pos[d];
+        }
+        this->perNodeRadiusSq[v] = radiusSq;
+    }
+
+    const double invN = 1.0 / static_cast<double>(n);
+    const double meanDisplacement =
+        util::deterministicSum(n, [this](std::size_t i) { return this->perNodeDisplacement[i]; }) * invN;
+    const double meanRadiusSq =
+        util::deterministicSum(n, [this](std::size_t i) { return this->perNodeRadiusSq[i]; }) * invN;
+    const double radius = std::sqrt(meanRadiusSq);
+
+    // guard a degenerate zero-radius layout (e.g. all nodes coincident)
+    const double relDisplacement = radius > 0.0 ? meanDisplacement / radius : 0.0;
+    this->state.lastRelDisplacement = relDisplacement;
+    this->displacementMonitor->observe(relDisplacement);
 }
 
 //TODO: This could be moved somewhere else

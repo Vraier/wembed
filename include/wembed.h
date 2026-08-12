@@ -36,6 +36,11 @@ enum LRSchedule : int32_t {
     LRLossAdaptive = 1,
 };
 
+enum StopCriterion : int32_t {
+    StopDisplacement = 0,  // stop when the relative per-step node movement settles
+    StopLoss = 1,          // stop when the (smoothed) loss stagnates (default)
+};
+
 // edge type. Used in place of std::pair<NodeId, NodeId>.
 struct Edge {
     NodeId src;
@@ -74,27 +79,38 @@ struct Options {
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerAdam;
-    int32_t maxIterations = 1000;
+    int32_t maxIterations = 10000;
     double simpleOptMaxDisplacement = 1.0;       // per-step cap (only used when optimizerType == OptimizerSimple)
 
-    // Learning rate schedule. Every parameter states which schedules read it.
+    // Learning rate schedule (lr* prefix). Every parameter states which schedules read it.
     LRSchedule lrSchedule = LRExponentialCooling;
     double learningRate = 10.0;                  // initial learning rate (both schedules)
     int32_t warmupSteps = 20;                    // linear LR ramp-up over the first steps (both schedules)
-    double coolingFactor = 0.99;                 // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
-    double decayFactor = 0.5;                    // multiplicative drop on a decay event (LRLossAdaptive only)
-    int32_t plateauPatience = 20;                // stagnant steps in a row before a decay event (LRLossAdaptive only)
-    double growthFactor = 1.05;                  // multiplicative growth after a significant new best loss
-                                                 // (LRLossAdaptive only; 1.0 disables growth)
-    double growthRelTol = 3e-3;                  // relative loss improvement over the best-so-far that triggers
-                                                 // an LR increase (LRLossAdaptive only)
+    double lrCoolingFactor = 0.995;              // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
+    double lrDecayFactor = 0.5;                  // multiplicative drop on a decay event (LRLossAdaptive only)
+    double lrDecayThreshold = 1e-2;              // decay when the loss-decrease rate stays below this (LRLossAdaptive only)
+    int32_t lrAdaptPatience = 20;                // consecutive in-zone steps before a decay OR growth event (LRLossAdaptive only)
+    double lrGrowthFactor = 1.0;                 // multiplicative growth while the loss keeps decreasing fast
+                                                 // (LRLossAdaptive only; 1.0 disables growth -> pure plateau decay)
+    double lrGrowthThreshold = 1e-1;             // grow when the loss-decrease rate stays above this (LRLossAdaptive only)
 
-    // Loss stagnation stopping criterion (maxIterations always applies as a hard cap).
-    double stopRelTol = 3e-2;                    // relative loss improvement below which a step counts as stagnant
-                                                 // (also feeds the stagnation counter that times LRLossAdaptive's decay events)
-    int32_t stopPatience = 50;                   // stagnant steps in a row before stopping.
-                                                 // When combined with LRLossAdaptive keep this >= 3 * plateauPatience
-                                                 // so the schedule gets a few decay events before the embedding stops.
+    // Stopping criterion (maxIterations always applies as a hard cap).
+    StopCriterion stopCriterion = StopLoss;  // which signal terminates the run
+
+    // Displacement stopping criterion (StopDisplacement).
+    double stopDisplacementTol = 3e-4;           // relative per-step node movement (mean displacement / radius of
+                                                 // gyration) below which the layout counts as settled
+    int32_t stopDisplacementPatience = 5;        // settled steps in a row before stopping
+
+    // Shared loss-progress signal (loss* prefix): windowed relative loss decrease rate(t),
+    // read by both the loss stop criterion and the LRLossAdaptive schedule.
+    double lossSmoothingFactor = 0.3;            // EMA weight of the newest loss sample before the monitor sees it
+                                                 // (1.0 disables smoothing); a light denoise on rate(t)
+    int32_t lossRateWindow = 30;                 // steps over which the relative loss-decrease rate is measured
+
+    // Loss stagnation stopping criterion (StopLoss).
+    double stopLossTol = 1e-3;                   // ftol: converged once rate(t) stays below this (relative decrease over window)
+    int32_t stopLossPatience = 50;               // sub-tolerance steps in a row before stopping
 };
 
 class Graph {
@@ -169,6 +185,14 @@ class Embedder {
     // Learning rate the optimizer used in the most recent step
     // (before the first step: the initial learning rate).
     double getCurrentLearningRate() const;
+
+    // Relative node displacement of the most recent step
+    // (mean per-node movement / radius of gyration); the displacement stop watches this.
+    double getLastRelDisplacement() const;
+
+    // Windowed relative loss-decrease rate of the most recent step (rate(t));
+    // the loss stop watches this (a step is stagnant when it stays below stopLossTol).
+    double getLastRelLossImprovement() const;
 
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;
 

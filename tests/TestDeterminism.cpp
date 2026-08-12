@@ -113,16 +113,63 @@ TEST(Determinism, LossIndependentOfThreadCount) {
 
 // running to convergence from a realistic (random) start must stop at
 // the same iteration (and produce the same embedding) regardless of thread count.
-TEST(Determinism, StoppingIterationIndependentOfThreadCount) {
+// This exercises the loss-based stopping criterion under the ftol semantics: the
+// windowed relative loss-decrease rate rate(t) is a deterministic function of the
+// deterministically-reduced loss stream plus a fixed-size buffer, so the stop
+// iteration is thread-count independent.
+TEST(Determinism, LossStoppingIterationIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
-    opts.stopPatience = 10;    
-    opts.stopRelTol = 1e-3;
-    opts.maxIterations = 2000;  
+    opts.stopCriterion = StopCriterionType::Loss;
+    opts.lossRateWindow = 10;    // rate measured over 10 steps
+    opts.stopLossTol = 1e-2;     // ftol: stop when the window relative decrease stays below 1%
+    opts.stopLossPatience = 10;  // sub-tolerance steps in a row before stopping
+    opts.maxIterations = 2000;
 
     auto single = runEmbedding(opts, 1, -1, false);
-    auto multi = runEmbedding(opts, 4, -1,false);
+    auto multi = runEmbedding(opts, 4, -1, false);
 
-    EXPECT_GT(single.iterations, opts.stopPatience);
+    EXPECT_GT(single.iterations, opts.stopLossPatience);
+    EXPECT_LT(single.iterations, opts.maxIterations);
+
+    EXPECT_EQ(single.iterations, multi.iterations);
+    expectExactlyEqual(single.coordinates, multi.coordinates);
+}
+
+// The LossAdaptive schedule reads the same windowed loss-decrease rate rate(t)
+// and adjusts the learning rate from it. Those adjustments are deterministic, so
+// a fixed-length run must be bit-for-bit identical across thread counts.
+TEST(Determinism, LossAdaptiveScheduleIndependentOfThreadCount) {
+    EmbedderOptions opts = baseOptions();
+    opts.lrScheduleType = LRScheduleType::LossAdaptive;
+    opts.lossRateWindow = 10;
+    opts.lrDecayThreshold = 1e-2;
+    opts.lrDecayFactor = 0.5;
+    opts.lrGrowthThreshold = 1e-1;
+    opts.lrGrowthFactor = 1.0;  // growth off: pure plateau decay
+    opts.lrAdaptPatience = 5;   // a few decay events within the run
+
+    // 60 steps > lossRateWindow + a few adapt cycles, so at least one decay fires
+    auto single = runEmbedding(opts, 1, 60, false);
+    auto multi = runEmbedding(opts, 4, 60, false);
+
+    expectExactlyEqual(single.coordinates, multi.coordinates);
+    EXPECT_EQ(single.loss, multi.loss);
+}
+
+// Same guarantee for the default displacement-based stopping criterion: the
+// relative-displacement signal is reduced deterministically, so the run must
+// stop at the same iteration on any thread count.
+TEST(Determinism, DisplacementStoppingIterationIndependentOfThreadCount) {
+    EmbedderOptions opts = baseOptions();
+    opts.stopCriterion = StopCriterionType::Displacement;
+    opts.stopDisplacementTol = 1e-3;
+    opts.stopDisplacementPatience = 5;
+    opts.maxIterations = 5000;
+
+    auto single = runEmbedding(opts, 1, -1, false);
+    auto multi = runEmbedding(opts, 4, -1, false);
+
+    EXPECT_GT(single.iterations, opts.stopDisplacementPatience);
     EXPECT_LT(single.iterations, opts.maxIterations);
 
     EXPECT_EQ(single.iterations, multi.iterations);

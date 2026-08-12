@@ -30,7 +30,7 @@ def main():
     options.dimensionHint = args.dim_hint
     options.maxIterations = args.iterations
     options.learningRate = args.speed
-    options.coolingFactor = args.cooling
+    options.lrCoolingFactor = args.cooling
     options.layeredEmbedding = args.layered
     options.centreScale = args.centre
 

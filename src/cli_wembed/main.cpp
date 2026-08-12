@@ -16,7 +16,8 @@ void calculateEmbeddingWithTrace(wembed::Embedder& embedder, const std::string& 
         std::exit(1);
     }
     trace << std::setprecision(12);
-    trace << "iteration,elapsed_ms,num_vertices,loss_attract,loss_repel,loss_total,learning_rate\n";
+    trace << "iteration,elapsed_ms,num_vertices,loss_attract,loss_repel,loss_total,learning_rate,rel_displacement,"
+             "rel_loss_improvement\n";
 
     const auto start = std::chrono::steady_clock::now();
     int iteration = 0;
@@ -27,7 +28,8 @@ void calculateEmbeddingWithTrace(wembed::Embedder& embedder, const std::string& 
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
         const wembed::Loss loss = embedder.getLoss();
         trace << iteration << ',' << elapsedMs << ',' << embedder.getNumVertices() << ',' << loss.attractive << ','
-              << loss.repulsive << ',' << loss.total << ',' << embedder.getCurrentLearningRate() << '\n';
+              << loss.repulsive << ',' << loss.total << ',' << embedder.getCurrentLearningRate() << ','
+              << embedder.getLastRelDisplacement() << ',' << embedder.getLastRelLossImprovement() << '\n';
     }
 }
 
@@ -117,49 +119,57 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Per-step displacement cap for the Simple optimizer")
         ->capture_default_str()->group(embedding);
 
-    // Defaults below are backed by a tuning study over GIRG + internet + amazon graphs at dims 2/4/6.
     const std::string schedule = "Learning rate schedule";
-    // robust default schedule; ties tuned adaptive on quality with the flattest response
     app.add_option("--lr-schedule", eo.lrSchedule,
                    "Learning rate schedule (0=ExponentialCooling, 1=LossAdaptive)")
         ->capture_default_str()->group(schedule);
-    // good default initial LR for the cooling default;
-    // note: adaptive-with-growth prefers lower (~2-5), plain adaptive prefers higher (~20-40)
     app.add_option("--speed", eo.learningRate, "Initial learning rate (both schedules)")
         ->capture_default_str()->group(schedule);
-    // warmup 0 consistently underperforms; 20-50 steps is the robust sweet spot for both schedules
     app.add_option("--warmup-steps", eo.warmupSteps,
                    "Linear learning rate ramp-up over the first steps (both schedules)")
         ->capture_default_str()->group(schedule);
-    // 0.99 dominates 0.98 on robustness across dims/graphs
-    app.add_option("--cooling", eo.coolingFactor, "Per-step multiplicative learning rate decay (schedule 0 only)")
+    app.add_option("--lr-cooling", eo.lrCoolingFactor,
+                   "Per-step multiplicative learning rate decay (schedule 0 only)")
         ->capture_default_str()->group(schedule);
-    // decay-factor 0.5 + patience 20 is the flattest, most hyperparameter-robust plateau cell
-    // (far from the collapse/blow-up cliffs)
-    app.add_option("--decay-factor", eo.decayFactor,
+    app.add_option("--lr-decay-factor", eo.lrDecayFactor,
                    "Multiplicative learning rate drop on a decay event (schedule 1 only)")
         ->capture_default_str()->group(schedule);
-    // see decay-factor note: patience 20 with decay 0.5 is the robust plateau cell
-    app.add_option("--plateau-patience", eo.plateauPatience,
-                   "Stagnant steps in a row before a decay event (schedule 1 only)")
+    app.add_option("--lr-decay-threshold", eo.lrDecayThreshold,
+                   "Decay when rate(t) stays below this loss-decrease rate (schedule 1 only)")
         ->capture_default_str()->group(schedule);
-    // gentle growth is safe and mildly helpful; values >1.1 fall off a cliff,
-    // >=1.2 is dangerous - do not raise the default
-    app.add_option("--growth-factor", eo.growthFactor,
-                   "Multiplicative learning rate growth after a significant new best loss "
+    app.add_option("--lr-adapt-patience", eo.lrAdaptPatience,
+                   "Consecutive in-zone steps before a decay OR growth event (schedule 1 only)")
+        ->capture_default_str()->group(schedule);
+    app.add_option("--lr-growth-factor", eo.lrGrowthFactor,
+                   "Multiplicative learning rate growth while the loss keeps decreasing fast "
                    "(schedule 1 only; 1.0 disables growth)")
         ->capture_default_str()->group(schedule);
-    // with gentle growth (factor 1.05), a 3e-3 trigger threshold is the robust setting;
-    // larger thresholds lose the low-dim benefit
-    app.add_option("--growth-rel-tol", eo.growthRelTol,
-                   "Relative loss improvement over the best-so-far that triggers an LR increase (schedule 1 only)")
+    app.add_option("--lr-growth-threshold", eo.lrGrowthThreshold,
+                   "Grow when rate(t) stays above this loss-decrease rate (schedule 1 only)")
         ->capture_default_str()->group(schedule);
 
     const std::string stopping = "Stopping criterion";
-    app.add_option("--stop-rel-tol", eo.stopRelTol,
-                   "Relative loss improvement below which a step counts as stagnant "
-                   "(also times the decay events of schedule 1)")
+    app.add_option("--stop-criterion", eo.stopCriterion,
+                   "Signal that terminates the run (0=Displacement, 1=Loss)")
         ->capture_default_str()->group(stopping);
-    app.add_option("--stop-patience", eo.stopPatience, "Stagnant steps in a row before stopping")
+    app.add_option("--stop-displacement-tol", eo.stopDisplacementTol,
+                   "Relative per-step node movement (mean displacement / radius of gyration) below which "
+                   "the layout counts as settled (criterion 0)")
+        ->capture_default_str()->group(stopping);
+    app.add_option("--stop-displacement-patience", eo.stopDisplacementPatience,
+                   "Settled steps in a row before stopping (criterion 0)")
+        ->capture_default_str()->group(stopping);
+    app.add_option("--loss-smoothing", eo.lossSmoothingFactor,
+                   "EMA weight of the newest loss sample before the loss-progress monitor sees it "
+                   "(1.0 disables smoothing)")
+        ->capture_default_str()->group(stopping);
+    app.add_option("--loss-rate-window", eo.lossRateWindow,
+                   "Steps over which the relative loss-decrease rate rate(t) is measured")
+        ->capture_default_str()->group(stopping);
+    app.add_option("--stop-loss-tol", eo.stopLossTol,
+                   "ftol: converged once rate(t) stays below this relative loss decrease (criterion 1)")
+        ->capture_default_str()->group(stopping);
+    app.add_option("--stop-loss-patience", eo.stopLossPatience,
+                   "Sub-tolerance steps in a row before stopping (criterion 1)")
         ->capture_default_str()->group(stopping);
 }

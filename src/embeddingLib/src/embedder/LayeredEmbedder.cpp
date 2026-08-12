@@ -78,14 +78,15 @@ void LayeredEmbedder::expandPositions() {
 
         tmpVec.setToRandomUnitVector();
         double sphere_size = Toolkit::myPow(numSiblings, 1.0 / (double)opts.embeddingDimension);
-        tmpVec *= sphere_size; 
+        tmpVec *= sphere_size;
         for (int d = 0; d < opts.embeddingDimension; d++) {
             newPositions[v][d] = geometricStretch * oldPostions[parent][d] + tmpVec[d];
         }
     }
 
     currentLayer--;
-    WembedEmbedder newEmbedder(hierarchy->graphs[currentLayer], opts, timer);
+    // initializeState=false skips the constructor's throwaway random coordinate/weight
+    WembedEmbedder newEmbedder(hierarchy->graphs[currentLayer], opts, timer, false);
     currentEmbedder = std::move(newEmbedder);
     currentEmbedder.setCoordinates(newPositions);
     currentEmbedder.setWeights(newWeights);
