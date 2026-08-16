@@ -74,10 +74,16 @@ void LayeredEmbedder::expandPositions() {
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldN, "Parent node " << parent << " is out of bounds " << oldN);
-        double numSiblings = hierarchy->nodeLayers[currentLayer][parent].totalContainedNodes;
+        // direct child count, not total contained leaves: children.size()^(1/d) spheres
+        // tile the stretched layout (volume ~ newN) at unit density
+        double numSiblings = hierarchy->nodeLayers[currentLayer][parent].children.size();
 
         tmpVec.setToRandomUnitVector();
-        double sphere_size = Toolkit::myPow(numSiblings, 1.0 / (double)opts.embeddingDimension);
+        // clusters pack tighter than unit density since internal edges don't repel; measured
+        // converged rms spreads: ~0.2*k^(1/d) at d=2, ~0.4 at d=4, ~0.5 at d=8, but end
+        // quality and iteration count are insensitive to this factor in [0.15,1] at d=2 and 8
+        constexpr double scatterPacking = 0.3;
+        double sphere_size = scatterPacking * Toolkit::myPow(numSiblings, 1.0 / (double)opts.embeddingDimension);
         tmpVec *= sphere_size;
         for (int d = 0; d < opts.embeddingDimension; d++) {
             newPositions[v][d] = geometricStretch * oldPostions[parent][d] + tmpVec[d];

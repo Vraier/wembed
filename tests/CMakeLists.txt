@@ -4,7 +4,7 @@ set(TEST_FILES
     TestGraph.cpp
     TestGraphAlgorithm.cpp
     TestGeometricGraphSampler.cpp
-    #TestHierarchy.cpp
+    TestHierarchy.cpp
     TestMetrics.cpp
     TestTimings.cpp
     TestSNNQueries.cpp

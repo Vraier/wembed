@@ -11,16 +11,16 @@ struct NodeInformation {
     int parentNode = -1;
     std::vector<int> children;  // This is kind of needed for calculating approx rep forces
 
-    // information about all contained nodes
+    // information about all contained finest-layer nodes
     int totalContainedNodes = 0;
-    double nodeWeightSum = 0;  // sum of the node weights
+    double nodeWeightSum = 0;  // sum of contained finest-layer degrees
 };
 
 struct EdgeInformation {
     // pointer to next and previous layer
-    int parentEdge = 1;
+    int parentEdge = -1;
     std::vector<int> children;
-    int totalContainedEdges = 0;  // counts the number of edges between clusters
+    int totalContainedEdges = 0;  // finest-layer edges represented by this coarse edge
 };
 
 /**
