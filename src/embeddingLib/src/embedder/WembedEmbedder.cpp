@@ -159,12 +159,15 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
                            (invExpWeights[v] + invExpWeights[u]) :
                            (invExpWeights[v] * invExpWeights[u]);
 
+    // loss is the linear hinge on the weighted distance (threshold 1), so it
+    // matches the applied force: force = -grad(loss) via the chain rule
     double lossContribution = 0.0;
-    if (dist * weightScaling <= this->opts.edgeLength) {
+    const double weightedDist = dist * weightScaling;
+    if (weightedDist <= 1.0) {
         result *= 0;
     } else {
-        result *= this->opts.attractionScale * weightScaling;
-        lossContribution = dist - this->opts.edgeLength / weightScaling;
+        result *= weightScaling;
+        lossContribution = weightedDist - 1.0;
     }
 
     this->state.force[v] += result;
@@ -179,30 +182,35 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
     TmpVec<0> result(forceBuffer, 0.0);
     const double dist = vectorOperations::calculateLPNorm(posV, posU);
 
-    // displace in random direction if positions are identical (see attractionForce)
+    // displace in random direction if positions are identical (see attractionForce);
+    // coincident non-neighbors have the maximal repulsion violation, so report it
     if (dist <= 0) {
         std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
         result.setToRandomUnitVector(gen);
         this->state.force[v] +=  result;
-        return 0.0;
+        return 1.0;
     }
 
     vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
 
-    // calculate weighted distance
     const double weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
                                                             : (invExpWeights[v] * invExpWeights[u]);
+
+    // hinge on the weighted distance, mirroring the force (see attractionForce)
     double lossContribution = 0.0;
-    if (dist * weightScaling > this->opts.edgeLength) {
+    const double weightedDist = dist * weightScaling;
+    if (weightedDist > 1.0) {
         result *= 0;
     } else {
-        result *= this->opts.repulsionScale * weightScaling;
-        lossContribution = this->opts.edgeLength / weightScaling - dist;
+        result *= weightScaling;
+        lossContribution = 1.0 - weightedDist;
     }
 
-    // increase repulsion force when we use less negative samples
+    // increase repulsion force (and its loss estimate) when we use less negative samples
     if (this->opts.numNegativeSamples > 0) {
-        result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
+        const double sampleRescale = static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
+        result *= sampleRescale;
+        lossContribution *= sampleRescale;
     }
 
     this->state.force[v] += result;
@@ -248,7 +256,7 @@ std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
         return candidates;
     }
 
-    this->state.currentWeightedIndex.getNodesWithinWeightedDistance(this->state.currentPositions[v], this->state.currentWeights[v], this->opts.edgeLength,
+    this->state.currentWeightedIndex.getNodesWithinWeightedDistance(this->state.currentPositions[v], this->state.currentWeights[v], 1.0,
                                                        candidates, buffer);
     for (NodeId& candidate: candidates) {
         candidate = this->state.indexToGraphMap[candidate];

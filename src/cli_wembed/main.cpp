@@ -100,10 +100,6 @@ void addOptions(CLI::App& app, Options& opts) {
         ->group(embedding);
     app.add_option("--index-type", eo.indexType, "Type of spatial index used for the embedding (1=SNN, 2=Sprk)")
         ->capture_default_str()->group(embedding);
-    app.add_option("--attraction", eo.attractionScale, "Changes magnitude of attracting forces")
-        ->capture_default_str()->group(embedding);
-    app.add_option("--repulsion", eo.repulsionScale, "Changes magnitude of repulsing forces")
-        ->capture_default_str()->group(embedding);
     app.add_option("--centre,--center", eo.centreScale,
                    "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01-0.1). "
                    "Default 0 disables it.")
