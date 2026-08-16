@@ -17,8 +17,6 @@ class WembedEmbedder : public EmbedderInterface {
 
     std::shared_ptr<util::Timer> timer;
 
-    uint32_t numRepForceCalculations = 0;
-
     std::vector<double> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
     // written by exactly one thread, then reduced deterministically (so the
@@ -71,7 +69,7 @@ class WembedEmbedder : public EmbedderInterface {
     /**
      * Computes all nodes to do a repulsion force computation with node v
      */
-    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
+    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v) const;
 
     /**
      * Updates spacial data structure

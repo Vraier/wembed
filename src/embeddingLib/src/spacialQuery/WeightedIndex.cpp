@@ -62,41 +62,22 @@ std::vector<double> WeightedIndex::getDoublingWeightBuckets(const std::vector<do
     return buckets;
 }
 
-void WeightedIndex::getNodesWithinWeightedDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output,
-                                                   VecBuffer<2>& buffer) const {
+void WeightedIndex::getNodesWithinWeightedDistance(CVecRef p, double weight, double radius,
+                                                   std::vector<NodeId>& output) const {
     ASSERT(output.empty());
     for (int i = 0; i < maxWeightOfClass.size(); i++) {
-        getNodesWithinWeightedDistanceForClass(p, weight, radius, i, output, buffer);
+        getNodesWithinWeightedDistanceForClass(p, weight, radius, i, output);
     }
 }
 
 void WeightedIndex::getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
-                                                           std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
+                                                           std::vector<NodeId>& output) const {
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
     ASSERT(weight_class < maxWeightOfClass.size());
 
     double maxWeight = maxWeightOfClass[weight_class];
     double queryRadius = radius * Toolkit::myPow(weight * maxWeight, 1.0 / (double)DIMENSION);
-    getWithinRadius(weight_class, p, queryRadius, output, buffer);
-}
-
-void WeightedIndex::getNodesWithinWeightedInfNormDistance(CVecRef p, double weight, double radius,
-                                                          std::vector<NodeId>& output, VecBuffer<2>& buffer) const {
-    ASSERT(output.empty());
-    for (int i = 0; i < maxWeightOfClass.size(); i++) {
-        getNodesWithinWeightedDistanceInfNormForClass(p, weight, radius, i, output, buffer);
-    }
-}
-
-void WeightedIndex::getNodesWithinWeightedDistanceInfNormForClass(CVecRef p, double weight, double radius,
-                                                                  size_t weight_class, std::vector<NodeId>& output,
-                                                                  VecBuffer<2>& buffer) const {
-    ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
-    ASSERT(weight_class < maxWeightOfClass.size());
-
-    double maxWeight = maxWeightOfClass[weight_class];
-    double queryRadius = radius * Toolkit::myPow(weight * maxWeight, 1.0 / (double)DIMENSION);
-    getWithinBox(weight_class, p, queryRadius, output, buffer);
+    getWithinRadius(weight_class, p, queryRadius, output);
 }
 
 int WeightedIndex::getNumWeightClasses() const { return maxWeightOfClass.size(); }
@@ -105,30 +86,8 @@ int WeightedIndex::getIndexDimension() const { return DIMENSION; }
 
 std::vector<double> WeightedIndex::getWeightClasses() const { return maxWeightOfClass; }
 
-void WeightedIndex::getKNNNeighbors(int indexId, CVecRef p, int k, std::vector<NodeId>& output) const {
-    ASSERT(p.dimension() == DIMENSION);
-    spacialIndices[indexId]->query_nearest(p, k, output);
-}
-
-void WeightedIndex::getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
-                                    VecBuffer<2>& buffer) const {
+void WeightedIndex::getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output) const {
     ASSERT(p.dimension() == DIMENSION);
     ASSERT(radius > 0);
     spacialIndices[indexId]->query_sphere(p, radius, output);
-}
-
-void WeightedIndex::getWithinBox(int indexId, CVecRef p, double radius, std::vector<NodeId>& output,
-                                 VecBuffer<2>& buffer) const {
-    ASSERT(p.dimension() == DIMENSION);
-    ASSERT(radius > 0);
-
-    TmpVec<0> min_corner(buffer);
-    TmpVec<1> max_corner(buffer);
-    min_corner = p;
-    max_corner = p;
-    for (int i = 0; i < DIMENSION; i++) {
-        min_corner[i] -= radius;
-        max_corner[i] += radius;
-    }
-    spacialIndices[indexId]->query_box(min_corner.erase(), max_corner.erase(), output);
 }

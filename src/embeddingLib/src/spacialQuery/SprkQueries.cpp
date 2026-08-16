@@ -66,10 +66,3 @@ size_t SprkQueries::query_sphere(CVecRef point, double radius, std::vector<int>&
     return out.size();
 }
 
-size_t SprkQueries::query_nearest(CVecRef, unsigned int, std::vector<int>&) const {
-    throw std::runtime_error("Not implemented!");
-}
-
-size_t SprkQueries::query_box(CVecRef, CVecRef, std::vector<int>&) const {
-    throw std::runtime_error("Not implemented!");
-}

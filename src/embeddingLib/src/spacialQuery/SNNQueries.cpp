@@ -41,10 +41,3 @@ size_t SNNQueries::query_sphere(CVecRef point, double radius, std::vector<int>& 
 }
 
 
-size_t SNNQueries::query_nearest(CVecRef, unsigned int, std::vector<int>&) const {
-    throw std::runtime_error("Not implemented!");
-}
-
-size_t SNNQueries::query_box(CVecRef, CVecRef, std::vector<int>&) const {
-    throw std::runtime_error("Not implemented!");
-}

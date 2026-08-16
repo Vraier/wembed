@@ -18,10 +18,6 @@ class SNNQueries: public SpatialIndex {
 
     size_t query_sphere(CVecRef point, double radius, std::vector<int>& out) const override;
 
-    // note: no support for box or kNN queries
-    size_t query_nearest(CVecRef point, unsigned int number, std::vector<int>& out) const override;
-    size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<int>& out) const override;
-
    private:
     SnnModel snn;
     std::vector<IdType> result_buffer;

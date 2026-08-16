@@ -65,11 +65,8 @@ void WembedEmbedder::calculateStep() {
 bool WembedEmbedder::isFinished() {
     if (this->state.currentIteration >= this->opts.maxIterations) return true;
     if (graphSize() <= 1) return true;
-    switch (this->opts.stopCriterion) {
-        case StopCriterionType::Displacement:
-            return this->displacementMonitor->converged();
-        case StopCriterionType::Loss:
-            return this->convergenceMonitor->converged();
+    if (this->opts.stopCriterion == StopCriterionType::Displacement) {
+        return this->displacementMonitor->converged();
     }
     return this->convergenceMonitor->converged();
 }
@@ -155,9 +152,7 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
 
-    const double weightScaling = this->opts.additiveWeights ?
-                           (invExpWeights[v] + invExpWeights[u]) :
-                           (invExpWeights[v] * invExpWeights[u]);
+    const double weightScaling = invExpWeights[v] * invExpWeights[u];
 
     // loss is the linear hinge on the weighted distance (threshold 1), so it
     // matches the applied force: force = -grad(loss) via the chain rule
@@ -193,8 +188,7 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
 
     vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
 
-    const double weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
-                                                            : (invExpWeights[v] * invExpWeights[u]);
+    const double weightScaling = invExpWeights[v] * invExpWeights[u];
 
     // hinge on the weighted distance, mirroring the force (see attractionForce)
     double lossContribution = 0.0;
@@ -247,7 +241,7 @@ void WembedEmbedder::updateIndex() {
     }
 }
 
-std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const {
+std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v) const {
     //TODO: Definitely think about refactoring this
     std::vector<NodeId> candidates;
 
@@ -257,7 +251,7 @@ std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, VecB
     }
 
     this->state.currentWeightedIndex.getNodesWithinWeightedDistance(this->state.currentPositions[v], this->state.currentWeights[v], 1.0,
-                                                       candidates, buffer);
+                                                       candidates);
     for (NodeId& candidate: candidates) {
         candidate = this->state.indexToGraphMap[candidate];
         ASSERT(candidate < graphSize() && candidate >= 0, "Index out of bounds: " << candidate << " for N = " << graphSize());
@@ -280,20 +274,17 @@ void WembedEmbedder::calculateAllAttractingForces() {
 }
 
 void WembedEmbedder::calculateAllRepellingForces() {
-    VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
-    numRepForceCalculations = 0;
 
-#pragma omp parallel for default(none) firstprivate(indexBuffer, forceBuffer), shared(state, graph, lossPerNode), reduction(+:numRepForceCalculations), schedule(runtime)
+#pragma omp parallel for default(none) firstprivate(forceBuffer), shared(state, graph, lossPerNode), schedule(runtime)
     for (const NodeId v : state.sortedNodeIDs) {
         double nodeLoss = 0.0;
-        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
+        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v);
         for (const NodeId u : repellingCandidates) {
             if (graph.areNeighbors(v, u) || graph.areInSameColorClass(v, u)) {
                 continue;
             }
             nodeLoss += repellingForce(v, u, forceBuffer);
-            numRepForceCalculations++;
         }
         this->lossPerNode[v] = nodeLoss;
     }

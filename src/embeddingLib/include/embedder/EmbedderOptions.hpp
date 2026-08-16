@@ -41,8 +41,6 @@ struct EmbedderOptions {
     double centreScale = 0.0; //factor by which each node is drawn to the centre
     double expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 
-    bool additiveWeights = false;
-
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerType::Adam;
     int maxIterations = 10000;
