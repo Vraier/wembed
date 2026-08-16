@@ -60,11 +60,6 @@ void WembedEmbedder::calculateStep() {
     observeDisplacement();
     this->convergenceMonitor->observe(this->state.lastAttractLoss + this->state.lastRepelLoss);
     this->state.lastRelLossImprovement = this->convergenceMonitor->relImprovement();
-
-    // if (this->state.currentIteration == 1 || (this->state.currentIteration > 0 && this->state.currentIteration % 10 == 0)) {
-    //    std::cout << "(Iteration " << this->state.currentIteration << ": loss: "
-    //              << this->state.lastAttractLoss + this->state.lastRepelLoss << ")" << std::endl;
-    // S}
 }
 
 bool WembedEmbedder::isFinished() {
@@ -188,7 +183,7 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
     if (dist <= 0) {
         std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
         result.setToRandomUnitVector(gen);
-        this->state.force[v] += result;
+        this->state.force[v] +=  result;
         return 0.0;
     }
 

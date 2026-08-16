@@ -10,14 +10,10 @@ namespace util {
  * Deterministic parallel reductions.
  *
  * A plain OpenMP `reduction(+:x)` combines the per-thread partial sums in an
- * unspecified order, This breaks determinism on float numbers.
- * 
- * This function implements a block-reduce pattern that is deterministic. Regardless of thread count.
+ * unspecified order, which breaks determinism for floating-point sums. This uses
+ * a fixed block-reduce pattern that gives the same result regardless of thread
+ * count. For a per-dimension sum, call this once per dimension.
  */
-
-// Sums element(i) for i in [0, n). element must be safe to call concurrently.
-// For a per-dimension sum, call this once per dimension: each call fixes the same
-// block boundaries and combine order, so every column is reduced deterministically.
 template <typename ElementFn>
 inline double deterministicSum(std::size_t n, ElementFn&& element, std::size_t blockSize = 4096) {
     if (n == 0) return 0.0;

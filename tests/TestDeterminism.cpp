@@ -28,10 +28,9 @@ struct RunResult {
 };
 
 // Runs the embedder and returns the resulting coordinates, loss and iteration
-// count. If steps >= 0 it runs exactly that many steps; if steps < 0 it runs to
-// convergence (until isFinished()), which exercises the stopping criterion.
-// coincidentStart places all nodes at the same position.
-// otherwise the constructor's random initialisation is used. for the stopping criterion.
+// count. If steps >= 0 it runs exactly that many steps;
+// coincidentStart places all nodes at the same position; otherwise the
+// constructor's random initialisation is used.
 RunResult runEmbedding(const EmbedderOptions& opts, int numThreads, int steps, bool coincidentStart) {
 #ifdef _OPENMP
     omp_set_num_threads(numThreads);
@@ -93,7 +92,7 @@ TEST(Determinism, RepeatedMultiThreadedRunsMatch) {
     expectExactlyEqual(first.coordinates, second.coordinates);
 }
 
-// The embedding must not depend on how many threads OpenMP uses.
+// must not depend on how many threads OpenMP uses
 TEST(Determinism, ResultIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
     auto single = runEmbedding(opts, 1, 25,true);
@@ -101,9 +100,7 @@ TEST(Determinism, ResultIndependentOfThreadCount) {
     expectExactlyEqual(single.coordinates, multi.coordinates);
 }
 
-// The loss that drives the stopping criterion must also be thread-count
-// independent, otherwise a run could stop at a different iteration on a different
-// machine. This exercises the deterministic loss reduction.
+// exercises the deterministic loss reduction
 TEST(Determinism, LossIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
     auto single = runEmbedding(opts, 1, 25, true);
@@ -111,12 +108,7 @@ TEST(Determinism, LossIndependentOfThreadCount) {
     EXPECT_EQ(single.loss, multi.loss);
 }
 
-// running to convergence from a realistic (random) start must stop at
-// the same iteration (and produce the same embedding) regardless of thread count.
-// This exercises the loss-based stopping criterion under the ftol semantics: the
-// windowed relative loss-decrease rate rate(t) is a deterministic function of the
-// deterministically-reduced loss stream plus a fixed-size buffer, so the stop
-// iteration is thread-count independent.
+// loss-based stopping must halt at the same iteration on any thread count
 TEST(Determinism, LossStoppingIterationIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
     opts.stopCriterion = StopCriterionType::Loss;
@@ -135,9 +127,7 @@ TEST(Determinism, LossStoppingIterationIndependentOfThreadCount) {
     expectExactlyEqual(single.coordinates, multi.coordinates);
 }
 
-// The LossAdaptive schedule reads the same windowed loss-decrease rate rate(t)
-// and adjusts the learning rate from it. Those adjustments are deterministic, so
-// a fixed-length run must be bit-for-bit identical across thread counts.
+// LossAdaptive adjusts the LR from the deterministic loss rate, so runs match across thread counts
 TEST(Determinism, LossAdaptiveScheduleIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
     opts.lrScheduleType = LRScheduleType::LossAdaptive;
@@ -156,9 +146,7 @@ TEST(Determinism, LossAdaptiveScheduleIndependentOfThreadCount) {
     EXPECT_EQ(single.loss, multi.loss);
 }
 
-// Same guarantee for the default displacement-based stopping criterion: the
-// relative-displacement signal is reduced deterministically, so the run must
-// stop at the same iteration on any thread count.
+// displacement-based stopping must halt at the same iteration on any thread count
 TEST(Determinism, DisplacementStoppingIterationIndependentOfThreadCount) {
     EmbedderOptions opts = baseOptions();
     opts.stopCriterion = StopCriterionType::Displacement;

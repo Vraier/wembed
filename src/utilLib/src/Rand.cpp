@@ -3,7 +3,7 @@
 
 #include <unordered_set>
 
-Rand* Rand::instance = nullptr; 
+Rand* Rand::instance = nullptr;
 
 Rand::Rand() {
     // i think this makes a random seed every time (if system supports random device)
@@ -28,8 +28,8 @@ std::mt19937& Rand::globalGenerator() { return get()->generator; }
 
 std::mt19937 Rand::localGenerator(uint32_t a, uint32_t b) {
     // seed_seq scrambles the (base seed, a, b) inputs into mt19937's state, so even
-    // adjacent keys yield uncorrelated streams (setSeed sould run
-    //  single-threaded before any parallel use).
+    // adjacent keys yield uncorrelated streams (setSeed must run single-threaded
+    // before any parallel use)
     std::seed_seq seq{get()->seedValue, a, b};
     return std::mt19937(seq);
 }
