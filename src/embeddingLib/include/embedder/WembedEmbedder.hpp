@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mutex>
-
 #include <memory>
 
 #include "AdamOptimizer.hpp"
@@ -19,8 +17,6 @@ class WembedEmbedder : public EmbedderInterface {
 
     std::vector<double> invExpWeights;
     std::unique_ptr<Optimizer> posOptimizer;
-
-    std::vector<std::mutex> candidateLocks;
 
     static std::unique_ptr<Optimizer> makePosOptimizer(const EmbedderOptions &opts, uint32_t numVertices) {
         switch (opts.optimizerType) {
@@ -72,8 +68,7 @@ class WembedEmbedder : public EmbedderInterface {
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
                         invExpWeights(g.getNumVertices()),
-                        posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
-                        candidateLocks(g.getNumVertices())
+                        posOptimizer(makePosOptimizer(opts, g.getNumVertices()))
     {
 
         WembedEmbedder::setCoordinates(constructRandomCoordinates());
