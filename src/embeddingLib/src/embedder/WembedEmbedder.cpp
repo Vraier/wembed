@@ -319,11 +319,11 @@ void WembedEmbedder::calculateAllRepellingForces() {
 
 #pragma omp parallel for num_threads(threadCount) default(none) shared(indexBuffer, forces, threadCount) reduction(+:numRepForceCalculations) schedule(dynamic)
     for (const NodeId v : state.sortedNodeIDs) {
-        double nodeLoss = 0.0;
         const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
-        nodeLoss += scatterRepulsion(v, repellingCandidates, forces, threadCount);
-        numRepForceCalculations += repellingCandidates.size();
+        const double nodeLoss = scatterRepulsion(v, repellingCandidates, forces, threadCount);
         this->lossPerNode[v] = nodeLoss;
+
+        numRepForceCalculations += repellingCandidates.size();
     }
 
     //Add results into force vector
@@ -333,6 +333,8 @@ void WembedEmbedder::calculateAllRepellingForces() {
             this->state.force[i] += forces[i * threadCount + t];
         }
     }
+
+    //Addition as we have the neighbor offset
     this->state.lastRepelLoss +=
             util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
 }

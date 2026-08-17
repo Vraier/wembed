@@ -1,4 +1,6 @@
 #pragma once
+#include "SpacialIndex.hpp"
+#include "SprkQueries.hpp"
 
 
 class WeightedIndex {
