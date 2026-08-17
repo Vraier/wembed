@@ -146,6 +146,14 @@ double Embedder::getCurrentLearningRate() const {
     return _embedder->getCurrentLearningRate();
 }
 
+double Embedder::getLastRelDisplacement() const {
+    return _embedder->getLastRelDisplacement();
+}
+
+double Embedder::getLastRelLossImprovement() const {
+    return _embedder->getLastRelLossImprovement();
+}
+
 void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) const {
     if (writeWeights) {
         EmbeddingIO::writeCoordinates(filePath, _embedder->getCoordinates(), _embedder->getWeights());
@@ -170,6 +178,22 @@ static ::OptimizerType toInternalOptimizerType(OptimizerType opt) {
     return ::OptimizerType::Adam;
 }
 
+static LRScheduleType toInternalLRScheduleType(LRSchedule schedule) {
+    switch (schedule) {
+        case LRExponentialCooling: return LRScheduleType::ExponentialCooling;
+        case LRLossAdaptive:       return LRScheduleType::LossAdaptive;
+    }
+    return LRScheduleType::ExponentialCooling;
+}
+
+static StopCriterionType toInternalStopCriterion(StopCriterion criterion) {
+    switch (criterion) {
+        case StopDisplacement: return StopCriterionType::Displacement;
+        case StopLoss:         return StopCriterionType::Loss;
+    }
+    return StopCriterionType::Loss;
+}
+
 Embedder createEmbedder(const Graph& g, const Options& options) {
     EmbedderOptions opts;
     opts.embeddingDimension = options.embeddingDimension;
@@ -182,11 +206,24 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.edgeLength = options.edgeLength;
     opts.expansionStretch = options.expansionStretch;
     opts.optimizerType = toInternalOptimizerType(options.optimizerType);
-    opts.coolingFactor = options.coolingFactor;
-    opts.learningRate = options.learningRate;
     opts.maxIterations = options.maxIterations;
-    opts.positionMinChange = options.positionMinChange;
     opts.simpleOptMaxDisplacement = options.simpleOptMaxDisplacement;
+    opts.lrScheduleType = toInternalLRScheduleType(options.lrSchedule);
+    opts.learningRate = options.learningRate;
+    opts.warmupSteps = options.warmupSteps;
+    opts.lrCoolingFactor = options.lrCoolingFactor;
+    opts.lrDecayFactor = options.lrDecayFactor;
+    opts.lrDecayThreshold = options.lrDecayThreshold;
+    opts.lrAdaptPatience = options.lrAdaptPatience;
+    opts.lrGrowthFactor = options.lrGrowthFactor;
+    opts.lrGrowthThreshold = options.lrGrowthThreshold;
+    opts.stopCriterion = toInternalStopCriterion(options.stopCriterion);
+    opts.stopDisplacementTol = options.stopDisplacementTol;
+    opts.stopDisplacementPatience = options.stopDisplacementPatience;
+    opts.lossSmoothingFactor = options.lossSmoothingFactor;
+    opts.lossRateWindow = options.lossRateWindow;
+    opts.stopLossTol = options.stopLossTol;
+    opts.stopLossPatience = options.stopLossPatience;
 
     const auto& graph = *g._graph;
     if (options.layeredEmbedding) {

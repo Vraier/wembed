@@ -5,3 +5,5 @@
 * Remove dead EmbedderOptions fields (optimizerType, weightPenalty, lpNorm, weightLearningRate, dumpWeights, WeightType::Original)
 * remove code duplication of options, timingResults, SpatialIndex in cpp library interface
     * replace inline map with constexpr 
+* get cmake clean up (maybe take a refcmake project like chris)
+* check that embedder is deterministic and has no race conditions (like in the rng generator)

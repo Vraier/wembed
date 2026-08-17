@@ -3,12 +3,13 @@
 
 #include <unordered_set>
 
-Rand* Rand::instance = nullptr;  // or NULL, or nullptr in c++11
+Rand* Rand::instance = nullptr;
 
 Rand::Rand() {
     // i think this makes a random seed every time (if system supports random device)
     std::random_device device;
-    generator = std::mt19937(device());
+    seedValue = device();
+    generator = std::mt19937(seedValue);
 }
 
 Rand* Rand::get() {
@@ -18,7 +19,20 @@ Rand* Rand::get() {
     return instance;
 }
 
-void Rand::setSeed(int seed) { get()->generator = std::mt19937(seed); }
+void Rand::setSeed(int seed) {
+    get()->seedValue = static_cast<uint32_t>(seed);
+    get()->generator = std::mt19937(static_cast<uint32_t>(seed));
+}
+
+std::mt19937& Rand::globalGenerator() { return get()->generator; }
+
+std::mt19937 Rand::localGenerator(uint32_t a, uint32_t b) {
+    // seed_seq scrambles the (base seed, a, b) inputs into mt19937's state, so even
+    // adjacent keys yield uncorrelated streams (setSeed must run single-threaded
+    // before any parallel use)
+    std::seed_seq seq{get()->seedValue, a, b};
+    return std::mt19937(seq);
+}
 
 int Rand::randomInt(int lowerBound, int upperBound) {
     std::uniform_int_distribution<int> distribution(lowerBound, upperBound);

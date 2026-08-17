@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <random>
 #include <vector>
 
@@ -11,6 +12,9 @@ class Rand {
     static Rand *get();  // this returns the singleton but is not needed for the user
 
     std::mt19937 generator;
+    // base seed the singleton was seeded with; used to derive independent
+    // deterministic generators (see localGenerator)
+    uint32_t seedValue = 0;
 
    public:
     /**
@@ -18,6 +22,19 @@ class Rand {
      * Otherwise the time of the system will be used
      */
     static void setSeed(int seed);
+
+    /**
+     * Reference to the shared singleton generator. Only safe to use
+     * single-threaded (it is the default source for the non-parallel RNG helpers).
+     */
+    static std::mt19937 &globalGenerator();
+
+    /**
+     * Returns a fresh, independent generator seeded deterministically from the
+     * global base seed and the two key components (e.g. node id and iteration).
+     * Use this instead of the shared singleton inside parallel regions.
+     */
+    static std::mt19937 localGenerator(uint32_t a, uint32_t b);
     /**
      * Random integer between lower and upper bound.
      * The bounds are inclusive

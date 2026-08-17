@@ -410,11 +410,17 @@ class VecRefImpl {
         return maxIndex;
     }
 
-    ALWAYS_INLINE void setToRandomUnitVector() {
+    // Fills with a random unit vector. Defaults to the shared singleton generator
+    // (single-threaded callers); inside parallel force loops pass a per-node
+    // deterministic generator (Rand::localGenerator) so the tie-break direction
+    // for coincident nodes does not depend on thread count or scheduling.
+    ALWAYS_INLINE void setToRandomUnitVector(std::mt19937& gen = Rand::globalGenerator()) {
         double norm = 0;
         for (int i = 0; i < dimension(); i++) {
-            coord.get()[i] = Rand::gaussDistribution(0.0, 1.0);
-            norm += coord.get()[i] * coord.get()[i];
+            std::normal_distribution<double> dist(0.0, 1.0);
+            const double x = dist(gen);
+            coord.get()[i] = x;
+            norm += x * x;
         }
         norm = std::sqrt(norm);
         for (int i = 0; i < dimension(); i++) {

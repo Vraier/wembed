@@ -1,7 +1,7 @@
 #pragma once
 
+#include <memory>
 
-#include "AdamOptimizer.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "GraphHierarchy.hpp"
@@ -40,6 +40,8 @@ class LayeredEmbedder : public EmbedderInterface {
     void copyCoordinatesTo(double* out) const override { currentEmbedder->copyCoordinatesTo(out); }
     EmbeddingLoss getLoss() const override { return currentEmbedder->getLoss(); }
     double getCurrentLearningRate() const override { return currentEmbedder->getCurrentLearningRate(); }
+    double getLastRelDisplacement() const override { return currentEmbedder->getLastRelDisplacement(); }
+    double getLastRelLossImprovement() const override { return currentEmbedder->getLastRelLossImprovement(); }
 
    private:
     std::shared_ptr<Timer> timer;
@@ -51,7 +53,6 @@ class LayeredEmbedder : public EmbedderInterface {
 
     int currentIteration = 0;
     int currentLayer;
-    bool insignificantPosChange = false;
 
     // stores positions and weights of all graphs in the hierarchy
     std::unique_ptr<WembedEmbedder> currentEmbedder;

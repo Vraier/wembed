@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "EmbedderOptions.hpp"
-#include "EmbedderParameters.hpp"
+#include "EmbedderState.hpp"
 #include "Graph.hpp"
 #include "Timings.hpp"
 #include "VecList.hpp"
@@ -23,25 +23,16 @@ struct EmbeddingLoss {
 class EmbedderInterface {
 
     protected:
-    // graph information
-    Graph graph;
-    VecList currentPositions;
-    std::vector<double> currentWeights;
-    std::vector<int32_t> sortedNodeIDs;
-
-    // embedding information
-    EmbedderOptions opts;
-    EmbedderParameters params;
+    Graph graph;            // the (current) graph being embedded
+    EmbedderOptions opts;   // configuration
+    EmbedderState state;    // all mutable run state (layout, buffers, last-step observables)
 
     EmbedderInterface(const Graph& g, const EmbedderOptions& opts)
                         : graph(g),
-                          currentPositions(opts.embeddingDimension, g.getNumVertices()),
-                          currentWeights(g.getNumVertices()),
-                          sortedNodeIDs(g.getNumVertices()),
                           opts(opts),
-                          params(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
+                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
     {
-
+        state.lastLearningRate = opts.learningRate;
     }
 
     /**
@@ -55,9 +46,9 @@ class EmbedderInterface {
      * Sorts the node IDs according to the nodes weight
      */
     void sortNodes() {
-        std::iota(sortedNodeIDs.begin(), sortedNodeIDs.end(), 0);
-        std::ranges::sort(sortedNodeIDs,
-                          [this](const int a , const int b) -> bool {return this->currentWeights[a] > this->currentWeights[b];});
+        std::iota(state.sortedNodeIDs.begin(), state.sortedNodeIDs.end(), 0);
+        std::ranges::sort(state.sortedNodeIDs,
+                          [this](const int a , const int b) -> bool {return this->state.currentWeights[a] > this->state.currentWeights[b];});
     }
 
 
@@ -85,14 +76,14 @@ class EmbedderInterface {
      * For LayeredEmbedder, this changes across coarsening layers.
      */
     virtual int getNumVertices() const {
-        return static_cast<int>(this->currentPositions.size());
+        return static_cast<int>(this->state.currentPositions.size());
     }
 
     /**
      * Dimension of the embedding space.
      */
     virtual int getEmbeddingDimension() const {
-        return static_cast<int>(this->currentPositions.dimension());
+        return static_cast<int>(this->state.currentPositions.dimension());
     }
 
     /**
@@ -100,26 +91,38 @@ class EmbedderInterface {
      * getNumVertices() * getEmbeddingDimension() doubles. Zero allocation.
      */
     virtual void copyCoordinatesTo(double* out) const {
-        this->currentPositions.copyToFlat(out);
+        this->state.currentPositions.copyToFlat(out);
     }
 
     /**
      * Loss from the most recent force computation
      */
     virtual EmbeddingLoss getLoss() const {
-        return {this->params.lastAttractLoss,
-                this->params.lastRepelLoss,
-                this->params.lastAttractLoss + this->params.lastRepelLoss};
+        return {this->state.lastAttractLoss,
+                this->state.lastRepelLoss,
+                this->state.lastAttractLoss + this->state.lastRepelLoss};
     }
 
     /**
-     * Effective learning rate at the current step (after cooling has been applied).
-     * Matches what the underlying optimizer used in its most recent update.
+     * Learning rate the optimizer used in the most recent step
+     * (before the first step: the initial learning rate).
      */
     virtual double getCurrentLearningRate() const {
-        return this->opts.learningRate *
-               Toolkit::myPow(this->opts.coolingFactor,
-                              static_cast<double>(this->params.currentIteration));
+        return this->state.lastLearningRate;
+    }
+
+    /**
+     * This is the signal the displacement stopping criterion watches.
+     */
+    virtual double getLastRelDisplacement() const {
+        return this->state.lastRelDisplacement;
+    }
+
+    /**
+     * This is the signal the loss stopping criterion watches.
+     */
+    virtual double getLastRelLossImprovement() const {
+        return this->state.lastRelLossImprovement;
     }
 
     /**
