@@ -8,7 +8,6 @@
 #include "LabelPropagation.hpp"
 #include "Timings.hpp"
 #include "WembedEmbedder.hpp"
-#include "WeightedIndex.hpp"
 
 class LayeredEmbedder : public EmbedderInterface {
     //TODO: remove redundant variables
@@ -19,8 +18,10 @@ class LayeredEmbedder : public EmbedderInterface {
         : EmbedderInterface(g, opts),
           timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
-          currentLayer(hierarchy->getNumLayers() - 1),
-          currentEmbedder(hierarchy->graphs[currentLayer], opts, timer) {};
+          currentLayer(hierarchy->getNumLayers() - 1)
+    {
+        currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
+    }
 
     virtual void calculateStep();
     virtual bool isFinished();
@@ -34,13 +35,13 @@ class LayeredEmbedder : public EmbedderInterface {
     virtual std::vector<util::TimingResult> getTimings();
     virtual Graph getCurrentGraph();
 
-    int getNumVertices() const override { return currentEmbedder.getNumVertices(); }
-    int getEmbeddingDimension() const override { return currentEmbedder.getEmbeddingDimension(); }
-    void copyCoordinatesTo(double* out) const override { currentEmbedder.copyCoordinatesTo(out); }
-    EmbeddingLoss getLoss() const override { return currentEmbedder.getLoss(); }
-    double getCurrentLearningRate() const override { return currentEmbedder.getCurrentLearningRate(); }
-    double getLastRelDisplacement() const override { return currentEmbedder.getLastRelDisplacement(); }
-    double getLastRelLossImprovement() const override { return currentEmbedder.getLastRelLossImprovement(); }
+    int getNumVertices() const override { return currentEmbedder->getNumVertices(); }
+    int getEmbeddingDimension() const override { return currentEmbedder->getEmbeddingDimension(); }
+    void copyCoordinatesTo(double* out) const override { currentEmbedder->copyCoordinatesTo(out); }
+    EmbeddingLoss getLoss() const override { return currentEmbedder->getLoss(); }
+    double getCurrentLearningRate() const override { return currentEmbedder->getCurrentLearningRate(); }
+    double getLastRelDisplacement() const override { return currentEmbedder->getLastRelDisplacement(); }
+    double getLastRelLossImprovement() const override { return currentEmbedder->getLastRelLossImprovement(); }
 
    private:
     std::shared_ptr<Timer> timer;
@@ -54,5 +55,5 @@ class LayeredEmbedder : public EmbedderInterface {
     int currentLayer;
 
     // stores positions and weights of all graphs in the hierarchy
-    WembedEmbedder currentEmbedder;
+    std::unique_ptr<WembedEmbedder> currentEmbedder;
 };

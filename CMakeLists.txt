@@ -47,15 +47,6 @@ if(NOT WEMBED_AS_LIBRARY)
     enable_testing()
 endif()
 
-# try to find sfml, if it is not avaliable we will not build the drawLib
-option(SFML_STATIC_LIBRARIES "Use static SFML libraries" OFF)
-find_package(SFML 3 COMPONENTS Window Graphics System Audio QUIET)
-if(SFML_FOUND)
-        message(STATUS "SFML found, embedding animation will be available")
-else()
-        message(STATUS "SFML not found, no embedding animation will be available")
-endif()
-
 # determine the directories for the binary files
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)

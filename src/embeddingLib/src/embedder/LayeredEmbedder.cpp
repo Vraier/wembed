@@ -4,13 +4,13 @@
 
 void LayeredEmbedder::calculateStep() {
     currentIteration++;
-    if (currentEmbedder.isFinished()) {
+    if (currentEmbedder->isFinished()) {
         expandPositions();
     }
-    currentEmbedder.calculateStep();
+    currentEmbedder->calculateStep();
 }
 
-bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder.isFinished(); }
+bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder->isFinished(); }
 
 void LayeredEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
@@ -35,9 +35,9 @@ void LayeredEmbedder::setWeights(const std::vector<double>& weights) {
     return;
 }
 
-std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder.getCoordinates(); }
+std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
 
-std::vector<double> LayeredEmbedder::getWeights() { return currentEmbedder.getWeights(); }
+std::vector<double> LayeredEmbedder::getWeights() { return currentEmbedder->getWeights(); }
 
 std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
 
@@ -52,7 +52,7 @@ void LayeredEmbedder::expandPositions() {
 
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
     int oldN = hierarchy->graphs[currentLayer].getNumVertices();
-    std::vector<std::vector<double>> oldPostions = currentEmbedder.getCoordinates();
+    std::vector<std::vector<double>> oldPostions = currentEmbedder->getCoordinates();
     std::vector<std::vector<double>> newPositions(newN, std::vector<double>(opts.embeddingDimension, 0.0));
     ASSERT(oldN == oldPostions.size(), "Old positions size mismatch: " << oldN << " vs " << oldPostions.size());
 
@@ -85,11 +85,9 @@ void LayeredEmbedder::expandPositions() {
     }
 
     currentLayer--;
-    // initializeState=false skips the constructor's throwaway random coordinate/weight
-    WembedEmbedder newEmbedder(hierarchy->graphs[currentLayer], opts, timer, false);
-    currentEmbedder = std::move(newEmbedder);
-    currentEmbedder.setCoordinates(newPositions);
-    currentEmbedder.setWeights(newWeights);
+    currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer, false);
+    currentEmbedder->setCoordinates(newPositions);
+    currentEmbedder->setWeights(newWeights);
 
     timer->stopTiming("expanding");
 }

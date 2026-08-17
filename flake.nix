@@ -59,7 +59,6 @@
           buildInputs = with pkgs; [
             eigen
             gtest
-            sfml
           ];
 
           # Copy the pre-fetched dependencies to their expected locations
@@ -146,7 +145,6 @@
             # Core dependencies
             eigen
             gtest
-            sfml
 
             # Python tools and dependencies
             python3

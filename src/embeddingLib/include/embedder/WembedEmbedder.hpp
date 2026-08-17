@@ -11,7 +11,6 @@
 #include "Optimizer.hpp"
 #include "SimpleOptimizer.hpp"
 #include "VecList.hpp"
-#include "WeightedIndex.hpp"
 
 class WembedEmbedder : public EmbedderInterface {
 
@@ -57,7 +56,8 @@ class WembedEmbedder : public EmbedderInterface {
     // Force functions return the loss contribution of this pair
     // so the callers can accumulate it
     double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    double repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    double repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    double scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
     void applyGravityCentre();
 
     /**
@@ -76,6 +76,7 @@ class WembedEmbedder : public EmbedderInterface {
     /**
      * Updates spacial data structure
      */
+    void selectNodes(std::vector<CVecRef>& points);
     void updateIndex();
 
     [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
@@ -138,7 +139,7 @@ class WembedEmbedder : public EmbedderInterface {
     virtual void setWeights(const std::vector<double>& weights) override;
 
     [[nodiscard]] static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
-                                                        const std::vector<double>& weights);
+                                                const std::vector<double>& weights);
     [[nodiscard]] static std::vector<double> constructDegreeWeights(const Graph& g);
     [[nodiscard]] static std::vector<double> constructUnitWeights(int N);
 };

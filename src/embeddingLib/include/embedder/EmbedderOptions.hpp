@@ -7,7 +7,7 @@ enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1 };
 
-enum class IndexType {SNN = 1, Sprk = 2 };
+enum class IndexType {Sprk = 2 };
 
 enum class LRScheduleType { ExponentialCooling = 0, LossAdaptive = 1 };
 
@@ -26,7 +26,7 @@ inline std::map<StopCriterionType, std::string> stopCriterionTypeMap = {
 inline std::map<WeightType, std::string> weightTypeMap = {
     {WeightType::Unit, "Unit"}, {WeightType::Degree, "Degree"}};
 
-inline std::map<IndexType, std::string> indexTypeMap = { {IndexType::SNN, "SNN"}, {IndexType::Sprk, "Sprk"}};
+inline std::map<IndexType, std::string> indexTypeMap = { {IndexType::Sprk, "Sprk"}};
 
 struct EmbedderOptions {
     int embeddingDimension = 4;
