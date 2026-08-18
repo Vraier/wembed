@@ -1,6 +1,6 @@
 #include "Cosine.hpp"
 
-Cosine::Cosine(const std::vector<std::vector<double>> &coords) : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
+Cosine::Cosine(const std::vector<std::vector<float>> &coords) : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
     coordinates.setSize(coords.size(), 0);
 
     for (int i = 0; i < coords.size(); i++) {
@@ -11,10 +11,10 @@ Cosine::Cosine(const std::vector<std::vector<double>> &coords) : DIMENSION(coord
     }
 }
 
-double Cosine::getSimilarity(NodeId a, NodeId b) const {
-    double aDotb = 0.0;
-    double aNorm = coordinates[a].norm();
-    double bNorm = coordinates[b].norm();
+float Cosine::getSimilarity(NodeId a, NodeId b) const {
+    float aDotb = 0.0;
+    float aNorm = coordinates[a].norm();
+    float bNorm = coordinates[b].norm();
     for (int d = 0; d < DIMENSION; d++) {
         aDotb += coordinates[a][d] * coordinates[b][d];
     }

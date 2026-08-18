@@ -16,7 +16,7 @@
 #include "WeightedNoDim.hpp"
 #include "Additive.hpp"
 
-std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<double>>& coordinates, int lpNorm) {
+std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<float>>& coordinates, int lpNorm) {
     switch (type) {
         case WeightedEmb:
             // weighted
@@ -49,16 +49,16 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
             {
                 LOG_INFO("Constructing mercator embedding");
                 // split into kappa and rest;
-                std::vector<double> kappa;
-                std::vector<std::vector<double>> rest;
+                std::vector<float> kappa;
+                std::vector<std::vector<float>> rest;
                 std::tie(kappa, rest) = splitFirstColumn(coordinates);
                 unused(kappa);
 
                 // one dimensional embedding
                 if (rest[0].size() <= 2) {
                     // split into theta and radius
-                    std::vector<double> theta;
-                    std::vector<double> radius;
+                    std::vector<float> theta;
+                    std::vector<float> radius;
                     std::tie(theta, rest) = splitFirstColumn(rest);
                     std::tie(radius, rest) = splitFirstColumn(rest);
                     ASSERT(rest[0].size() == 0);
@@ -68,8 +68,8 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
                 else {
                     ASSERT(rest[0].size() >= 3);
                     // split into radius and rest
-                    std::vector<double> radius;
-                    std::vector<std::vector<double>> coordinates;
+                    std::vector<float> radius;
+                    std::vector<std::vector<float>> coordinates;
                     std::tie(radius, coordinates) = splitFirstColumn(rest);
                     return std::make_unique<MercatorEmbedding>(radius, coordinates);
                 }
@@ -107,10 +107,10 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
     }
 }
 
-std::vector<std::vector<double>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
+std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
                                                                       std::string delimiter) {
     LOG_INFO("Reading coordinates from file: " << filePath);
-    std::vector<std::vector<double>> result;
+    std::vector<std::vector<float>> result;
 
     std::ifstream input(filePath);
     std::string line;
@@ -121,7 +121,7 @@ std::vector<std::vector<double>> EmbeddingIO::readCoordinatesFromFile(std::strin
     }
 
     // read in the coordinates
-    std::map<NodeId, std::vector<double>> coords_dict;
+    std::map<NodeId, std::vector<float>> coords_dict;
     int coord_size = -1; //dimension of the embedding
     while (std::getline(input, line)) {
         if (line.rfind(comment, 0) == 0) {
@@ -131,7 +131,7 @@ std::vector<std::vector<double>> EmbeddingIO::readCoordinatesFromFile(std::strin
         std::vector<std::string> tokens = util::splitIntoTokens(line, delimiter);
         NodeId a = std::stoi(tokens[0]);
 
-        std::vector<double> coord(tokens.size() - 1); // dimension of node a
+        std::vector<float> coord(tokens.size() - 1); // dimension of node a
         if (coord_size == -1) {
             coord_size = coord.size();
         } else {
@@ -161,10 +161,10 @@ std::vector<std::vector<double>> EmbeddingIO::readCoordinatesFromFile(std::strin
     return result;
 }
 
-std::pair<std::vector<std::vector<double>>, std::vector<double>> EmbeddingIO::splitLastColumn(
-    const std::vector<std::vector<double>>& coordinates) {
-    std::vector<std::vector<double>> coords(coordinates.size());
-    std::vector<double> weights(coordinates.size());
+std::pair<std::vector<std::vector<float>>, std::vector<float>> EmbeddingIO::splitLastColumn(
+    const std::vector<std::vector<float>>& coordinates) {
+    std::vector<std::vector<float>> coords(coordinates.size());
+    std::vector<float> weights(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         for (int j = 0; j < coordinates[i].size() - 1; j++) {
@@ -176,10 +176,10 @@ std::pair<std::vector<std::vector<double>>, std::vector<double>> EmbeddingIO::sp
     return std::make_pair(coords, weights);
 }
 
-std::pair<std::vector<double>, std::vector<std::vector<double>>> EmbeddingIO::splitFirstColumn(
-    const std::vector<std::vector<double>>& coordinates) {
-    std::vector<double> weights(coordinates.size());
-    std::vector<std::vector<double>> coords(coordinates.size());
+std::pair<std::vector<float>, std::vector<std::vector<float>>> EmbeddingIO::splitFirstColumn(
+    const std::vector<std::vector<float>>& coordinates) {
+    std::vector<float> weights(coordinates.size());
+    std::vector<std::vector<float>> coords(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         weights[i] = coordinates[i][0];
@@ -191,12 +191,12 @@ std::pair<std::vector<double>, std::vector<std::vector<double>>> EmbeddingIO::sp
     return std::make_pair(weights, coords);
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<double>>& positions,
-                                   const std::vector<double>& weights) {
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions,
+                                   const std::vector<float>& weights) {
     LOG_INFO("Writing coordinates to file " << filePath);
     std::ofstream fil;
     fil.open(filePath);
-    fil << std::setprecision(std::numeric_limits<double>::digits10 + 1);
+    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
     for (int i = 0; i < positions.size(); i++) {
         fil << i;
         for (int j = 0; j < positions[i].size(); j++) {
@@ -207,10 +207,10 @@ void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::
     fil.close();
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<double>>& positions) {
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions) {
     std::ofstream fil;
     fil.open(filePath);
-    fil << std::setprecision(std::numeric_limits<double>::digits10 + 1);
+    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
     for(int i = 0; i < positions.size(); i++) {
         fil << i;
         for(int j = 0; j < positions[i].size(); j++) {

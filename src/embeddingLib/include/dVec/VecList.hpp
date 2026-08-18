@@ -15,6 +15,16 @@ class VecList {
         setSize(num_elements, 0.0);
     }
 
+    VecList(std::vector<std::vector<float>> list) : num_elements(list.size()), dim(list[0].size()), data() {
+        setSize(num_elements);
+        for (size_t i = 0; i < list.size(); ++i) {
+            ASSERT(list[i].size() == dim, "list[" << i << "].size()=" << list[i].size() << ", dim=" << dim);
+            for (unsigned int d = 0; d < dim; ++d) {
+                (*this)[i][d] = list[i][d];
+            }
+        }
+    }
+
     VecList(std::vector<std::vector<double>> list) : num_elements(list.size()), dim(list[0].size()), data() {
         setSize(num_elements);
         for (size_t i = 0; i < list.size(); ++i) {
@@ -61,6 +71,16 @@ class VecList {
         return CVecRef(&data[index], dim);
     }
 
+    std::vector<std::vector<float>> convertToVectorf() const {
+        std::vector<std::vector<float>> result(size(), std::vector<float>(dimension()));
+        for (size_t i = 0; i < size(); ++i) {
+            for (unsigned int d = 0; d < dimension(); d++) {
+                result[i][d] = static_cast<float>((*this)[i][d]);
+            }
+        }
+        return result;
+    }
+
     std::vector<std::vector<double>> convertToVector() const {
         std::vector<std::vector<double>> result(size(), std::vector<double>(dimension()));
         for (size_t i = 0; i < size(); ++i) {
@@ -69,6 +89,14 @@ class VecList {
             }
         }
         return result;
+    }
+
+    void copyToFlat(float* out) const {
+        for (size_t i = 0; i < size(); ++i) {
+            for (unsigned int d = 0; d < dimension(); ++d) {
+                out[i * dimension() + d] = static_cast<float>((*this)[i][d]);
+            }
+        }
     }
 
     void copyToFlat(double* out) const {

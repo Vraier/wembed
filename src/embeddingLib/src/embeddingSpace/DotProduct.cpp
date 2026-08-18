@@ -1,6 +1,6 @@
 #include "DotProduct.hpp"
 
-DotProduct::DotProduct(const std::vector<std::vector<double>> &coords)
+DotProduct::DotProduct(const std::vector<std::vector<float>> &coords)
     : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
     coordinates.setSize(coords.size(), 0);
 
@@ -13,8 +13,8 @@ DotProduct::DotProduct(const std::vector<std::vector<double>> &coords)
     }
 }
 
-double DotProduct::getSimilarity(NodeId a, NodeId b) const {
-    double res = 0.0;
+float DotProduct::getSimilarity(NodeId a, NodeId b) const {
+    float res = 0.0;
     for (int d = 0; d < DIMENSION; d++) {
         res += coordinates[a][d] * coordinates[b][d];
     }

@@ -1,6 +1,13 @@
 #include "DVec.hpp"
 
 namespace vectorOperations {
+static inline float calculateLPNormf(const CVecRef& x, const CVecRef& y) {
+    float sum = 0.0;
+    for (size_t i = 0; i < x.dimension(); i++) {
+        sum += Toolkit::myPowf(static_cast<float>(std::abs(x[i] - y[i])), 2);
+    }
+    return std::sqrt(sum);
+}
 
 static inline double calculateLPNorm(const CVecRef& x, const CVecRef& y) {
     double sum = 0.0;

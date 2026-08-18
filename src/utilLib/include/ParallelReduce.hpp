@@ -15,21 +15,21 @@ namespace util {
  * count. For a per-dimension sum, call this once per dimension.
  */
 template <typename ElementFn>
-inline double deterministicSum(std::size_t n, ElementFn&& element, std::size_t blockSize = 4096) {
+inline float deterministicSum(std::size_t n, ElementFn&& element, std::size_t blockSize = 4096) {
     if (n == 0) return 0.0;
     const std::size_t numBlocks = (n + blockSize - 1) / blockSize;
-    std::vector<double> partial(numBlocks, 0.0);
+    std::vector<float> partial(numBlocks, 0.0);
 #pragma omp parallel for schedule(static)
     for (std::size_t b = 0; b < numBlocks; b++) {
         const std::size_t begin = b * blockSize;
         const std::size_t end = std::min(begin + blockSize, n);
-        double sum = 0.0;
+        float sum = 0.0;
         for (std::size_t i = begin; i < end; i++) {
             sum += element(i);
         }
         partial[b] = sum;
     }
-    double total = 0.0;
+    float total = 0.0;
     for (std::size_t b = 0; b < numBlocks; b++) {
         total += partial[b];
     }

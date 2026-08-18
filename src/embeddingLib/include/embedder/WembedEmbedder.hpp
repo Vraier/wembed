@@ -18,17 +18,17 @@ class WembedEmbedder : public EmbedderInterface {
 
     uint32_t numRepForceCalculations = 0;
 
-    std::vector<double> invExpWeights;
+    std::vector<float> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
     // written by exactly one thread, then reduced deterministically (so the
     // stopping-criterion signal does not depend on thread count)
-    std::vector<double> lossPerNode;
+    std::vector<float> lossPerNode;
     // positions at the start of the current step and the per-node displacement /
     // squared radius derived from them; written one-thread-per-node then reduced
     // deterministically, exactly like lossPerNode
     VecList previousPositions;
-    std::vector<double> perNodeDisplacement;
-    std::vector<double> perNodeRadiusSq;
+    std::vector<float> perNodeDisplacement;
+    std::vector<float> perNodeRadiusSq;
     std::unique_ptr<Optimizer> posOptimizer;
     // heap-owned and declared before the scheduler: LossAdaptive holds a reference to the monitor,
     // which stays valid when the embedder is moved (LayeredEmbedder moves it on layer expansion)
@@ -55,9 +55,9 @@ class WembedEmbedder : public EmbedderInterface {
     void calculateAllCentreForces();
     // Force functions return the loss contribution of this pair
     // so the callers can accumulate it
-    double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    double repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
-    double scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+    float attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    float repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    float scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
     void applyGravityCentre();
 
     /**
@@ -132,14 +132,14 @@ class WembedEmbedder : public EmbedderInterface {
     virtual bool isFinished() override;
     virtual void calculateEmbedding() override;
     virtual Graph getCurrentGraph() override;
-    virtual std::vector<std::vector<double>> getCoordinates() override;
-    virtual std::vector<double> getWeights() override;
+    virtual std::vector<std::vector<float>> getCoordinates() override;
+    virtual std::vector<float> getWeights() override;
     virtual std::vector<util::TimingResult> getTimings() override;
-    virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates) override;
-    virtual void setWeights(const std::vector<double>& weights) override;
+    virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates) override;
+    virtual void setWeights(const std::vector<float>& weights) override;
 
-    [[nodiscard]] static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
-                                                const std::vector<double>& weights);
-    [[nodiscard]] static std::vector<double> constructDegreeWeights(const Graph& g);
-    [[nodiscard]] static std::vector<double> constructUnitWeights(int N);
+    [[nodiscard]] static std::vector<float> rescaleWeights(float dimensionHint, float embeddingDimension,
+                                                const std::vector<float>& weights);
+    [[nodiscard]] static std::vector<float> constructDegreeWeights(const Graph& g);
+    [[nodiscard]] static std::vector<float> constructUnitWeights(int N);
 };

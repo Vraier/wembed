@@ -102,7 +102,7 @@ int32_t Embedder::getEmbeddingDimension() const {
     return static_cast<int32_t>(_embedder->getEmbeddingDimension());
 }
 
-void Embedder::copyCoordinatesTo(double* out) const {
+void Embedder::copyCoordinatesTo(float* out) const {
     _embedder->copyCoordinatesTo(out);
 }
 
@@ -111,19 +111,19 @@ Graph Embedder::getCurrentGraph() const {
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<double>> Embedder::getCoordinates() const {
+std::vector<std::vector<float>> Embedder::getCoordinates() const {
     return _embedder->getCoordinates();
 }
 
-std::vector<double> Embedder::getWeights() const {
+std::vector<float> Embedder::getWeights() const {
     return _embedder->getWeights();
 }
 
-void Embedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
+void Embedder::setCoordinates(const std::vector<std::vector<float>>& coordinates) {
     _embedder->setCoordinates(coordinates);
 }
 
-void Embedder::setWeights(const std::vector<double>& weights) {
+void Embedder::setWeights(const std::vector<float>& weights) {
     _embedder->setWeights(weights);
 }
 
@@ -142,15 +142,15 @@ Loss Embedder::getLoss() const {
     return {internal.attractive, internal.repulsive, internal.total};
 }
 
-double Embedder::getCurrentLearningRate() const {
+float Embedder::getCurrentLearningRate() const {
     return _embedder->getCurrentLearningRate();
 }
 
-double Embedder::getLastRelDisplacement() const {
+float Embedder::getLastRelDisplacement() const {
     return _embedder->getLastRelDisplacement();
 }
 
-double Embedder::getLastRelLossImprovement() const {
+float Embedder::getLastRelLossImprovement() const {
     return _embedder->getLastRelLossImprovement();
 }
 
@@ -227,7 +227,7 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
 
     const auto& graph = *g._graph;
     if (options.layeredEmbedding) {
-        std::vector<double> edgeWeights(g.getNumEdges() * 2, 1.0);
+        std::vector<float> edgeWeights(g.getNumEdges() * 2, 1.0);
         auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
         return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
     } else {
@@ -251,7 +251,7 @@ Graph graphFromEdgeListFile(const std::string& filePath,
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<double>> readCoordinatesFromFile(const std::string& filePath,
+std::vector<std::vector<float>> readCoordinatesFromFile(const std::string& filePath,
                                                           const std::string& comment,
                                                           const std::string& delimiter) {
     return EmbeddingIO::readCoordinatesFromFile(filePath, comment, delimiter);

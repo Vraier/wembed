@@ -1,8 +1,8 @@
 #include "DisplacementMonitor.hpp"
 
-DisplacementMonitor::DisplacementMonitor(double relTol, int patience) : relTol(relTol), patience(patience) {}
+DisplacementMonitor::DisplacementMonitor(float relTol, int patience) : relTol(relTol), patience(patience) {}
 
-void DisplacementMonitor::observe(double relDisplacement) {
+void DisplacementMonitor::observe(float relDisplacement) {
     lastRelDisplacement = relDisplacement;
     numObserved++;
 

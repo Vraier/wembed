@@ -12,9 +12,9 @@
  * Loss values from the last completed force computation.
  */
 struct EmbeddingLoss {
-    double attractive;
-    double repulsive;
-    double total;
+    float attractive;
+    float repulsive;
+    float total;
 };
 
 /**
@@ -57,10 +57,10 @@ class EmbedderInterface {
      * randomly places the nodes in the embedding space
      * @return A vector of coordinates, where vector[v] are the coordinates of the node with ID v
      */
-    [[nodiscard]] std::vector<std::vector<double>> constructRandomCoordinates() const {
+    [[nodiscard]] std::vector<std::vector<float>> constructRandomCoordinates() const {
         const int32_t dimension = this->opts.embeddingDimension;
-        const double CUBE_SIDE_LENGTH = Toolkit::myPow(static_cast<float>(graphSize()), 1.0 / dimension);
-        return Rand::randomCoordinates(static_cast<int>(graphSize()), dimension, CUBE_SIDE_LENGTH);
+        const float CUBE_SIDE_LENGTH = Toolkit::myPowf(static_cast<float>(graphSize()), 1.0f / static_cast<float>(dimension));
+        return Rand::randomCoordinatesf(static_cast<int>(graphSize()), dimension, CUBE_SIDE_LENGTH);
     }
 
 
@@ -88,9 +88,9 @@ class EmbedderInterface {
 
     /**
      * Copy coordinates row-major into a caller-owned buffer of at least
-     * getNumVertices() * getEmbeddingDimension() doubles. Zero allocation.
+     * getNumVertices() * getEmbeddingDimension() floats. Zero allocation.
      */
-    virtual void copyCoordinatesTo(double* out) const {
+    virtual void copyCoordinatesTo(float* out) const {
         this->state.currentPositions.copyToFlat(out);
     }
 
@@ -107,21 +107,21 @@ class EmbedderInterface {
      * Learning rate the optimizer used in the most recent step
      * (before the first step: the initial learning rate).
      */
-    virtual double getCurrentLearningRate() const {
+    virtual float getCurrentLearningRate() const {
         return this->state.lastLearningRate;
     }
 
     /**
      * This is the signal the displacement stopping criterion watches.
      */
-    virtual double getLastRelDisplacement() const {
+    virtual float getLastRelDisplacement() const {
         return this->state.lastRelDisplacement;
     }
 
     /**
      * This is the signal the loss stopping criterion watches.
      */
-    virtual double getLastRelLossImprovement() const {
+    virtual float getLastRelLossImprovement() const {
         return this->state.lastRelLossImprovement;
     }
 
@@ -148,12 +148,12 @@ class EmbedderInterface {
     /**
      * Returns the current coordinates of the nodes.
      */
-    virtual std::vector<std::vector<double>> getCoordinates() = 0;
+    virtual std::vector<std::vector<float>> getCoordinates() = 0;
 
     /**
      * Returns the current weights of the nodes.
      */
-    virtual std::vector<double> getWeights() = 0;
+    virtual std::vector<float> getWeights() = 0;
 
     /*
      * Returns timing results for the duration of different phases of the embedding
@@ -164,11 +164,11 @@ class EmbedderInterface {
      * Sets the coordinates of the nodes.
      * Can be used to set initial coordinates.
      */
-    virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates) = 0;
+    virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates) = 0;
 
     /**
      * Sets the weights of the nodes.
      * Can be used to set initial weights.
      */
-    virtual void setWeights(const std::vector<double> &weights) = 0;
+    virtual void setWeights(const std::vector<float> &weights) = 0;
 };

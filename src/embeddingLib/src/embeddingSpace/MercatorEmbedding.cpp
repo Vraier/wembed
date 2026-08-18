@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-MercatorEmbedding::MercatorEmbedding(const std::vector<double>& radii,
-                                     const std::vector<std::vector<double>>& positions)
+MercatorEmbedding::MercatorEmbedding(const std::vector<float>& radii,
+                                     const std::vector<std::vector<float>>& positions)
     : DIMENSION(positions[0].size() - 1), coordinates(positions[0].size()) {
     ASSERT(radii.size() == positions.size());
     ASSERT(DIMENSION > 0);
@@ -17,14 +17,14 @@ MercatorEmbedding::MercatorEmbedding(const std::vector<double>& radii,
     }
 }
 
-MercatorEmbedding::MercatorEmbedding(const std::vector<double>& radii, const std::vector<double>& thetas)
+MercatorEmbedding::MercatorEmbedding(const std::vector<float>& radii, const std::vector<float>& thetas)
     : DIMENSION(1), coordinates(DIMENSION) {
     ASSERT(radii.size() == thetas.size());
     this->radii = radii;
     this->thetas = thetas;
 }
 
-double MercatorEmbedding::getSimilarity(NodeId a, NodeId b) const {
+float MercatorEmbedding::getSimilarity(NodeId a, NodeId b) const {
     if (DIMENSION == 1)
         return S1_distance(radii[a], radii[b], thetas[a], thetas[b]);
     else
@@ -34,11 +34,11 @@ double MercatorEmbedding::getSimilarity(NodeId a, NodeId b) const {
 int MercatorEmbedding::getDimension() const { return DIMENSION; }
 
 // https://github.com/networkgeometry/d-mercator/blob/b259bd0194ad7394f76bef3de681273f479c881d/lib/greedy_routing.cpp#L170
-double MercatorEmbedding::S1_distance(double r1, double r2, double theta1, double theta2) const {
+float MercatorEmbedding::S1_distance(float r1, float r2, float theta1, float theta2) const {
     if ((r1 == r2) && (theta1 == theta2)) {
         return 0;
     }
-    double delta_theta = M_PI - std::fabs(M_PI - std::fabs(theta1 - theta2));
+    float delta_theta = M_PI - std::fabs(M_PI - std::fabs(theta1 - theta2));
     if (delta_theta == 0) {
         return std::fabs(r1 - r2);
     } else {
@@ -48,9 +48,9 @@ double MercatorEmbedding::S1_distance(double r1, double r2, double theta1, doubl
     }
 }
 
-double MercatorEmbedding::compute_angle_d_vectors(CVecRef v1, CVecRef v2) const {
+float MercatorEmbedding::compute_angle_d_vectors(CVecRef v1, CVecRef v2) const {
     ASSERT(v1.dimension() == v2.dimension());
-    double angle{0}, norm1{0}, norm2{0};
+    float angle{0}, norm1{0}, norm2{0};
     for (int i = 0; i < v1.dimension(); ++i) {
         angle += v1[i] * v2[i];
         norm1 += v1[i] * v1[i];
@@ -66,8 +66,8 @@ double MercatorEmbedding::compute_angle_d_vectors(CVecRef v1, CVecRef v2) const 
         return std::acos(result);
 }
 
-double MercatorEmbedding::SD_distance(double r1, double r2, CVecRef pos1, CVecRef pos2) const {
-    double delta_theta = compute_angle_d_vectors(pos1, pos2);
+float MercatorEmbedding::SD_distance(float r1, float r2, CVecRef pos1, CVecRef pos2) const {
+    float delta_theta = compute_angle_d_vectors(pos1, pos2);
     if ((r1 == r2) && delta_theta == 0) {
         return 0;  // the same positions
     }

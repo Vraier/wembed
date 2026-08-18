@@ -18,7 +18,7 @@
 struct EmbedderState {
     // Current layout
     VecList currentPositions;
-    std::vector<double> currentWeights;
+    std::vector<float> currentWeights;
     std::vector<int32_t> sortedNodeIDs;  // node IDs sorted by descending weight
 
     // Per-step working buffers
@@ -28,11 +28,11 @@ struct EmbedderState {
     WeightedIndex currentWeightedIndex;
 
     // Observables of the most recent step
-    double lastAttractLoss = 0.0;
-    double lastRepelLoss = 0.0;
-    double lastLearningRate = 0.0;
-    double lastRelDisplacement = 0.0;     // rate the displacement stop watches
-    double lastRelLossImprovement = 0.0;  // rate(t) the loss stop watches
+    float lastAttractLoss = 0.0;
+    float lastRepelLoss = 0.0;
+    float lastLearningRate = 0.0;
+    float lastRelDisplacement = 0.0;     // rate the displacement stop watches
+    float lastRelLossImprovement = 0.0;  // rate(t) the loss stop watches
 
     EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType)
         : currentPositions(dimension, graphSize),

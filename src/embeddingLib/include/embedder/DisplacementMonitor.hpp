@@ -7,19 +7,19 @@
  */
 class DisplacementMonitor {
    public:
-    DisplacementMonitor(double relTol, int patience);
+    DisplacementMonitor(float relTol, int patience);
 
-    void observe(double relDisplacement);
+    void observe(float relDisplacement);
 
     bool converged() const { return numSettledSteps >= patience; }
     int settledSteps() const { return numSettledSteps; }
     int numObservations() const { return numObserved; }
-    double lastDisplacement() const { return lastRelDisplacement; }
+    float lastDisplacement() const { return lastRelDisplacement; }
 
    private:
-    double relTol;
+    float relTol;
     int patience;
     int numSettledSteps = 0;
     int numObserved = 0;
-    double lastRelDisplacement = 0.0;
+    float lastRelDisplacement = 0.0;
 };
