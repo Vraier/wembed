@@ -41,19 +41,19 @@ class VecBase {
         return coord.dimension();
     }
 
-    ALWAYS_INLINE double operator[](int i) const {
+    ALWAYS_INLINE float operator[](int i) const {
         return coord[i];
     }
 
-    ALWAYS_INLINE double norm() const {
+    ALWAYS_INLINE float norm() const {
         return std::sqrt(sqNorm());
     }
 
-    ALWAYS_INLINE double infNorm() const {
+    ALWAYS_INLINE float infNorm() const {
         return coord.infNorm();
     }
 
-    ALWAYS_INLINE double sqNorm() const {
+    ALWAYS_INLINE float sqNorm() const {
         return coord.sqNorm();
     }
 
@@ -84,7 +84,7 @@ class VecBase {
     template <typename E>
     friend class MultExpr;
     template <typename E>
-    friend MultExpr<typename E::ExprType> operator*(double, const E&);
+    friend MultExpr<typename E::ExprType> operator*(float, const E&);
 
     VecBase() : coord() {
         // fail hard in case of invalid access
@@ -156,7 +156,7 @@ struct MultExpr {
     using ChunkType = typename E::ChunkType;
     using ExprType = MultExpr<E>;
 
-    double scalar;
+    float scalar;
     E vec;
 
     ALWAYS_INLINE ChunkType chunkAt(unsigned int i) const {
@@ -167,12 +167,12 @@ struct MultExpr {
 };
 
 template <typename E>
-ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(double scalar, const E& vec) {
+ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(float scalar, const E& vec) {
     return MultExpr<typename E::ExprType>{scalar, vec};
 }
 
 template <typename E>
-ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(const E& vec, double scalar) {
+ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(const E& vec, float scalar) {
     return scalar * vec;
 }
 
@@ -260,7 +260,7 @@ class VecRefImpl {
     }
 
     template <unsigned int N_SLOTS>
-    VecRefImpl(Buffer<N_SLOTS>& buffer, double default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
+    VecRefImpl(Buffer<N_SLOTS>& buffer, float default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
         static_assert(SLOT >= 0, "TmpVec with negative slot not allowed!");
         static_assert(SLOT < N_SLOTS, "Invalid slot!");
         setAll(default_value);
@@ -303,27 +303,27 @@ class VecRefImpl {
         return static_cast<Vec>(*this).dimension();
     }
 
-    ALWAYS_INLINE void setAll(double value) {
+    ALWAYS_INLINE void setAll(float value) {
         coord.get().setAll(value);
     }
 
-    ALWAYS_INLINE double operator[](int i) const {
+    ALWAYS_INLINE float operator[](int i) const {
         return static_cast<Vec>(*this)[i];
     }
 
-    ALWAYS_INLINE double& operator[](int i) {
+    ALWAYS_INLINE float& operator[](int i) {
         return coord.get()[i];
     }
 
-    ALWAYS_INLINE double norm() const {
+    ALWAYS_INLINE float norm() const {
         return static_cast<Vec>(*this).norm();
     }
 
-    ALWAYS_INLINE double infNorm() const {
+    ALWAYS_INLINE float infNorm() const {
         return static_cast<Vec>(*this).infNorm();
     }
 
-    ALWAYS_INLINE double sqNorm() const {
+    ALWAYS_INLINE float sqNorm() const {
         return static_cast<Vec>(*this).sqNorm();
     }
 
@@ -345,34 +345,34 @@ class VecRefImpl {
         return *this;
     }
 
-    ALWAYS_INLINE Self& operator*=(const double scalar) {
+    ALWAYS_INLINE Self& operator*=(const float scalar) {
         for (size_t i = 0; i < coord.get().numChunks(); ++i) {
             coord.get().chunkAt(i) *= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE Self& operator/=(const double scalar) {
+    ALWAYS_INLINE Self& operator/=(const float scalar) {
         for (size_t i = 0; i < coord.get().numChunks(); ++i) {
             coord.get().chunkAt(i) /= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE void cWiseMax(const double scalar) {
+    ALWAYS_INLINE void cWiseMax(const float scalar) {
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = std::max(scalar, coord.get()[i]);
         }
     }
 
-    ALWAYS_INLINE void cWiseMin(const double scalar) {
+    ALWAYS_INLINE void cWiseMin(const float scalar) {
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = std::min(scalar, coord.get()[i]);
         }
     }
 
     ALWAYS_INLINE void normed() {
-        double norm = this->norm();
+        float norm = this->norm();
         if (norm > 0) {
             for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] /= norm;
@@ -388,7 +388,7 @@ class VecRefImpl {
      */
     ALWAYS_INLINE void infNormed() {
         int maxIndex = this->maxIndex();
-        double sign = coord.get()[maxIndex] > 0 ? 1 : -1;
+        float sign = coord.get()[maxIndex] > 0 ? 1 : -1;
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = 0;
         }
@@ -400,7 +400,7 @@ class VecRefImpl {
     */
     ALWAYS_INLINE int maxIndex() const {
         int maxIndex = 0;
-        double max = 0;
+        float max = 0;
         for(int i = 0; i < this->dimension(); i++) {
             if(std::abs(coord.get()[i]) > max) {
                 max = std::abs(coord.get()[i]);
@@ -415,10 +415,10 @@ class VecRefImpl {
     // deterministic generator (Rand::localGenerator) so the tie-break direction
     // for coincident nodes does not depend on thread count or scheduling.
     ALWAYS_INLINE void setToRandomUnitVector(std::mt19937& gen = Rand::globalGenerator()) {
-        double norm = 0;
+        float norm = 0;
         for (int i = 0; i < dimension(); i++) {
-            std::normal_distribution<double> dist(0.0, 1.0);
-            const double x = dist(gen);
+            std::normal_distribution<float> dist(0.0, 1.0);
+            const float x = dist(gen);
             coord.get()[i] = x;
             norm += x * x;
         }
@@ -431,7 +431,7 @@ class VecRefImpl {
     ALWAYS_INLINE void setToRandomVectorInSphere() {
         setToRandomUnitVector();
 
-        double radius = Toolkit::myPow(Rand::randomDouble(0.0, 1.0), 1.0 / dimension());
+        float radius = Toolkit::myPowf(Rand::randomFloat(0.0, 1.0), 1.0 / dimension());
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] *= radius;
         }
@@ -466,7 +466,7 @@ class VecRefImpl {
     void initRefCount(Buffer<N_SLOTS>& buffer) {
 #ifdef EMBEDDING_USE_ASSERTIONS
         ref_count = &buffer.ref_counts[SLOT];
-        ASSERT(*ref_count == 0, "Double use of slot " << SLOT);
+        ASSERT(*ref_count == 0, "float use of slot " << SLOT);
         (*ref_count)++;
 #endif
     }
@@ -645,29 +645,29 @@ struct ValueImpl {
         return data.size();
     }
 
-    ALWAYS_INLINE double& operator[](int i) {
+    ALWAYS_INLINE float& operator[](int i) {
         ASSERT(i < dimension());
         return data[i];
     }
 
-    ALWAYS_INLINE double operator[](int i) const {
+    ALWAYS_INLINE float operator[](int i) const {
         ASSERT(i < dimension());
         return data[i];
     }
 
-    ALWAYS_INLINE void setAll(double value) {
+    ALWAYS_INLINE void setAll(float value) {
         data.setConstant(value);
     }
 
-    ALWAYS_INLINE double sqNorm() const {
+    ALWAYS_INLINE float sqNorm() const {
         return data.squaredNorm();
     }
 
-    ALWAYS_INLINE double infNorm() const {
+    ALWAYS_INLINE float infNorm() const {
         // NOTE: maybe this is inefficient?
-        double max = 0;
+        float max = 0;
         for (int i = 0; i < dimension(); i++) {
-            max = std::max(std::abs(data[i]), max);
+            max = std::max(static_cast<float>(std::abs(data[i])), max);
         }
         return max;
     }
@@ -717,23 +717,23 @@ struct ArrayBaseType {
     ArrayBaseType(const ArrayBaseType&) = default;
     ArrayBaseType& operator=(const ArrayBaseType&) = default;
 
-    ArrayBaseType(const std::array<double, D>& data) : data(data) {}
+    ArrayBaseType(const std::array<float, D>& data) : data(data) {}
 
     ALWAYS_INLINE unsigned int size() const {
         return D;
     }
 
-    ALWAYS_INLINE double& operator[](int i) {
+    ALWAYS_INLINE float& operator[](int i) {
         ASSERT(i < D);
         return data[i];
     }
 
-    ALWAYS_INLINE double operator[](int i) const {
+    ALWAYS_INLINE float operator[](int i) const {
         ASSERT(i < D);
         return data[i];
     }
 
-    ALWAYS_INLINE void setConstant(double value) {
+    ALWAYS_INLINE void setConstant(float value) {
         for (int i = 0; i < D; i++) {
             data[i] = value;
         }
@@ -753,30 +753,30 @@ struct ArrayBaseType {
         return *this;
     }
 
-    ALWAYS_INLINE ArrayBaseType& operator*=(const double scalar) {
+    ALWAYS_INLINE ArrayBaseType& operator*=(const float scalar) {
         for (int i = 0; i < D; i++) {
             data[i] *= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE ArrayBaseType& operator/=(const double scalar) {
+    ALWAYS_INLINE ArrayBaseType& operator/=(const float scalar) {
         for (int i = 0; i < D; i++) {
             data[i] /= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE double squaredNorm() const {
-        double sum = 0;
+    ALWAYS_INLINE float squaredNorm() const {
+        float sum = 0;
         for (int i = 0; i < D; i++) {
             sum += data[i] * data[i];
         }
         return sum;
     }
 
-    ALWAYS_INLINE double infNorm() const {
-        double max = 0;
+    ALWAYS_INLINE float infNorm() const {
+        float max = 0;
         for (int i = 0; i < D; i++) {
             max = std::max(std::abs(data[i]), max);
         }
@@ -784,7 +784,7 @@ struct ArrayBaseType {
     }
 
    private:
-    std::array<double, D> data;
+    std::array<float, D> data;
 };
 
 using Eigen::Vector;
@@ -792,21 +792,21 @@ using Eigen::VectorXd;
 
 template <unsigned int D>
 struct ConstructVector {
-    static constexpr Vector<double, D> construct() {
-        return Vector<double, D>();
+    static constexpr Vector<float, D> construct() {
+        return Vector<float, D>();
     }
 };
 
 template <unsigned int D>
 struct ConstructArray {
-    static constexpr std::array<double, D> construct() {
-        return std::array<double, D>();
+    static constexpr std::array<float, D> construct() {
+        return std::array<float, D>();
     }
 };
 
 struct IndirectionImpl {
-    using MemoryType = double;
-    using ChunkType = double;
+    using MemoryType = float;
+    using ChunkType = float;
     using RefType = IndirectionImpl;
     using TmpValueType = IndirectionImpl;
 
@@ -828,32 +828,32 @@ struct IndirectionImpl {
         return dim;
     }
 
-    ALWAYS_INLINE double& operator[](int i) {
+    ALWAYS_INLINE float& operator[](int i) {
         ASSERT(i < dim);
         return ptr[i];
     }
 
-    ALWAYS_INLINE double operator[](int i) const {
+    ALWAYS_INLINE float operator[](int i) const {
         ASSERT(i < dim);
         return ptr[i];
     }
 
-    ALWAYS_INLINE void setAll(double value) {
+    ALWAYS_INLINE void setAll(float value) {
         for (int i = 0; i < dim; i++) {
             ptr[i] = value;
         }
     }
 
-    ALWAYS_INLINE double sqNorm() const {
-        double sum = 0;
+    ALWAYS_INLINE float sqNorm() const {
+        float sum = 0;
         for (int i = 0; i < dim; i++) {
             sum += ptr[i] * ptr[i];
         }
         return sum;
     }
 
-    ALWAYS_INLINE double infNorm() const {
-        double max = 0;
+    ALWAYS_INLINE float infNorm() const {
+        float max = 0;
         for (int i = 0; i < dim; i++) {
             max = std::max(std::abs(ptr[i]), max);
         }
@@ -892,15 +892,15 @@ struct IndirectionImpl {
     }
 
    private:
-    double* ptr;
+    float* ptr;
     unsigned int dim;
 };
 
 // explicitely instantiate the different variants to trigger compiler
 // errors if one does not work
 template class VecBase<ValueImpl<ArrayBaseType<DIMENSION>, ConstructArray<DIMENSION>>>;
-template class VecBase<ValueImpl<Eigen::Vector<double, DIMENSION>, ConstructVector<DIMENSION>>>;
-template class VecBase<ValueImpl<Eigen::VectorXd, ConstructVector<DIMENSION>>>;
+template class VecBase<ValueImpl<Eigen::Vector<float, DIMENSION>, ConstructVector<DIMENSION>>>;
+template class VecBase<ValueImpl<Eigen::VectorXf, ConstructVector<DIMENSION>>>;
 template class VecBase<IndirectionImpl>;
 
 }  // end of namespace impl
@@ -908,7 +908,7 @@ template class VecBase<IndirectionImpl>;
 // change this declaration to exchange the vector type
 
 // using InnerType = impl::ValueImpl<impl::ArrayBaseType<impl::DIMENSION>, impl::ConstructArray<impl::DIMENSION>>;
-// using InnerType = impl::ValueImpl<Eigen::Vector<double, impl::DIMENSION>, impl::ConstructVector<impl::DIMENSION>>;
+// using InnerType = impl::ValueImpl<Eigen::Vector<float, impl::DIMENSION>, impl::ConstructVector<impl::DIMENSION>>;
 // using InnerType = impl::ValueImpl<Eigen::VectorXd, impl::ConstructVector<impl::DIMENSION>>;
 using InnerType = impl::IndirectionImpl;
 

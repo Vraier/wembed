@@ -132,7 +132,7 @@ std::vector<TimingResult> Embedder::getTimings() const {
     std::vector<TimingResult> out;
     out.reserve(internal.size());
     for (const auto& t : internal) {
-        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, t.value});
+        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, static_cast<float>(t.value)});
     }
     return out;
 }

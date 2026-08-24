@@ -4,18 +4,18 @@
 
 class AdamOptimizer : public Optimizer {
    public:
-    AdamOptimizer(int dimension, int numNodes, double beta1, double beta2, double epsilon);
+    AdamOptimizer(int dimension, int numNodes, float beta1, float beta2, float epsilon);
     ~AdamOptimizer();
 
-    void update(VecList& parameters, const VecList& gradients, double learningRate) override;
+    void update(VecList& parameters, const VecList& gradients, float learningRate) override;
     void reset() override;
 
    private:
     int dimension;
     int numNodes;
-    double beta1;
-    double beta2;
-    double epsilon;
+    float beta1;
+    float beta2;
+    float epsilon;
 
     VecList m;  // First moment estimates
     VecList v;  // Second moment estimates

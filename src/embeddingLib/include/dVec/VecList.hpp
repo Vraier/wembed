@@ -44,7 +44,7 @@ class VecList {
         // ASSERT(size() == 0);
         setSize(new_size);
         for (size_t i = 0; i < size(); ++i) {
-            (*this)[i].setAll(default_value);
+            (*this)[i].setAll(static_cast<float>(default_value));
         }
     }
 

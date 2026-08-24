@@ -1,6 +1,6 @@
 #include "SimpleOptimizer.hpp"
 
-SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, double maxDisplacement)
+SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, float maxDisplacement)
     : dimension(dimension),
       numNodes(numNodes),
       maxDisplacement(maxDisplacement),
@@ -10,7 +10,7 @@ SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, double maxDisplace
 
 SimpleOptimizer::~SimpleOptimizer() {}
 
-void SimpleOptimizer::update(VecList& parameters, const VecList& gradients, double learningRate) {
+void SimpleOptimizer::update(VecList& parameters, const VecList& gradients, float learningRate) {
     ASSERT(parameters.size() == numNodes, "Number of nodes in parameters does not match numNodes");
     ASSERT(gradients.size() == numNodes, "Number of nodes in gradients does not match numNodes");
 
