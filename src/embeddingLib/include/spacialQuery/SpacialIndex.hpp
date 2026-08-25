@@ -14,7 +14,7 @@ class SpatialIndex {
     virtual size_t query_nearest(CVecRef point, unsigned int number, std::vector<uint64_t>& out) const = 0;
 
     // Query for points within a certain radius from a point (range query)
-    virtual size_t query_sphere(CVecRef point, double radius, std::vector<uint64_t>& out) const = 0;
+    virtual size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const = 0;
 
     // Query for points in a box (range query)
     virtual size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<uint64_t>& out) const = 0;

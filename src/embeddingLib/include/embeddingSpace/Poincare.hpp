@@ -11,5 +11,5 @@ class Poincare : public Embedding {
 
    private:
     const int DIMENSION;
-    VecList coordinates;
+    VecList<> coordinates;
 };

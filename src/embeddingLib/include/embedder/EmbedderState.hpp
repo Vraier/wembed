@@ -17,13 +17,13 @@
  */
 struct EmbedderState {
     // Current layout
-    VecList currentPositions;
+    VecList<> currentPositions;
     std::vector<float> currentWeights;
     std::vector<int32_t> sortedNodeIDs;  // node IDs sorted by descending weight
 
     // Per-step working buffers
     size_t currentIteration = 0;
-    VecList force;
+    VecList<> force;
     std::vector<NodeId> indexToGraphMap;
     WeightedIndex currentWeightedIndex;
 

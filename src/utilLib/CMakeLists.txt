@@ -1,6 +1,7 @@
 set(target utilLib)
 
 set(HEADERS
+        include/Concepts.hpp
         include/FileOperations.hpp
         include/Macros.hpp 
         include/Rand.hpp

@@ -26,7 +26,7 @@ class WembedEmbedder : public EmbedderInterface {
     // positions at the start of the current step and the per-node displacement /
     // squared radius derived from them; written one-thread-per-node then reduced
     // deterministically, exactly like lossPerNode
-    VecList previousPositions;
+    VecList<> previousPositions;
     std::vector<float> perNodeDisplacement;
     std::vector<float> perNodeRadiusSq;
     std::unique_ptr<Optimizer> posOptimizer;
@@ -57,7 +57,7 @@ class WembedEmbedder : public EmbedderInterface {
     // so the callers can accumulate it
     float attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
     float repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
-    float scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+    float scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList<>& forces, size_t threadCount);
     void applyGravityCentre();
 
     /**

@@ -19,6 +19,6 @@ class WeightedNoDim : public Embedding {
 
    private:
     const int DIMENSION;
-    VecList coordinates;
+    VecList<> coordinates;
     std::vector<float> weights;
 };

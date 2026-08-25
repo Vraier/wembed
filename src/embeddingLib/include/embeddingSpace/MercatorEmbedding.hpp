@@ -12,7 +12,7 @@ class MercatorEmbedding : public Embedding {
 
    private:
     const int DIMENSION;
-    VecList coordinates;
+    VecList<> coordinates;
     std::vector<float> thetas;
     std::vector<float> radii;
 

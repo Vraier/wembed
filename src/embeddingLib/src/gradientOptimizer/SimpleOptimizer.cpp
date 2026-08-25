@@ -10,7 +10,7 @@ SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, float maxDisplacem
 
 SimpleOptimizer::~SimpleOptimizer() {}
 
-void SimpleOptimizer::update(VecList& parameters, const VecList& gradients, float learningRate) {
+void SimpleOptimizer::update(VecList<>& parameters, const VecList<>& gradients, float learningRate) {
     ASSERT(parameters.size() == numNodes, "Number of nodes in parameters does not match numNodes");
     ASSERT(gradients.size() == numNodes, "Number of nodes in gradients does not match numNodes");
 

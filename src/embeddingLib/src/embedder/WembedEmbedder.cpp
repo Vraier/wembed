@@ -93,7 +93,7 @@ Graph WembedEmbedder::getCurrentGraph() {
 }
 
 std::vector<std::vector<float> > WembedEmbedder::getCoordinates() {
-    return this->state.currentPositions.convertToVectorf();
+    return this->state.currentPositions.convertToVector();
 }
 
 std::vector<float> WembedEmbedder::getWeights() {
@@ -209,7 +209,7 @@ float WembedEmbedder::repellingForce(const NodeId v, const NodeId u, TmpVec<0>& 
 }
 
 
-float WembedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId> &candidates, VecList& forces, const size_t threadCount) {
+float WembedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId> &candidates, VecList<>& forces, const size_t threadCount) {
     const size_t tid = omp_get_thread_num();
 
     VecBuffer<1> forceBuffer(this->opts.embeddingDimension);

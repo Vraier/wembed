@@ -7,7 +7,7 @@ class SimpleOptimizer : public Optimizer {
     SimpleOptimizer(int dimension, int numNodes, float maxDisplacement);
     ~SimpleOptimizer();
 
-    void update(VecList& parameters, const VecList& gradients, float learningRate) override;
+    void update(VecList<>& parameters, const VecList<>& gradients, float learningRate) override;
     void reset() override;
 
    private:
@@ -15,5 +15,5 @@ class SimpleOptimizer : public Optimizer {
     int numNodes;
     float maxDisplacement;
 
-    VecList tmpGradient;
+    VecList<> tmpGradient;
 };

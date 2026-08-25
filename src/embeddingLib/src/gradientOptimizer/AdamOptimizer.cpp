@@ -12,7 +12,7 @@ AdamOptimizer::AdamOptimizer(int dimension, int numNodes, float beta1, float bet
 
 AdamOptimizer::~AdamOptimizer() {}
 
-void AdamOptimizer::update(VecList& parameters, const VecList& gradients, float learningRate) {
+void AdamOptimizer::update(VecList<>& parameters, const VecList<>& gradients, float learningRate) {
     ASSERT(parameters.size() == numNodes, "Number of nodes in parameters does not match numNodes");
     ASSERT(gradients.size() == numNodes, "Number of nodes in gradients does not match numNodes");
 

@@ -17,6 +17,6 @@ class WeightedGeometric : public Embedding {
     const int DIMENSION;
     const float DINVERSE;
     const int P;
-    VecList coordinates;
+    VecList<> coordinates;
     std::vector<float> weights;
 };

@@ -25,7 +25,7 @@ float Poincare::getSimilarity(NodeId a, NodeId b) const {
     float sqdist = tmpVec.sqNorm();
 
     float x = (sqdist / ((1 - sqanorm) * (1 - sqbnorm))) * 2 + 1;
-    float z = std::sqrtf(std::powf(x, 2) - 1);
+    float z = std::sqrt(std::pow(x, 2.f) - 1.f);
     return std::log(x + z);
 }
 

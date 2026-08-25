@@ -8,6 +8,6 @@ class Optimizer {
    public:
     virtual ~Optimizer() {}
 
-    virtual void update(VecList& parameters, const VecList& gradients, float learningRate) = 0;
+    virtual void update(VecList<>& parameters, const VecList<>& gradients, float learningRate) = 0;
     virtual void reset() = 0;
 };
