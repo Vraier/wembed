@@ -36,7 +36,6 @@ struct EmbedderOptions {
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
     int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
-    double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
     double doublingFactor = 2.0;           // determines how the weight buckets are calculated
     double attractionScale = 1.0;                   // factor by which attracting forces are scaled
     double repulsionScale = 1.0;                    // factor by which repulsion forces are scaled

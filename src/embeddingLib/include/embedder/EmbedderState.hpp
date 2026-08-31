@@ -24,7 +24,6 @@ struct EmbedderState {
     // Per-step working buffers
     size_t currentIteration = 0;
     VecList force;
-    std::vector<NodeId> indexToGraphMap;
     WeightedIndex currentWeightedIndex;
 
     // Observables of the most recent step
@@ -39,7 +38,6 @@ struct EmbedderState {
           currentWeights(graphSize),
           sortedNodeIDs(graphSize),
           force(dimension, graphSize),
-          indexToGraphMap(graphSize),
           currentWeightedIndex(indexType, dimension) {}
 
     // Reset the per-step accumulators before a new step.

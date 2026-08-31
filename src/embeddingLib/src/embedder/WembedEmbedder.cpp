@@ -224,41 +224,18 @@ double WembedEmbedder::scatterRepulsion(const NodeId v, const std::vector<NodeId
     return lossContribution;
 }
 
-void WembedEmbedder::selectNodes(std::vector<CVecRef>& points) {
-
-    if (this->opts.IndexSize >= 1.0) {
-
-        state.indexToGraphMap.resize(graphSize());
-        points.resize(graphSize());
-
-#pragma omp parallel for default(none) shared(points, state) schedule(static)
-        for (int i = 0; i < graphSize(); i++) {
-            this->state.indexToGraphMap[i] = i;
-            points[i] = this->state.currentPositions[i];
-        }
-
-    } else {
-
-        //Only insert a fraction of nodes into the index
-        const int32_t numNodes = std::max(1, static_cast<int32_t>(graphSize() * this->opts.IndexSize));
-        state.indexToGraphMap = Rand::randomSample(static_cast<int>(graphSize()), numNodes);
-        points.resize(numNodes);
-
-#pragma omp parallel for default(none) shared(numNodes, points, state) schedule(static)
-        for (int i = 0; i < numNodes; i++) {
-            points[i] = this->state.currentPositions[state.indexToGraphMap[i]];
-        }
-
-    }
-}
-
 void WembedEmbedder::updateIndex() {
     if (this->opts.numNegativeSamples >= 0) {
         return; //we are not using a geometric index
     }
 
     std::vector<CVecRef> points;
-    selectNodes(points);
+    points.resize(graphSize());
+
+#pragma omp parallel for default(none) shared(points, state) schedule(static)
+    for (int i = 0; i < graphSize(); i++) {
+        points[i] = this->state.currentPositions[i];
+    }
     state.currentWeightedIndex.updateIndex(points);
 }
 
@@ -272,13 +249,6 @@ std::vector<NodeId> WembedEmbedder::getRepellingCandidatesForNode(NodeId v, [[ma
 
     std::vector<uint64_t> queryResults;
     this->state.currentWeightedIndex.querySphere(this->state.currentPositions[v], this->state.currentWeights[v], this->opts.edgeLength, queryResults);
-
-    if (this->opts.IndexSize < 1.0) {
-        for (uint64_t& r: queryResults) {
-            r = this->state.indexToGraphMap[r];
-            ASSERT(r < graphSize());
-        }
-    }
 
     //Filter candidates
     candidates.reserve(queryResults.size());
