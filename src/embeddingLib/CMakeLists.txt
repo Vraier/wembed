@@ -32,6 +32,7 @@ set(HEADERS
         include/embedder/DisplacementMonitor.hpp
         include/embedder/WembedEmbedder.hpp
         include/embedder/LayeredEmbedder.hpp
+        include/embedder/SimpleDotProductEmbedder.hpp
 
         include/gradientOptimizer/AdamOptimizer.hpp
         include/gradientOptimizer/SimpleOptimizer.hpp
@@ -62,6 +63,7 @@ set(SOURCES
         src/embedder/DisplacementMonitor.cpp
         src/embedder/WembedEmbedder.cpp
         src/embedder/LayeredEmbedder.cpp
+        src/embedder/SimpleDotProductEmbedder.cpp
 
         src/gradientOptimizer/AdamOptimizer.cpp
         src/gradientOptimizer/SimpleOptimizer.cpp
