@@ -43,6 +43,39 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
         return std::make_unique<AdamOptimizer>(opts.embeddingDimension, numVertices, 0.9, 0.999, 1e-8);
     }
 
+    /**
+     * Functions to compute the forces between two vertices
+     */
+    void calculateAllAttractingForces();
+    void calculateAllRepellingForces();
+    void calculateAllCentreForces();
+    // Force functions return the loss contribution of this pair
+    // so the callers can accumulate it
+    double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    double repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
+    //TODO: Remove or implement:
+    //double scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+    void applyGravityCentre();
+    /**
+     * Computes the relative node displacement of the step just applied
+     * (mean per-node movement since previousPositions / radius of gyration)
+     * and feeds it to the displacement monitor. Must run after the positions
+     * have been updated and recentred.
+     */
+    void observeDisplacement();
+
+    /**
+     * Computes all nodes to do a repulsion force computation with node v
+     */
+    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
+
+    /**
+     * Updates spacial data structure
+     */
+    //TODO: Remove or implement:
+    //void selectNodes(std::vector<CVecRef>& points);
+    void updateIndex();
+
 
     public:
     // initializeState controls whether the constructor sets a random starting layout and
