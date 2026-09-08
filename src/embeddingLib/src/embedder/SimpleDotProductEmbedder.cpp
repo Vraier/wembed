@@ -53,7 +53,41 @@ void SimpleDotProductEmbedder::calculateAllCentreForces() {
 }
 
 double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1> &forceBuffer) {
-    //TODO:
+    if (v == u) return 0.0;
+
+    const CVecRef posV = state.currentPositions[v];
+    const CVecRef posU = state.currentPositions[u];
+
+    TmpVec<0> result(forceBuffer, 0.0);
+    const double dist = vectorOperations::calculateDotProductNorm(posU, posV);
+
+    //displace in random direction if positions are identical
+    // TODO: What would the value be here?
+    /*
+    if (dist <= 0) {
+        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
+        result.setToRandomUnitVector(gen);
+        this->state.force[v] += result;
+        return 0.0;
+    }
+    */
+
+    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
+
+    //TODO: What weight scaling do I use?
+    const double weightScaling = this->opts.additiveWeights ?
+                           (invExpWeights[v] + invExpWeights[u]) :
+                           (invExpWeights[v] * invExpWeights[u]);
+
+    const double lossContribution = dist - this->opts.edgeLength / weightScaling;
+    if (dist * weightScaling <= this->opts.edgeLength) {
+        result *= this->opts.repulsionScale * weightScaling; //Attract to counter repulsion force
+    } else {
+        result *= this->opts.attractionScale * weightScaling;
+    }
+
+    this->state.force[v] += result;
+    return lossContribution;
 }
 
 double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1> &result) {
