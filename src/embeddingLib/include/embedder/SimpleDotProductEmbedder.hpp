@@ -52,9 +52,7 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
     // Force functions return the loss contribution of this pair
     // so the callers can accumulate it
     double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    double repellingForce(NodeId v, NodeId u, TmpVec<0>& result);
-    //TODO: Remove or implement:
-    //double scatterRepulsion(NodeId v, const std::vector<NodeId>& candidates, VecList& forces, size_t threadCount);
+    double repellingForce(NodeId v, NodeId u, VecBuffer<1>& result);
     void applyGravityCentre();
     /**
      * Computes the relative node displacement of the step just applied
@@ -63,18 +61,6 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
      * have been updated and recentred.
      */
     void observeDisplacement();
-
-    /**
-     * Computes all nodes to do a repulsion force computation with node v
-     */
-    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const;
-
-    /**
-     * Updates spacial data structure
-     */
-    //TODO: Remove or implement:
-    //void selectNodes(std::vector<CVecRef>& points);
-    void updateIndex();
 
 
     public:

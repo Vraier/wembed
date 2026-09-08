@@ -25,37 +25,24 @@ void SimpleDotProductEmbedder::calculateAllAttractingForces() {
 }
 
 void SimpleDotProductEmbedder::calculateAllRepellingForces() {
-    VecBuffer<2> indexBuffer(this->opts.embeddingDimension);
-    VecBuffer<1> forceBuffer(this->opts.embeddingDimension);
+    VecBuffer<1> buffer(this->opts.embeddingDimension);
     numRepForceCalculations = 0;
 
-    //TODO: Simplify
-    /*
-    //Parallel computation of repulsion forces
-    const size_t threadCount = std::thread::hardware_concurrency();
-    VecList forces(this->opts.embeddingDimension,graphSize() * threadCount);
-
-#pragma omp parallel for num_threads(threadCount) default(none) shared(indexBuffer, forces, threadCount) reduction(+:numRepForceCalculations) schedule(dynamic)
-    for (const NodeId v : state.sortedNodeIDs) {
-        const std::vector<NodeId> repellingCandidates = getRepellingCandidatesForNode(v, indexBuffer);
-        const double nodeLoss = scatterRepulsion(v, repellingCandidates, forces, threadCount);
-        this->lossPerNode[v] = nodeLoss;
-
-        numRepForceCalculations += repellingCandidates.size();
-    }
-
-    //Add results into force vector
-#pragma omp parallel for num_threads(threadCount) default(none) shared(threadCount, forces) schedule(dynamic)
-    for (size_t i = 0; i < graphSize(); i++) {
-        for (size_t t = 0; t < threadCount; t++) {
-            this->state.force[i] += forces[i * threadCount + t];
+#pragma omp parallel for default(none) firstprivate(buffer) shared(state, graph, lossPerNode) reduction(+:numRepForceCalculations) schedule(runtime)
+    for (const NodeId v : this->state.sortedNodeIDs) {
+        double nodeLoss = 0.0;
+        for (const NodeId u : this->state.sortedNodeIDs) {
+            if (v == u || this->graph.areNeighbors(v, u)) {
+                continue;
+            }
+            nodeLoss += repellingForce(v, u, buffer);
+            numRepForceCalculations++;
         }
+        this->lossPerNode[v] = nodeLoss;
     }
 
-    //Addition as we have the neighbor offset
-    this->state.lastRepelLoss +=
-            util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
-    */
+    const double loss = util::deterministicSum(graphSize(), [this](std::size_t i){return this->lossPerNode[i];});
+    this->state.lastRepelLoss = loss;
 }
 
 void SimpleDotProductEmbedder::calculateAllCentreForces() {
@@ -69,7 +56,7 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
     //TODO:
 }
 
-double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, TmpVec<0> &result) {
+double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1> &result) {
     //TODO:
 }
 
@@ -125,14 +112,6 @@ void SimpleDotProductEmbedder::observeDisplacement() {
     this->displacementMonitor->observe(relDisplacement);
 }
 
-std::vector<NodeId> SimpleDotProductEmbedder::getRepellingCandidatesForNode(NodeId v, VecBuffer<2> &buffer) const {
-    //TODO:
-}
-
-void SimpleDotProductEmbedder::updateIndex() {
-    //TODO:?
-}
-
 
 // ======================================================================================
 //
@@ -153,11 +132,6 @@ void SimpleDotProductEmbedder::calculateStep() {
     //Snapshot the positions so we can measure how far the nodes move this step.
     //state.currentPositions still holds the (recentred) positions from the previous step.
     this->previousPositions = this->state.currentPositions;
-
-    //Rebuild indices
-    this->timer->startTiming("index", "Construct spacial index");
-    updateIndex();
-    this->timer->stopTiming("index");
 
     //Compute attracting forces
     this->timer->startTiming("attracting_forces", "Compute Attracting Forces");
