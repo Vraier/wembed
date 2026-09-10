@@ -667,7 +667,7 @@ struct ValueImpl {
         // NOTE: maybe this is inefficient?
         float max = 0;
         for (int i = 0; i < dimension(); i++) {
-            max = std::max(static_cast<float>(std::abs(data[i])), max);
+            max = std::max(std::abs(data[i]), max);
         }
         return max;
     }

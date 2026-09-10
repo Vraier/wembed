@@ -4,11 +4,12 @@ namespace vectorOperations {
 static inline float calculateLPNormf(const CVecRef& x, const CVecRef& y) {
     float sum = 0.0;
     for (size_t i = 0; i < x.dimension(); i++) {
-        sum += Toolkit::myPowf(static_cast<float>(std::abs(x[i] - y[i])), 2);
+        sum += Toolkit::myPowf(std::abs(x[i] - y[i]), 2);
     }
     return std::sqrt(sum);
 }
 
+/*
 static inline double calculateLPNorm(const CVecRef& x, const CVecRef& y) {
     double sum = 0.0;
     for (size_t i = 0; i < x.dimension(); i++) {
@@ -16,7 +17,22 @@ static inline double calculateLPNorm(const CVecRef& x, const CVecRef& y) {
     }
     return std::sqrt(sum);
 }
+*/
+    static inline void differentiateLPNormDifferencef(const CVecRef& x, const CVecRef& y, const float lpNorm, TmpVec<0>& result) {
+    if (lpNorm == 0.f) {
+        result.setAll(0.f);
+        return;
+    }
 
+    for (size_t i = 0; i < x.dimension(); i++) {
+        const float diff = std::abs(x[i] - y[i]);
+        const float sign = (x[i] - y[i]) < 0 ? -1.0 : 1.0;
+        const float derivative = diff / lpNorm * sign;
+        result[i] = derivative;
+    }
+}
+
+/*
 static inline void differentiateLPNormDifference(const CVecRef& x, const CVecRef& y, const double lpNorm, TmpVec<0>& result) {
     if (lpNorm == 0.0) {
         result.setAll(0.0);
@@ -30,11 +46,18 @@ static inline void differentiateLPNormDifference(const CVecRef& x, const CVecRef
         result[i] = derivative;
     }
 }
+*/
 
 /**
  * Given x and y, calculate sigma/sigma x ||x-y||_p
  */
+static inline void differentiateLPNormDifferencef(const CVecRef& x, const CVecRef& y, TmpVec<0>& result) {
+    differentiateLPNormDifferencef(x, y, calculateLPNormf(x, y), result);
+}
+
+    /*
 static inline void differentiateLPNormDifference(const CVecRef& x, const CVecRef& y, TmpVec<0>& result) {
     differentiateLPNormDifference(x, y, calculateLPNorm(x, y), result);
 }
+*/
 }

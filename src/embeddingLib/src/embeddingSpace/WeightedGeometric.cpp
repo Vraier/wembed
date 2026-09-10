@@ -2,7 +2,7 @@
 #include "VectorOperations.hpp"
 
 WeightedGeometric::WeightedGeometric(const std::vector<std::vector<float>> &coords, const std::vector<float> &w, int p)
-    : DIMENSION(coords[0].size()), DINVERSE(1.0 / (float)DIMENSION), coordinates(DIMENSION), weights(w), P(p) {
+    : DIMENSION(coords[0].size()), DINVERSE(1.f / static_cast<float>(DIMENSION)), P(p), coordinates(DIMENSION), weights(w) {
     ASSERT(coords.size() == weights.size());
 
     coordinates.setSize(coords.size(), 0);

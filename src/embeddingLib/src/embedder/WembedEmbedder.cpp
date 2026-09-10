@@ -156,7 +156,7 @@ float WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<
         this->state.force[v] += result;
         return 0.0;
     }
-    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
+    vectorOperations::differentiateLPNormDifferencef(posU, posV, dist, result);
 
     const float weightScaling = this->opts.additiveWeights ?
                            (invExpWeights[v] + invExpWeights[u]) :
@@ -188,7 +188,7 @@ float WembedEmbedder::repellingForce(const NodeId v, const NodeId u, TmpVec<0>& 
         return 0.0;
     }
 
-    vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
+    vectorOperations::differentiateLPNormDifferencef(posV, posU, dist, result);
 
     // calculate weighted distance
     const float weightScaling = this->opts.additiveWeights ? (invExpWeights[v] + invExpWeights[u])
@@ -379,7 +379,7 @@ void WembedEmbedder::observeDisplacement() {
         this->perNodeDisplacement[v] = vectorOperations::calculateLPNormf(pos, prev);
         float radiusSq = 0.0;
         for (int d = 0; d < dim; d++) {
-            radiusSq += static_cast<float>(pos[d] * pos[d]);
+            radiusSq += pos[d] * pos[d];
         }
         this->perNodeRadiusSq[v] = radiusSq;
     }
