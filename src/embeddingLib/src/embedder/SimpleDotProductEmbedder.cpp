@@ -72,7 +72,8 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
     }
     */
 
-    vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
+    //vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
+    vectorOperations::differentiateDotProductNorm(posU, posV, dist, result);
 
     //TODO: What weight scaling do I use?
     const double weightScaling = this->opts.additiveWeights ?
