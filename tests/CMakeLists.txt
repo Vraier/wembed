@@ -8,7 +8,6 @@ set(TEST_FILES
     TestLossFunction.cpp
     TestMetrics.cpp
     TestTimings.cpp
-    TestSNNQueries.cpp
 )
 
 add_executable(UnitTests ${TEST_FILES})

@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "SNNQueries.hpp"
 #include "SprkQueries.hpp"
 
 using indexEntries = std::pair<CVecRef, NodeId>;
@@ -35,9 +34,6 @@ void WeightedIndex::updateIndices(const VecList& positions, const std::vector<do
     for (int i = 0; i < weightBuckets.size() + 1; i++) {
         switch (indexType)
         {
-        case IndexType::SNN:
-            spacialIndices.push_back(std::make_unique<SNNQueries>(std::move(bucketContent[i]), DIMENSION));
-            break;
         case IndexType::Sprk:
             spacialIndices.push_back(std::make_unique<SprkQueries>(std::move(bucketContent[i]), DIMENSION));
             break;

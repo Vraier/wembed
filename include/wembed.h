@@ -22,7 +22,6 @@ using EdgeId = int32_t;
 class Embedder;
 
 enum SpatialIndex : int32_t {
-    IndexSNN = 1,
     IndexSprk = 2,
 };
 
