@@ -5,6 +5,7 @@ set(TEST_FILES
     TestGraphAlgorithm.cpp
     TestGeometricGraphSampler.cpp
     TestHierarchy.cpp
+    TestLossFunction.cpp
     TestMetrics.cpp
     TestTimings.cpp
     TestSNNQueries.cpp

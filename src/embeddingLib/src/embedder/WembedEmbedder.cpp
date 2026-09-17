@@ -1,5 +1,6 @@
 #include "WembedEmbedder.hpp"
 
+#include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
 #include "VectorOperations.hpp"
 #include "WeightedIndex.hpp"
@@ -153,17 +154,11 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
 
     const double weightScaling = invExpWeights[v] * invExpWeights[u];
-
-    // loss is the linear hinge on the weighted distance (threshold 1), so it
-    // matches the applied force: force = -grad(loss) via the chain rule
-    double lossContribution = 0.0;
     const double weightedDist = dist * weightScaling;
-    if (weightedDist <= 1.0) {
-        result *= 0;
-    } else {
-        result *= weightScaling;
-        lossContribution = weightedDist - 1.0;
-    }
+
+    // force = -grad(loss), chain rule through the weighted distance (see LossFunction.hpp)
+    result *= lossFunction::attractionForceFactor(weightedDist) * weightScaling;
+    const double lossContribution = lossFunction::attractionLoss(weightedDist);
 
     this->state.force[v] += result;
     return lossContribution;
@@ -183,22 +178,16 @@ double WembedEmbedder::repellingForce(const NodeId v, const NodeId u, VecBuffer<
         std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
         result.setToRandomUnitVector(gen);
         this->state.force[v] +=  result;
-        return 1.0;
+        return lossFunction::maxRepulsionLoss();
     }
 
     vectorOperations::differentiateLPNormDifference(posV, posU, dist, result);
 
     const double weightScaling = invExpWeights[v] * invExpWeights[u];
-
-    // hinge on the weighted distance, mirroring the force (see attractionForce)
-    double lossContribution = 0.0;
     const double weightedDist = dist * weightScaling;
-    if (weightedDist > 1.0) {
-        result *= 0;
-    } else {
-        result *= weightScaling;
-        lossContribution = 1.0 - weightedDist;
-    }
+
+    result *= lossFunction::repulsionForceFactor(weightedDist) * weightScaling;
+    double lossContribution = lossFunction::repulsionLoss(weightedDist);
 
     // increase repulsion force (and its loss estimate) when we use less negative samples
     if (this->opts.numNegativeSamples > 0) {
