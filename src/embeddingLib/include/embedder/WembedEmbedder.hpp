@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 
 #include "AdamOptimizer.hpp"
@@ -16,6 +17,13 @@
 class WembedEmbedder : public EmbedderInterface {
 
     std::shared_ptr<util::Timer> timer;
+
+    std::vector<std::vector<NodeId>> ownedPairs;        // contains all vertices v owns
+    std::unique_ptr<std::atomic<uint32_t>[]> inCount;   // how many vertices own v
+    std::unique_ptr<std::atomic<uint32_t>[]> inCursor;  // used to index into inOwner
+    std::vector<uint64_t> inOffset;                     // prefix sum over inCount
+    std::vector<NodeId> inOwner;                        // flat array indicating who w is owned by
+                                                        // owned by subarrays are sorted to enforce determinism
 
     std::vector<double> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
@@ -52,11 +60,13 @@ class WembedEmbedder : public EmbedderInterface {
     void calculateAllAttractingForces();
     void calculateAllRepellingForces();
     void calculateAllCentreForces();
-    // Force functions return the loss contribution of this pair
-    // so the callers can accumulate it
+    // returns the loss contribution of this pair so the caller can accumulate it
     double attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
-    double repellingForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
     void applyGravityCentre();
+
+    // computes the repulsion push on `a` away from `b` into `out` (no state writes)
+    // and returns the pair's loss; coincident pairs get a random kick + maximal loss
+    double pairRepulsion(NodeId a, NodeId b, TmpVec<0>& out) const;
 
     /**
      * Computes the relative node displacement of the step just applied
@@ -67,17 +77,9 @@ class WembedEmbedder : public EmbedderInterface {
     void observeDisplacement();
 
     /**
-     * Computes all nodes to do a repulsion force computation with node v
-     */
-    std::vector<NodeId> getRepellingCandidatesForNode(NodeId v) const;
-
-    /**
      * Updates spacial data structure
      */
     void updateIndex();
-
-    [[nodiscard]] std::vector<NodeId> sampleRandomNoise(int32_t numNodes) const;
-
 
     public:
     // initializeState controls whether the constructor sets a random starting layout and

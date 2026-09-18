@@ -10,6 +10,7 @@ class SpatialIndex {
    public:
     virtual ~SpatialIndex() = default;
 
-    // Query for points within a certain radius from a point (range query)
-    virtual size_t query_sphere(CVecRef point, double radius, std::vector<int>& out) const = 0;
+    // Query for points within a certain radius from a point (range query).
+    // Returned ids are positions in the point array the index was built from.
+    virtual size_t query_sphere(CVecRef point, double radius, std::vector<uint64_t>& out) const = 0;
 };

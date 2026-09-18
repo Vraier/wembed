@@ -34,10 +34,8 @@ struct EmbedderOptions {
 
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
-    int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
-    double IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
-    double doublingFactor = 2.0;           // determines how the weight buckets are calculated
+    double doublingFactor = 4.0;  // growth of the weight-class bounds; 4 benchmarked best (embedder-review.md)
     double centreScale = 0.0; //factor by which each node is drawn to the centre
     double expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 

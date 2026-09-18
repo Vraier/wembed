@@ -9,7 +9,7 @@
 
 class SprkQueries : public SpatialIndex {
    public:
-    SprkQueries(const std::vector<std::pair<CVecRef, NodeId>>& points, size_t dimension);
+    SprkQueries(const std::vector<CVecRef>& points, size_t dimension);
     ~SprkQueries() override;
 
     // Move-only (handle cannot be shared)
@@ -18,10 +18,9 @@ class SprkQueries : public SpatialIndex {
     SprkQueries(const SprkQueries&) = delete;
     SprkQueries& operator=(const SprkQueries&) = delete;
 
-    size_t query_sphere(CVecRef point, double radius, std::vector<int>& out) const override;
+    size_t query_sphere(CVecRef point, double radius, std::vector<uint64_t>& out) const override;
 
    private:
     SprkHandle* handle_;
-    std::vector<NodeId> id_translation;
     size_t dimension;
 };

@@ -7,48 +7,47 @@
 #include "SpacialIndex.hpp"
 #include "VecList.hpp"
 
+/**
+ * Wraps a spacial index into multiple weight buckets to allow for weighted queries.
+ *
+ * Pairs are enumerated asymmetrically: each pair is reported exactly once, to its
+ * heavier endpoint (ties towards the smaller id). A node therefore only queries its
+ * own and lighter classes, with radius (w_v * classMax)^(1/d).
+ */
 class WeightedIndex {
    public:
-    using CandidateList = std::vector<std::pair<NodeId, NodeId>>;
+    WeightedIndex(IndexType type, int dimension, double doublingFactor)
+        : indexType(type), DIMENSION(dimension), doublingFactor(doublingFactor) {}
 
-    WeightedIndex(IndexType type, int dimension) : indexType(type), DIMENSION(dimension) {}
+    // rebuilds the per-class indices; positions/weights are borrowed until the next update
+    void update(const VecList& positions, const std::vector<double>& weights);
 
-    /**
-     * Rebuilds all r indices by inserting the positions into the right index according to the weight class.
-     */
-    void updateIndices(const VecList& positions, const std::vector<double>& weights,
-                       const std::vector<double>& weightBuckets);
+    // exactly the pairs v owns with weighted distance < 1
+    void getOwnedRepellingPairs(NodeId v, std::vector<NodeId>& out) const;
 
-    /**
-     * Returns the weight buckets used for index construction. The smalles weight has the sice doublingFactor*minWeight.
-     * Afterwards the weights are increased by the factor doublingFactor until the maximum weight is surpassed.
-     */
-    static std::vector<double> getDoublingWeightBuckets(const std::vector<double>& weights,
-                                                        double doublingFactor = 2.0);
-
-    /**
-     * Searches the indices of all classes and performs distance queries on them.
-     * The distance depends on the weightclass of the index, the weight of the node and the given radius.
-     *
-     * Finds all p,q, with |p-q| <= radius * (weightClass(q) * weight)^(1/d)
-     */
-    void getNodesWithinWeightedDistance(CVecRef p, double weight, double radius, std::vector<NodeId>& output) const;
-
-    int getNumWeightClasses() const;
-    int getIndexDimension() const;
-    std::vector<double> getWeightClasses() const;
+    // heavier endpoint owns a pair, ties towards the smaller id; also used by the
+    // attraction pass to cancel owned neighbor pairs out of the loss
+    static bool ownsPair(double weightV, double weightU, NodeId v, NodeId u) {
+        return weightV > weightU || (weightV == weightU && v < u);
+    }
 
    private:
-    void getWithinRadius(int indexId, CVecRef p, double radius, std::vector<NodeId>& output) const;
-
-    void getNodesWithinWeightedDistanceForClass(CVecRef p, double weight, double radius, size_t weight_class,
-                                                std::vector<NodeId>& output) const;
+    void queryClass(size_t weightClass, CVecRef p, double weight, std::vector<NodeId>& output) const;
 
     IndexType indexType;
     int DIMENSION;
+    double doublingFactor;
 
-    // assume nodes to always have the highest possible weight in a weight class
-    // this way, no node will be missed when searching for non neighbors
-    std::vector<std::shared_ptr<SpatialIndex>> spacialIndices;  // one index for each weight class
-    std::vector<double> maxWeightOfClass;  // nodes in index will have weight at most weightClasses[i]
+    // borrowed from update(); valid until the next update()
+    const VecList* positions = nullptr;
+    const std::vector<double>* weights = nullptr;
+
+    std::vector<double> invExpWeights;  // w^(-1/d), for the exact threshold check
+
+    // one index per weight class; nodes in class i have weight <= maxWeightOfClass[i],
+    // so querying with the class max misses no pair
+    std::vector<std::shared_ptr<SpatialIndex>> spacialIndices;
+    std::vector<double> maxWeightOfClass;
+    std::vector<double> classBounds;                 // upper bounds used for class assignment
+    std::vector<std::vector<NodeId>> classToGlobal;  // per class: local query id -> node id
 };

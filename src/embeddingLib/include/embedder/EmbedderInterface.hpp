@@ -31,7 +31,7 @@ class EmbedderInterface {
     EmbedderInterface(const Graph& g, const EmbedderOptions& opts)
                         : graph(g),
                           opts(opts),
-                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
+                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor)
     {
         state.lastLearningRate = opts.learningRate;
     }
