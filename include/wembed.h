@@ -206,7 +206,9 @@ Embedder createEmbedder(const Graph& g, const Options& options);
 
 // Build a graph from an edge list. Each undirected edge should appear exactly once.
 // Vertex IDs must be consecutive starting at 0.
-Graph graphFromEdges(const std::vector<Edge>& edges);
+// The graph has (largest id in edges + 1) vertices, or numVertices if that is larger. Pass numVertices
+// if there are vertices without edges at the end of the id range, they are not part of the graph otherwise.
+Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices = 0);
 
 Graph graphFromEdgeListFile(const std::string& filePath,
                             const std::string& comment = "#",

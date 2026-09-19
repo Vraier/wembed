@@ -234,13 +234,16 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     }
 }
 
-Graph graphFromEdges(const std::vector<Edge>& edges) {
-    std::vector<std::pair<int, int>> pairs;
-    pairs.reserve(edges.size());
+Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices) {
+    std::map<int, std::set<int>> neighbors;
     for (const auto& e : edges) {
-        pairs.emplace_back(e.src, e.dst);
+        neighbors[e.src].insert(e.dst);
     }
-    return Graph(std::make_unique<impl::EmbeddingGraph>(pairs));
+    if (numVertices > 0) {
+        // the graph gets (largest key + 1) vertices, an empty entry is enough to make it large enough
+        neighbors[numVertices - 1];
+    }
+    return Graph(std::make_unique<impl::EmbeddingGraph>(neighbors));
 }
 
 Graph graphFromEdgeListFile(const std::string& filePath,
