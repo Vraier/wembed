@@ -98,7 +98,8 @@ void addOptions(CLI::App& app, Options& opts) {
         ->capture_default_str()->group(embedding);
     app.add_flag("--unit-weights", eo.useUnitWeights, "Disable degree-based weights (use unit weights instead)")
         ->group(embedding);
-    app.add_option("--index-type", eo.indexType, "Type of spatial index used for the embedding (2=Sprk)")
+    app.add_option("--index-type", eo.indexType, "Type of spatial index used for the embedding (0=KdTree: slower, always available; "
+                   "1=Sprk: needs a build with Rust and 2 to 16 dimensions)")
         ->capture_default_str()->group(embedding);
     app.add_option("--dyn-buffer", eo.dynamicQueryBuffer,
                    "Additive slack added to repulsion query radii; the spatial index is only rebuilt once accumulated "

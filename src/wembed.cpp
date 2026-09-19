@@ -165,7 +165,8 @@ void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) 
 
 static IndexType toInternalIndexType(SpatialIndex idx) {
     switch (idx) {
-        case IndexSprk: return IndexType::Sprk;
+        case IndexKdTree: return IndexType::KdTree;
+        case IndexSprk:   return IndexType::Sprk;
     }
     return IndexType::Sprk;
 }

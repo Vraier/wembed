@@ -7,7 +7,9 @@ enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1 };
 
-enum class IndexType { Sprk = 2 };
+// Sprk needs Rust at build time (WEMBED_USE_SPRK) and supports 2 to 16 dimensions.
+// The slower KdTree always works, but has to be selected explicitly.
+enum class IndexType { KdTree = 0, Sprk = 1 };
 
 enum class LRScheduleType { ExponentialCooling = 0, LossAdaptive = 1 };
 
@@ -26,7 +28,7 @@ inline std::map<StopCriterionType, std::string> stopCriterionTypeMap = {
 inline std::map<WeightType, std::string> weightTypeMap = {
     {WeightType::Unit, "Unit"}, {WeightType::Degree, "Degree"}};
 
-inline std::map<IndexType, std::string> indexTypeMap = { {IndexType::Sprk, "Sprk"}};
+inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::KdTree, "KdTree"}, {IndexType::Sprk, "Sprk"}};
 
 struct EmbedderOptions {
     int embeddingDimension = 4;

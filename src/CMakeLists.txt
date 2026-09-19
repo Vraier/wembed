@@ -2,7 +2,9 @@
 add_subdirectory(graphLib)
 add_subdirectory(utilLib)
 add_subdirectory(embeddingLib)
-add_subdirectory(sprk)
+if(WEMBED_USE_SPRK)
+    add_subdirectory(sprk)
+endif()
 
 if(NOT WEMBED_AS_LIBRARY)
     add_subdirectory(evaluationLib)

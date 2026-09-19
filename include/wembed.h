@@ -22,7 +22,9 @@ using EdgeId = int32_t;
 class Embedder;
 
 enum SpatialIndex : int32_t {
-    IndexSprk = 2,
+    IndexKdTree = 0,  // bundled KD-tree: slower, but always available
+    IndexSprk = 1,    // sprk tree (default): needs wembed to be built with Rust, supports 2 to 16 dimensions.
+                      // It is an error to use it otherwise, select IndexKdTree explicitly in that case
 };
 
 enum OptimizerType : int32_t {

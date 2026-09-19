@@ -2,8 +2,25 @@
 
 #include <limits>
 
+#include "KdTreeQueries.hpp"
+#ifdef WEMBED_HAS_SPRK
 #include "SprkQueries.hpp"
+#endif
 #include "VectorOperations.hpp"
+
+IndexType WeightedIndex::checkedIndexType(const IndexType type, const int dimension) {
+    if (type == IndexType::Sprk) {
+#ifndef WEMBED_HAS_SPRK
+        LOG_ERROR("wembed was built without the sprk tree (WEMBED_USE_SPRK=OFF). "
+                  "Select the slower KD-tree explicitly (index type 0).");
+#endif
+        if (dimension < 2 || dimension > 16) {
+            LOG_ERROR("The sprk tree supports 2 to 16 dimensions, got "
+                      << dimension << ". Select the slower KD-tree explicitly (index type 0).");
+        }
+    }
+    return type;
+}
 
 void WeightedIndex::update(const VecList& newPositions, const std::vector<double>& newWeights,
                            double maxDisplacement) {
@@ -69,9 +86,14 @@ void WeightedIndex::rebuildClasses() {
     spacialIndices.clear();
     for (size_t i = 0; i < classContent.size(); i++) {
         switch (indexType) {
+            case IndexType::KdTree:
+                spacialIndices.push_back(std::make_unique<KdTreeQueries>(classContent[i], DIMENSION));
+                break;
+#ifdef WEMBED_HAS_SPRK
             case IndexType::Sprk:
                 spacialIndices.push_back(std::make_unique<SprkQueries>(classContent[i], DIMENSION));
                 break;
+#endif
             default:
                 LOG_ERROR("Unknown index type");
                 break;

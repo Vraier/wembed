@@ -23,7 +23,14 @@
 class WeightedIndex {
    public:
     WeightedIndex(IndexType type, int dimension, double doublingFactor, double dynamicBuffer)
-        : indexType(type), DIMENSION(dimension), doublingFactor(doublingFactor), dynamicBuffer(dynamicBuffer) {}
+        : indexType(checkedIndexType(type, dimension)),
+          DIMENSION(dimension),
+          doublingFactor(doublingFactor),
+          dynamicBuffer(dynamicBuffer) {}
+
+    // The sprk tree needs Rust at build time and supports 2 to 16 dimensions. Aborts if it
+    // is requested where it cannot be used: the slower KD-tree has to be chosen explicitly.
+    static IndexType checkedIndexType(IndexType type, int dimension);
 
     // refreshes the index; maxDisplacement is the largest single-node movement since the
     // previous call (pass infinity after any discontinuous position/weight change)

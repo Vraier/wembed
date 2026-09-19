@@ -12,6 +12,7 @@ PYBIND11_MODULE(wembed, m) {
     m.doc() = "WEmbed: weighted low-dimensional graph embeddings";
 
     py::enum_<wembed::SpatialIndex>(m, "SpatialIndex")
+        .value("IndexKdTree", wembed::IndexKdTree)
         .value("IndexSprk", wembed::IndexSprk)
         .export_values();
 

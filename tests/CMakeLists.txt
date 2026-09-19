@@ -7,6 +7,7 @@ set(TEST_FILES
     TestHierarchy.cpp
     TestLossFunction.cpp
     TestMetrics.cpp
+    TestSpatialIndex.cpp
     TestTimings.cpp
     TestWeightedIndex.cpp
 )

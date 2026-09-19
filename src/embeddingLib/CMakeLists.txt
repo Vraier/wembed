@@ -23,7 +23,7 @@ set(HEADERS
 
         include/spacialQuery/WeightedIndex.hpp
         include/spacialQuery/SpacialIndex.hpp
-        include/spacialQuery/SprkQueries.hpp
+        include/spacialQuery/KdTreeQueries.hpp
 
         # Embedder
         include/embedder/EmbedderOptions.hpp
@@ -56,7 +56,7 @@ set(SOURCES
         src/partition/GraphHierarchy.cpp
 
         src/spacialQuery/WeightedIndex.cpp
-        src/spacialQuery/SprkQueries.cpp
+        src/spacialQuery/KdTreeQueries.cpp
 
         # Embedder
         src/embedder/ConvergenceMonitor.cpp
@@ -81,5 +81,10 @@ target_include_directories(${target} PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include/embeddingIO
         ${CMAKE_CURRENT_LIST_DIR}/include/spacialQuery)
 
-target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX sprk_ffi-static)
+target_link_libraries(${target} PUBLIC wembed_flags graphLib OpenMP::OpenMP_CXX)
+if(WEMBED_USE_SPRK)
+    target_sources(${target} PRIVATE src/spacialQuery/SprkQueries.cpp)
+    target_link_libraries(${target} PUBLIC sprk_ffi-static)
+    target_compile_definitions(${target} PUBLIC WEMBED_HAS_SPRK)
+endif()
 set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

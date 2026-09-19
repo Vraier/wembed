@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.26)
 project(WEmbed VERSION 0.1.0 LANGUAGES CXX)
 
 option(WEMBED_AS_LIBRARY "Only build the C++ library." OFF)
+option(WEMBED_USE_SPRK "Use the sprk tree as spatial index (needs Rust). If OFF, a bundled KD-tree is used instead." ON)
 
 
 # define compiler flags for project
