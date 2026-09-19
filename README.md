@@ -62,10 +62,9 @@ embedder.writeCoordinates("example.emb")
 
 ## Installing Dependencies
 
-In order to compile WEmbed you need to have `Eigen3` headers installed.
+In order to compile WEmbed you need a C++20 compiler with OpenMP support and CMake 3.28 or newer.
 You can look at the [flake.nix](https://github.com/Vraier/wembed/blob/main/flake.nix) for more information.
-WEmbed also depends on a few other smaller libraries, these get downloaded automatically by CMake via Fetchcontent (you do not have to worry about them), 
-look at the root [CMakeLists.txt](https://github.com/Vraier/wembed/blob/main/CMakeLists.txt) for more information.
+WEmbed also depends on a few smaller libraries, these get downloaded automatically by CMake via Fetchcontent (you do not have to worry about them).
 
 By default, WEmbed uses the [sprk tree](https://github.com/wembed-pdf/sprk) as its spatial index, which needs a recent Rust toolchain (`cargo` 1.88 or newer).
 If you do not have Rust, configure with `-DWEMBED_USE_SPRK=OFF`: WEmbed then only contains a bundled KD-tree, which needs nothing but a C++ compiler.
@@ -77,15 +76,42 @@ Both indices report exactly the same repelling pairs, so the choice only affects
 
 The project uses CMake as a build tool (see the [root CMakeLists.txt](https://github.com/Vraier/wembed/blob/main/CMakeLists.txt) for more details).
 In order to build the binaries clone this repository,
-create a new folder and call CMake from it.
-A `bin` and `lib` folder will be created containing the executables and libraries.
+and call CMake with the `release` preset.
+A `release` folder will be created, its `bin` and `lib` folders contain the executables and libraries.
 ```
 git clone git@github.com:Vraier/wembed.git
 cd wembed
-mkdir release
-cd release
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make -j4
+cmake --preset release
+cmake --build --preset release
+```
+This needs [Ninja](https://ninja-build.org/). Without it, `cmake -B release -DCMAKE_BUILD_TYPE=Release` followed by `cmake --build release -j4` does the same.
+
+The build can be adjusted with the following options (e.g. `cmake --preset release -DWEMBED_USE_SPRK=OFF`):
+
+| Option                | Default | Description                                                                                         |
+|-----------------------|---------|-----------------------------------------------------------------------------------------------------|
+| `WEMBED_USE_SPRK`     | `ON`    | Use the sprk tree as spatial index (needs Rust). If `OFF`, only the bundled KD-tree is available.    |
+| `WEMBED_BUILD_TOOLS`  | `ON`    | Build the command line tools and unit tests. `OFF` by default if WEmbed is part of another project. |
+| `WEMBED_BUILD_PYTHON` | `OFF`   | Build the python module (needs the Python development headers). The presets turn this on.           |
+
+Run the unit tests with `ctest --preset release`.
+See [DEVELOPMENT.md](https://github.com/Vraier/wembed/blob/main/DEVELOPMENT.md) for the other presets (debug with sanitizers, profiling) and for building wheels.
+
+
+## Using WEmbed in your C++ project
+
+The C++ interface is the single header [wembed.h](https://github.com/Vraier/wembed/blob/main/include/wembed.h) and the CMake target `wembed::wembed`.
+With CMake's FetchContent, only the library is built, not the tools and tests:
+```
+include(FetchContent)
+FetchContent_Declare(
+    wembed
+    GIT_REPOSITORY https://github.com/Vraier/wembed.git
+    GIT_TAG        v0.2.0
+)
+FetchContent_MakeAvailable(wembed)
+
+target_link_libraries(my_target PRIVATE wembed::wembed)
 ```
 
 

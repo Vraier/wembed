@@ -5,21 +5,13 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
 
-    # CMake dependencies
-    googletest = {
-      url = "github:google/googletest/release-1.12.1";
-      flake = false;
-    };
-    cli11 = {
-      url = "github:CLIUtils/CLI11/v2.3.2";
+    # Sources that CMake would otherwise download (keep in sync with the pins in the CMake files)
+    sprk = {
+      url = "github:wembed-pdf/sprk/1e195eab1119aa5cf420bfb322788d53b95bf1ad";
       flake = false;
     };
     girgs = {
-      url = "github:chistopher/girgs/master";
-      flake = false;
-    };
-    pybind11 = {
-      url = "github:pybind/pybind11/v2.13.6";
+      url = "github:chistopher/girgs/d0e74e3f7ad714222a57d8cbea3e0f2fe5ec608b";
       flake = false;
     };
   };
@@ -28,10 +20,8 @@
     self,
     nixpkgs,
     flake-utils,
-    googletest,
-    cli11,
+    sprk,
     girgs,
-    pybind11,
   }:
     flake-utils.lib.eachDefaultSystem (
       system: let
@@ -40,56 +30,34 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "wembed";
-          version = "0.1.0";
-
+          version = "0.2.0";
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [
-            cmake
-            ninja
-            pkg-config
-            python3
-            git
-            python3.pkgs.scikit-build-core
-            python3.pkgs.pybind11
-            cargo
-            rustc
-          ];
+          nativeBuildInputs = with pkgs; [cmake ninja cargo rustc];
 
-          buildInputs = with pkgs; [
-            eigen
-            gtest
-          ];
-
-          # Copy the pre-fetched dependencies to their expected locations
-          preConfigure = ''
-            mkdir -p build/_deps
-            cp -r ${googletest} build/_deps/googletest-src
-            cp -r ${cli11} build/_deps/cli11-src
-            cp -r ${girgs} build/_deps/girgs-src
-            cp -r ${pybind11} build/_deps/pybind11-src
-            chmod -R +w build/_deps
-          '';
-
+          # The build sandbox has no network: hand CMake and cargo everything they would download.
           cmakeFlags = [
-            "-DCMAKE_BUILD_TYPE=Release"
             "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
-            "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${googletest}"
-            "-DFETCHCONTENT_SOURCE_DIR_CLI11=${cli11}"
+            "-DFETCHCONTENT_SOURCE_DIR_CORROSION=${pkgs.corrosion.src}"
+            "-DFETCHCONTENT_SOURCE_DIR_SPRK=${sprk}"
+            "-DFETCHCONTENT_SOURCE_DIR_CLI11=${pkgs.cli11.src}"
+            "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${pkgs.gtest.src}"
             "-DFETCHCONTENT_SOURCE_DIR_GIRGS=${girgs}"
-            "-DFETCHCONTENT_SOURCE_DIR_PYBIND11=${pybind11}"
           ];
-
-          # Handle Python packaging
-          postInstall = ''
-            # Ensure Python package is installed correctly
-            export PYTHONPATH="$out/${python.sitePackages}:$PYTHONPATH"
-
-            # Make the CLI executable available
-            mkdir -p $out/bin
-            cp bin/cli_wembed $out/bin/wembed
-            chmod +x $out/bin/wembed
+          preConfigure = ''
+            export CARGO_HOME=$(mktemp -d)
+            cat > $CARGO_HOME/config.toml <<EOF
+[source.crates-io]
+replace-with = "vendored-sources"
+[source.vendored-sources]
+directory = "${pkgs.rustPlatform.importCargoLock {lockFile = "${sprk}/Cargo.lock";}}"
+[net]
+offline = true
+EOF
           '';
+
+          doCheck = true;
+          installPhase = "install -Dm755 -t $out/bin bin/wembed bin/evaluator bin/generator";
 
           meta = with pkgs.lib; {
             description = "Calculate low dimensional weighted node embeddings";
@@ -101,21 +69,21 @@
               file = ./LICENSE;
             };
             platforms = platforms.linux;
-            maintainers = with maintainers; [
-              (maintainers.lib.maintainer {
+            maintainers = [
+              {
                 name = "Jean-Pierre von der Heydt";
                 email = "heydt@kit.edu";
                 github = "Vraier";
-              })
-              (maintainers.lib.maintainer {
+              }
+              {
                 name = "Nikolai Maas";
                 email = "nikolai.maas@kit.edu";
-              })
-              (maintainers.lib.maintainer {
+              }
+              {
                 name = "Dennis Kobert";
                 email = "dennis@kobert.dev";
                 github = "TrueDoctor";
-              })
+              }
             ];
           };
         };
@@ -143,7 +111,6 @@
             clippy
 
             # Core dependencies
-            eigen
             gtest
 
             # Python tools and dependencies

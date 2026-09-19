@@ -1,69 +1,39 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.28...4.1)
 
-project(WEmbed VERSION 0.1.0 LANGUAGES CXX)
+project(WEmbed VERSION 0.2.0 LANGUAGES CXX)
 
-option(WEMBED_AS_LIBRARY "Only build the C++ library." OFF)
+# The wembed library is always built. The tools default to OFF when wembed is part of another project.
+option(WEMBED_BUILD_TOOLS "Build the command line tools and unit tests." ${PROJECT_IS_TOP_LEVEL})
+option(WEMBED_BUILD_PYTHON "Build the python module." OFF)
 option(WEMBED_USE_SPRK "Use the sprk tree as spatial index (needs Rust). If OFF, a bundled KD-tree is used instead." ON)
+option(EMBEDDING_USE_ASSERTIONS "Explicitely activates assertions (even in release mode)." OFF)
 
-
-# define compiler flags for project
-# use interface library to not force the flags on the user
+# Compiler flags for our own targets.
+# The wembed library links this PRIVATE, so the flags are not forced on its users.
+# Sanitizers and profiling flags are not set here, see CMakePresets.json.
 add_library(wembed_flags INTERFACE)
 target_compile_features(wembed_flags INTERFACE cxx_std_20)
-target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare -g -fno-omit-frame-pointer)
-
-#target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:RELEASE>:-mtune=native -march=native>>") # for some reason compiling with pip does not work with this
-target_compile_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>") 
-target_link_options(wembed_flags INTERFACE "$<BUILD_INTERFACE:$<$<CONFIG:DEBUG>:-fsanitize=address,undefined>>")
-
-# Dependencies
-# openmp 
-find_package(OpenMP REQUIRED)
-# Eigen
-find_package(Eigen3 REQUIRED)
-
-include(FetchContent)
-
-if(NOT WEMBED_AS_LIBRARY)
-    # Google Test
-    FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        v1.17.0
-    )
-    # CLI11
-    FetchContent_Declare(
-        cli11
-        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
-        GIT_TAG v2.5.0
-    )
-    # Girg generator
-    FetchContent_Declare(
-        girgs
-        GIT_REPOSITORY https://github.com/chistopher/girgs.git
-    )
-
-    FetchContent_MakeAvailable(googletest cli11 girgs)
-
-    enable_testing()
+target_compile_options(wembed_flags INTERFACE -Wall -Wextra -Wno-sign-compare)
+if(EMBEDDING_USE_ASSERTIONS)
+    target_compile_definitions(wembed_flags INTERFACE EMBEDDING_USE_ASSERTIONS)
 endif()
 
-# determine the directories for the binary files
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+find_package(OpenMP REQUIRED)
+include(FetchContent)
 
-# additional compile options
-option(EMBEDDING_USE_ASSERTIONS "Explicitely activates assertions (even in release mode)." OFF)
-if(EMBEDDING_USE_ASSERTIONS)
-        add_compile_definitions(EMBEDDING_USE_ASSERTIONS)
-endif(EMBEDDING_USE_ASSERTIONS)
-
-# export compile_commands.json, which can be used by editors for auto
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Only touch global settings when wembed is the project being built, not when it is a subproject.
+if(PROJECT_IS_TOP_LEVEL)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 add_subdirectory(src)
-if(NOT WEMBED_AS_LIBRARY)
-    add_subdirectory(python)
+if(WEMBED_BUILD_TOOLS)
+    enable_testing()
     add_subdirectory(tests)
+endif()
+if(WEMBED_BUILD_PYTHON)
+    add_subdirectory(python)
 endif()
