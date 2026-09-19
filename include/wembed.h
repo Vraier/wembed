@@ -70,6 +70,10 @@ struct Options {
 
     // Force parameters
     SpatialIndex indexType = IndexSprk;
+    double dynamicQueryBuffer = -1.0;            // absolute slack added to repulsion query radii; spatial-index
+                                                 // rebuilds are skipped while accumulated node movement fits in
+                                                 // it. Negative = auto (3 / embeddingDimension, benchmarked),
+                                                 // 0 = rebuild every iteration (old behavior)
     double centreScale = 0.0;                    // pull toward origin; nonzero enables it (useful for unconnected graphs)
     double expansionStretch = 1.0;               // stretch applied during layer expansion
 

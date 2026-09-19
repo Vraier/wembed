@@ -200,6 +200,7 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.weightType = options.useUnitWeights ? WeightType::Unit : WeightType::Degree;
     opts.dimensionHint = options.dimensionHint;
     opts.indexType = toInternalIndexType(options.indexType);
+    opts.dynamicQueryBuffer = options.dynamicQueryBuffer;
     opts.centreScale = options.centreScale;
     opts.expansionStretch = options.expansionStretch;
     opts.optimizerType = toInternalOptimizerType(options.optimizerType);

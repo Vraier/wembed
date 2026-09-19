@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "Graph.hpp"
@@ -32,13 +33,16 @@ struct EmbedderState {
     double lastLearningRate = 0.0;
     double lastRelDisplacement = 0.0;     // rate the displacement stop watches
     double lastRelLossImprovement = 0.0;  // rate(t) the loss stop watches
+    // consumed by the dynamic-query budget in WeightedIndex; infinity forces a rebuild
+    double lastMaxDisplacement = std::numeric_limits<double>::infinity();
 
-    EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType, double doublingFactor)
+    EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType, double doublingFactor,
+                  double dynamicQueryBuffer)
         : currentPositions(dimension, graphSize),
           currentWeights(graphSize),
           sortedNodeIDs(graphSize),
           force(dimension, graphSize),
-          currentWeightedIndex(indexType, dimension, doublingFactor) {}
+          currentWeightedIndex(indexType, dimension, doublingFactor, dynamicQueryBuffer) {}
 
     // Reset the per-step accumulators before a new step.
     void nextStep() {

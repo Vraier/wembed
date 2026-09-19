@@ -100,6 +100,10 @@ void addOptions(CLI::App& app, Options& opts) {
         ->group(embedding);
     app.add_option("--index-type", eo.indexType, "Type of spatial index used for the embedding (2=Sprk)")
         ->capture_default_str()->group(embedding);
+    app.add_option("--dyn-buffer", eo.dynamicQueryBuffer,
+                   "Additive slack added to repulsion query radii; the spatial index is only rebuilt once accumulated "
+                   "node movement exceeds it. Negative = auto (3/dim), 0 = rebuild every iteration")
+        ->capture_default_str()->group(embedding);
     app.add_option("--centre,--center", eo.centreScale,
                    "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01-0.1). "
                    "Default 0 disables it.")

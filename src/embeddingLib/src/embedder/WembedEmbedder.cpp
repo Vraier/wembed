@@ -1,5 +1,8 @@
 #include "WembedEmbedder.hpp"
 
+#include <algorithm>
+#include <limits>
+
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
 #include "VectorOperations.hpp"
@@ -81,6 +84,10 @@ void WembedEmbedder::calculateEmbedding() {
     }
     timer->stopTiming("embedding_all");
     LOG_INFO("Finished calculating embedding in iteration " << this->state.currentIteration);
+    if (this->opts.dynamicQueryBuffer != 0.0) {
+        LOG_INFO("Dynamic queries: " << this->state.currentWeightedIndex.numRebuilds() << " rebuilds in "
+                                     << this->state.currentWeightedIndex.numUpdates() << " index updates");
+    }
 }
 
 Graph WembedEmbedder::getCurrentGraph() {
@@ -114,6 +121,8 @@ void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coo
             state.currentPositions[i][d] = coordinates[i][d];
         }
     }
+    // discontinuous jump: cached repulsion candidates are stale
+    state.lastMaxDisplacement = std::numeric_limits<double>::infinity();
 }
 
 void WembedEmbedder::setWeights(const std::vector<double> &weights) {
@@ -126,6 +135,7 @@ void WembedEmbedder::setWeights(const std::vector<double> &weights) {
     for (size_t i = 0; i < graphSize(); i++) {
         invExpWeights[i] = 1.0 / Toolkit::myPow(state.currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
     }
+    state.lastMaxDisplacement = std::numeric_limits<double>::infinity();
 }
 
 // ======================================================================================
@@ -177,7 +187,8 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
 }
 
 void WembedEmbedder::updateIndex() {
-    state.currentWeightedIndex.update(this->state.currentPositions, this->state.currentWeights);
+    state.currentWeightedIndex.update(this->state.currentPositions, this->state.currentWeights,
+                                      this->state.lastMaxDisplacement);
 }
 
 void WembedEmbedder::calculateAllAttractingForces() {
@@ -344,6 +355,9 @@ void WembedEmbedder::observeDisplacement() {
     const double relDisplacement = radius > 0.0 ? meanDisplacement / radius : 0.0;
     this->state.lastRelDisplacement = relDisplacement;
     this->displacementMonitor->observe(relDisplacement);
+
+    // max is order-independent, so this stays deterministic without a guarded reduction
+    this->state.lastMaxDisplacement = *std::max_element(perNodeDisplacement.begin(), perNodeDisplacement.end());
 }
 
 std::vector<double> WembedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,

@@ -13,17 +13,24 @@
  * Pairs are enumerated asymmetrically: each pair is reported exactly once, to its
  * heavier endpoint (ties towards the smaller id). A node therefore only queries its
  * own and lighter classes, with radius (w_v * classMax)^(1/d).
+ *
+ * With dynamicBuffer > 0 rebuilds are amortized over iterations (rembed's DynamicQuery):
+ * after a rebuild, queries run once with radii inflated by the buffer and cache each
+ * node's candidate list; while the accumulated movement (2 * maxDisplacement per step)
+ * stays below the buffer, iterations only re-filter the cached lists against current
+ * positions. 
  */
 class WeightedIndex {
    public:
-    WeightedIndex(IndexType type, int dimension, double doublingFactor)
-        : indexType(type), DIMENSION(dimension), doublingFactor(doublingFactor) {}
+    WeightedIndex(IndexType type, int dimension, double doublingFactor, double dynamicBuffer)
+        : indexType(type), DIMENSION(dimension), doublingFactor(doublingFactor), dynamicBuffer(dynamicBuffer) {}
 
-    // rebuilds the per-class indices; positions/weights are borrowed until the next update
-    void update(const VecList& positions, const std::vector<double>& weights);
+    // refreshes the index; maxDisplacement is the largest single-node movement since the
+    // previous call (pass infinity after any discontinuous position/weight change)
+    void update(const VecList& positions, const std::vector<double>& weights, double maxDisplacement);
 
     // exactly the pairs v owns with weighted distance < 1
-    void getOwnedRepellingPairs(NodeId v, std::vector<NodeId>& out) const;
+    void getOwnedRepellingPairs(NodeId v, std::vector<NodeId>& out);
 
     // heavier endpoint owns a pair, ties towards the smaller id; also used by the
     // attraction pass to cancel owned neighbor pairs out of the loss
@@ -31,12 +38,36 @@ class WeightedIndex {
         return weightV > weightU || (weightV == weightU && v < u);
     }
 
+    size_t numUpdates() const { return updateCalls; }
+    size_t numRebuilds() const { return rebuildCalls; }
+
    private:
-    void queryClass(size_t weightClass, CVecRef p, double weight, std::vector<NodeId>& output) const;
+    // a fill (inflated radii) only pays off if the buffer survives a few steps of the
+    // current movement; below that, query tight like before
+    static constexpr double MIN_EXPECTED_REUSES = 2.0;
+
+    enum class QueryMode {
+        Plain,  // tight radii, no caching, default when dynamicBuffer == 0
+        Fill,   // radii inflated by dynamicBuffer, cache the candidates
+        Reuse   // answer from the cached lists; the trees are not touched
+    };
+
+    void rebuildClasses();
+    void queryClass(size_t weightClass, CVecRef p, double weight, double radiusSlack,
+                    std::vector<NodeId>& output) const;
 
     IndexType indexType;
     int DIMENSION;
     double doublingFactor;
+    double dynamicBuffer;
+
+    QueryMode mode = QueryMode::Plain;
+    double remainingBudget = -1.0;
+    size_t updateCalls = 0;
+    size_t rebuildCalls = 0;
+    // per node: owned candidates within the inflated radius at fill time.
+    // INVARIANT: cachedPairs[v] is only touched by the thread querying v
+    std::vector<std::vector<NodeId>> cachedPairs;
 
     // borrowed from update(); valid until the next update()
     const VecList* positions = nullptr;

@@ -31,7 +31,10 @@ class EmbedderInterface {
     EmbedderInterface(const Graph& g, const EmbedderOptions& opts)
                         : graph(g),
                           opts(opts),
-                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor)
+                          // negative buffer = auto;
+                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor,
+                                opts.dynamicQueryBuffer < 0.0 ? 3.0 / opts.embeddingDimension
+                                                              : opts.dynamicQueryBuffer)
     {
         state.lastLearningRate = opts.learningRate;
     }

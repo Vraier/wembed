@@ -60,6 +60,7 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("dimensionHint", &wembed::Options::dimensionHint)
         .def_readwrite("layeredEmbedding", &wembed::Options::layeredEmbedding)
         .def_readwrite("indexType", &wembed::Options::indexType)
+        .def_readwrite("dynamicQueryBuffer", &wembed::Options::dynamicQueryBuffer)
         .def_readwrite("centreScale", &wembed::Options::centreScale)
         .def_readwrite("expansionStretch", &wembed::Options::expansionStretch)
         .def_readwrite("optimizerType", &wembed::Options::optimizerType)
