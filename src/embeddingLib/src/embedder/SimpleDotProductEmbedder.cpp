@@ -62,37 +62,92 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
     const double dist = vectorOperations::calculateDotProductNorm(posU, posV);
 
     //displace in random direction if positions are identical
-    // TODO: What would the value be here?
-    /*
-    if (dist <= 0) {
+    VecBuffer<2> norms(posV.dimension());
+    TmpVec<0> tmpV(norms);
+    TmpVec<1> tmpU(norms);
+    tmpV = posV.norm() * posV;
+    tmpU = posU.norm() * posU;
+    bool isSameDirection = true;
+    for (int i = 0; i < tmpV.dimension(); i++) {
+        if (tmpV[i] != tmpU[i]) {
+            isSameDirection = false;
+            break;
+        }
+    }
+
+    if (isSameDirection) {
         std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
-        result.setToRandomUnitVector(gen);
+        VecBuffer<1> displace(posU.dimension());
+        TmpVec<0> tmpDis(displace);
+        tmpDis.setToRandomUnitVector(gen);
+        result = posV + 0.05 * tmpDis;
         this->state.force[v] += result;
         return 0.0;
     }
-    */
 
-    //vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
     vectorOperations::differentiateDotProductNorm(posU, posV, dist, result);
 
-    //TODO: What weight scaling do I use?
-    const double weightScaling = this->opts.additiveWeights ?
-                           (invExpWeights[v] + invExpWeights[u]) :
-                           (invExpWeights[v] * invExpWeights[u]);
-
-    const double lossContribution = dist - this->opts.edgeLength / weightScaling;
-    if (dist * weightScaling <= this->opts.edgeLength) {
-        result *= this->opts.repulsionScale * weightScaling; //Attract to counter repulsion force
+    const double lossContribution = dist - this->opts.edgeLength;
+    if (dist >= this->opts.edgeLength) { // if dot product distance it greater or equal to 1
+        result *= 0.0;
     } else {
-        result *= this->opts.attractionScale * weightScaling;
+        result *= this->opts.attractionScale;
     }
 
     this->state.force[v] += result;
     return lossContribution;
 }
 
-double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1> &result) {
-    //TODO:
+double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1> &forceBuffer) {
+    if (v == u) return 0.0;
+
+    const CVecRef posV = state.currentPositions[v];
+    const CVecRef posU = state.currentPositions[u];
+
+    TmpVec<0> result(forceBuffer, 0.0);
+    const double dist = vectorOperations::calculateDotProductNorm(posU, posV);
+
+    //displace in random direction if positions are identical
+    VecBuffer<2> norms(posV.dimension());
+    TmpVec<0> tmpV(norms);
+    TmpVec<1> tmpU(norms);
+    tmpV = posV.norm() * posV;
+    tmpU = posU.norm() * posU;
+    bool isSameDirection = true;
+    for (int i = 0; i < tmpV.dimension(); i++) {
+        if (tmpV[i] != tmpU[i]) {
+            isSameDirection = false;
+            break;
+        }
+    }
+
+    if (isSameDirection) {
+        std::mt19937 gen = Rand::localGenerator(static_cast<uint32_t>(v), static_cast<uint32_t>(state.currentIteration));
+        VecBuffer<1> displace(posU.dimension());
+        TmpVec<0> tmpDis(displace);
+        tmpDis.setToRandomUnitVector(gen);
+        result = posV + 0.05 * tmpDis;
+        this->state.force[v] += result;
+        return 0.0;
+    }
+
+    vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
+
+    double lossContribution = 0.0;
+    if (dist < this->opts.edgeLength) {
+        result *= 0;
+    } else {
+        result *= this->opts.repulsionScale;
+        lossContribution = this->opts.edgeLength - dist;
+    }
+
+    // increase repulsion force when we use less negative samples
+    if (this->opts.numNegativeSamples > 0) {
+        result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
+    }
+
+    this->state.force[v] += result;
+    return lossContribution;
 }
 
 void SimpleDotProductEmbedder::applyGravityCentre() {
@@ -259,14 +314,9 @@ void SimpleDotProductEmbedder::setCoordinates(const std::vector<std::vector<doub
 
 void SimpleDotProductEmbedder::setWeights(const std::vector<double> &weights) {
     ASSERT(graphSize() == weights.size());
-
+    LOG_WARNING("Dot product embeddings ignore weights")
     this->state.currentWeights = weights;
     sortNodes();
-
-#pragma omp parallel for default(none) shared(invExpWeights, state) schedule(static)
-    for (size_t i = 0; i < graphSize(); i++) {
-        invExpWeights[i] = 1.0 / Toolkit::myPow(state.currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
-    }
 }
 
 std::vector<double> SimpleDotProductEmbedder::rescaleWeights(double dimensionHint, double embeddingDimension,

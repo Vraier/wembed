@@ -14,7 +14,6 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
 
     uint32_t numRepForceCalculations = 0;
 
-    std::vector<double> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
     // written by exactly one thread, then reduced deterministically (so the
     // stopping-criterion signal does not depend on thread count)
@@ -75,7 +74,6 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
                       bool initializeState = true)
                       : EmbedderInterface(g, opts),
                         timer(timer_ptr),
-                        invExpWeights(g.getNumVertices()),
                         lossPerNode(g.getNumVertices()),
                         previousPositions(opts.embeddingDimension, g.getNumVertices()),
                         perNodeDisplacement(g.getNumVertices()),
@@ -93,17 +91,8 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
         }
 
         SimpleDotProductEmbedder::setCoordinates(constructRandomCoordinates());
-
-        switch (opts.weightType) {
-            case WeightType::Degree:
-                SimpleDotProductEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
-                                                             opts.embeddingDimension,
-                                                             constructDegreeWeights(g)));
-                break;
-            case WeightType::Unit:
-                SimpleDotProductEmbedder::setWeights(constructUnitWeights(graphSize()));
-                break;
-        }
+        // Set weights to something uniform, so other library parts can deal with the embeddings
+        SimpleDotProductEmbedder::setWeights(constructUnitWeights(static_cast<int>(graphSize())));
     }
 
     virtual ~SimpleDotProductEmbedder() override = default;
