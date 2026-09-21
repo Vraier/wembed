@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <string>
 
 #include "AdamOptimizer.hpp"
 #include "ConvergenceMonitor.hpp"
@@ -130,6 +131,9 @@ class WembedEmbedder : public EmbedderInterface {
     virtual void calculateStep() override;
     virtual bool isFinished() override;
     virtual void calculateEmbedding() override;
+
+    // key=value summary of the finished run, machine-parsed by the experiment pipeline
+    std::string runSummary() const;
     virtual Graph getCurrentGraph() override;
     virtual std::vector<std::vector<double>> getCoordinates() override;
     virtual std::vector<double> getWeights() override;

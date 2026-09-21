@@ -1,7 +1,9 @@
 #include "WembedEmbedder.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <limits>
+#include <sstream>
 
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
@@ -78,16 +80,31 @@ bool WembedEmbedder::isFinished() {
 void WembedEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
+    const auto start = std::chrono::steady_clock::now();
     this->state.currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
     LOG_INFO("Finished calculating embedding in iteration " << this->state.currentIteration);
-    if (this->opts.dynamicQueryBuffer != 0.0) {
-        LOG_INFO("Dynamic queries: " << this->state.currentWeightedIndex.numRebuilds() << " rebuilds in "
-                                     << this->state.currentWeightedIndex.numUpdates() << " index updates");
+    LOG_INFO("Layer summary: layer=0 " << runSummary() << " time_s="
+                                       << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
+}
+
+std::string WembedEmbedder::runSummary() const {
+    const char* stopReason = "converged";
+    if (graphSize() <= 1) {
+        stopReason = "trivial";
+    } else if (this->state.currentIteration >= this->opts.maxIterations) {
+        stopReason = "max_iterations";
     }
+    std::ostringstream out;
+    out << "n=" << graphSize() << " iterations=" << this->state.currentIteration
+        << " loss=" << this->state.lastAttractLoss + this->state.lastRepelLoss
+        << " lr=" << this->state.lastLearningRate << " stop=" << stopReason
+        << " index_updates=" << this->state.currentWeightedIndex.numUpdates()
+        << " index_rebuilds=" << this->state.currentWeightedIndex.numRebuilds();
+    return out.str();
 }
 
 Graph WembedEmbedder::getCurrentGraph() {

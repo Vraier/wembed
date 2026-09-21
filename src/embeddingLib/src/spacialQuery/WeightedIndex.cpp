@@ -45,7 +45,7 @@ void WeightedIndex::update(const VecList& newPositions, const std::vector<double
     rebuildClasses();
     rebuildCalls++;
 
-    if (dynamicBuffer > 0.0 && 2.0 * maxDisplacement * MIN_EXPECTED_REUSES <= dynamicBuffer) {
+    if (dynamicBuffer > 0.0 && 2.0 * maxDisplacement * minExpectedReuses <= dynamicBuffer) {
         mode = QueryMode::Fill;
         remainingBudget = dynamicBuffer;
         cachedPairs.resize(newWeights.size());

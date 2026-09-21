@@ -8,6 +8,17 @@ void LayeredEmbedder::calculateStep() {
         expandPositions();
     }
     currentEmbedder->calculateStep();
+    // stepping callers (cli --trace) never reach calculateEmbedding, so the last layer reports here
+    if (isFinished()) {
+        logLayerSummary();
+    }
+}
+
+void LayeredEmbedder::logLayerSummary() {
+    const auto now = std::chrono::steady_clock::now();
+    LOG_INFO("Layer summary: layer=" << currentLayer << " " << currentEmbedder->runSummary()
+                                     << " time_s=" << std::chrono::duration<double>(now - layerStart).count());
+    layerStart = now;
 }
 
 bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder->isFinished(); }
@@ -16,6 +27,7 @@ void LayeredEmbedder::calculateEmbedding() {
     LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
     currentIteration = 0;
+    layerStart = std::chrono::steady_clock::now();
     while (!isFinished()) {
         calculateStep();
     }
@@ -44,6 +56,7 @@ std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->ge
 Graph LayeredEmbedder::getCurrentGraph() { return hierarchy->graphs[currentLayer]; }
 
 void LayeredEmbedder::expandPositions() {
+    logLayerSummary();
     LOG_INFO("Expanding positions to layer " << currentLayer - 1 << " in iteration " << currentIteration);
     timer->startTiming("expanding", "Expanding Positions");
 

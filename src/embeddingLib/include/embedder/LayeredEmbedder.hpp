@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <memory>
 
 #include "EmbedderInterface.hpp"
@@ -47,11 +48,13 @@ class LayeredEmbedder : public EmbedderInterface {
 
     // decreases the layer and initializes a new embedder
     virtual void expandPositions();
+    void logLayerSummary();
 
     std::shared_ptr<GraphHierarchy> hierarchy;
 
     int currentIteration = 0;
     int currentLayer;
+    std::chrono::steady_clock::time_point layerStart = std::chrono::steady_clock::now();
 
     // stores positions and weights of all graphs in the hierarchy
     std::unique_ptr<WembedEmbedder> currentEmbedder;

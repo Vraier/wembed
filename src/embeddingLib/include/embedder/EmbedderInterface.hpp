@@ -34,7 +34,8 @@ class EmbedderInterface {
                           // negative buffer = auto;
                           state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor,
                                 opts.dynamicQueryBuffer < 0.0 ? 3.0 / opts.embeddingDimension
-                                                              : opts.dynamicQueryBuffer)
+                                                              : opts.dynamicQueryBuffer,
+                                opts.dynamicQueryMinReuses)
     {
         state.lastLearningRate = opts.learningRate;
     }

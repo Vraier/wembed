@@ -105,6 +105,9 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Additive slack added to repulsion query radii; the spatial index is only rebuilt once accumulated "
                    "node movement exceeds it. Negative = auto (3/dim), 0 = rebuild every iteration")
         ->capture_default_str()->group(embedding);
+    app.add_option("--dyn-min-reuses", eo.dynamicQueryMinReuses,
+                   "Only over-query if the buffer is expected to survive this many steps of the current movement")
+        ->capture_default_str()->group(embedding);
     app.add_option("--centre,--center", eo.centreScale,
                    "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01-0.1). "
                    "Default 0 disables it.")

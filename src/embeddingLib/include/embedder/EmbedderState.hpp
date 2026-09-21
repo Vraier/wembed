@@ -37,12 +37,12 @@ struct EmbedderState {
     double lastMaxDisplacement = std::numeric_limits<double>::infinity();
 
     EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType, double doublingFactor,
-                  double dynamicQueryBuffer)
+                  double dynamicQueryBuffer, double dynamicQueryMinReuses)
         : currentPositions(dimension, graphSize),
           currentWeights(graphSize),
           sortedNodeIDs(graphSize),
           force(dimension, graphSize),
-          currentWeightedIndex(indexType, dimension, doublingFactor, dynamicQueryBuffer) {}
+          currentWeightedIndex(indexType, dimension, doublingFactor, dynamicQueryBuffer, dynamicQueryMinReuses) {}
 
     // Reset the per-step accumulators before a new step.
     void nextStep() {

@@ -22,11 +22,13 @@
  */
 class WeightedIndex {
    public:
-    WeightedIndex(IndexType type, int dimension, double doublingFactor, double dynamicBuffer)
+    WeightedIndex(IndexType type, int dimension, double doublingFactor, double dynamicBuffer,
+                  double minExpectedReuses = 2.0)
         : indexType(checkedIndexType(type, dimension)),
           DIMENSION(dimension),
           doublingFactor(doublingFactor),
-          dynamicBuffer(dynamicBuffer) {}
+          dynamicBuffer(dynamicBuffer),
+          minExpectedReuses(minExpectedReuses) {}
 
     // The sprk tree needs Rust at build time and supports 2 to 16 dimensions. Aborts if it
     // is requested where it cannot be used: the slower KD-tree has to be chosen explicitly.
@@ -49,10 +51,6 @@ class WeightedIndex {
     size_t numRebuilds() const { return rebuildCalls; }
 
    private:
-    // a fill (inflated radii) only pays off if the buffer survives a few steps of the
-    // current movement; below that, query tight like before
-    static constexpr double MIN_EXPECTED_REUSES = 2.0;
-
     enum class QueryMode {
         Plain,  // tight radii, no caching, default when dynamicBuffer == 0
         Fill,   // radii inflated by dynamicBuffer, cache the candidates
@@ -67,6 +65,9 @@ class WeightedIndex {
     int DIMENSION;
     double doublingFactor;
     double dynamicBuffer;
+    // a fill (inflated radii) only pays off if the buffer survives a few steps of the
+    // current movement; below that, query tight like before
+    double minExpectedReuses;
 
     QueryMode mode = QueryMode::Plain;
     double remainingBudget = -1.0;
