@@ -34,7 +34,10 @@ void ConvergenceMonitor::observe(double loss) {
         lastRate = STILL_IMPROVING;
     }
 
-    if (lastRate < relTol) {
+    // two-sided: a rising loss (rate << 0, e.g. the bump right after a layer expansion)
+    // is not stagnation and must reset the counter, otherwise the stop fires after
+    // window + patience steps at 10x the converged loss on some high-dim runs
+    if (std::abs(lastRate) < relTol) {
         numStagnantSteps++;
     } else {
         numStagnantSteps = 0;

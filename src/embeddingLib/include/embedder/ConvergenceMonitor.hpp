@@ -7,7 +7,7 @@
  * Tracks the EMA-smoothed training loss and exposes the windowed relative loss
  * decrease
  *     rate(t) = (Lbar(t - rateWindow) - Lbar(t)) / max(|Lbar(t - rateWindow)|, tiny)
- * The loss has converged once rate(t) stays below relTol for `patience`
+ * The loss has converged once |rate(t)| stays below relTol for `patience`
  * consecutive steps. Until a full window is buffered, rate(t)
  * reads STILL_IMPROVING so neither the stop nor a loss-reactive LR schedule
  * reacts during that warmup.
