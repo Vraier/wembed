@@ -16,7 +16,9 @@ class ConvergenceMonitor {
    public:
     static constexpr double STILL_IMPROVING = std::numeric_limits<double>::infinity();
 
-    ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow);
+    // lossFloor: lower bound of the rate's denominator. Below it the tolerance acts on the
+    // absolute loss change, so a (nearly) perfectly embedded graph with loss ~ 0 still stops
+    ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow, double lossFloor = TINY);
 
     void observe(double loss);
 
@@ -30,6 +32,7 @@ class ConvergenceMonitor {
     static constexpr double TINY = 1e-12;
 
     double relTol;
+    double lossFloor;
     int patience;
     double smoothingFactor;
     int rateWindow;

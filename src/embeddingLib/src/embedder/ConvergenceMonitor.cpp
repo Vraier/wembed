@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow)
+ConvergenceMonitor::ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow,
+                                       double lossFloor)
     : relTol(relTol),
+      lossFloor(std::max(lossFloor, TINY)),
       patience(patience),
       smoothingFactor(smoothingFactor),
       rateWindow(rateWindow < 1 ? 1 : rateWindow),
@@ -28,7 +30,7 @@ void ConvergenceMonitor::observe(double loss) {
 
     if (ringCount >= static_cast<int>(ring.size())) {
         const double windowStart = ring[ringHead];  // Lbar(t - rateWindow)
-        const double denom = std::max(std::abs(windowStart), TINY);
+        const double denom = std::max(std::abs(windowStart), lossFloor);
         lastRate = (windowStart - smoothedLoss) / denom;
     } else {
         lastRate = STILL_IMPROVING;

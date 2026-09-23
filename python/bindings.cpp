@@ -62,7 +62,6 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("layeredEmbedding", &wembed::Options::layeredEmbedding)
         .def_readwrite("indexType", &wembed::Options::indexType)
         .def_readwrite("dynamicQueryBuffer", &wembed::Options::dynamicQueryBuffer)
-        .def_readwrite("dynamicQueryMinReuses", &wembed::Options::dynamicQueryMinReuses)
         .def_readwrite("centreScale", &wembed::Options::centreScale)
         .def_readwrite("expansionStretch", &wembed::Options::expansionStretch)
         .def_readwrite("optimizerType", &wembed::Options::optimizerType)
@@ -80,8 +79,6 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("stopCriterion", &wembed::Options::stopCriterion)
         .def_readwrite("stopDisplacementTol", &wembed::Options::stopDisplacementTol)
         .def_readwrite("stopDisplacementPatience", &wembed::Options::stopDisplacementPatience)
-        .def_readwrite("lossSmoothingFactor", &wembed::Options::lossSmoothingFactor)
-        .def_readwrite("lossRateWindow", &wembed::Options::lossRateWindow)
         .def_readwrite("stopLossTol", &wembed::Options::stopLossTol)
         .def_readwrite("stopLossPatience", &wembed::Options::stopLossPatience);
 

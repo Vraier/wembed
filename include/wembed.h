@@ -76,8 +76,6 @@ struct Options {
                                                  // rebuilds are skipped while accumulated node movement fits in
                                                  // it. Negative = auto (3 / embeddingDimension, benchmarked),
                                                  // 0 = rebuild every iteration (old behavior)
-    double dynamicQueryMinReuses = 2.0;          // only over-query when the buffer is expected to survive this
-                                                 // many steps of the current movement
     double centreScale = 0.0;                    // pull toward origin; nonzero enables it (useful for unconnected graphs)
     double expansionStretch = 1.0;               // stretch applied during layer expansion
 
@@ -106,14 +104,9 @@ struct Options {
                                                  // gyration) below which the layout counts as settled
     int32_t stopDisplacementPatience = 5;        // settled steps in a row before stopping
 
-    // Shared loss-progress signal (loss* prefix): windowed relative loss decrease rate(t),
-    // read by both the loss stop criterion and the LRLossAdaptive schedule.
-    double lossSmoothingFactor = 0.3;            // EMA weight of the newest loss sample before the monitor sees it
-                                                 // (1.0 disables smoothing); a light denoise on rate(t)
-    int32_t lossRateWindow = 30;                 // steps over which the relative loss-decrease rate is measured
-
     // Loss stagnation stopping criterion (StopLoss).
-    double stopLossTol = 1e-3;                   // ftol: converged once rate(t) stays below this (relative decrease over window)
+    double stopLossTol = 1e-3;                   // ftol: converged once the relative loss decrease over a 30-step window
+                                                 // stays below this (also read by LRLossAdaptive's rate signal)
     int32_t stopLossPatience = 50;               // sub-tolerance steps in a row before stopping
 };
 

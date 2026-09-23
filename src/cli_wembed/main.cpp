@@ -105,9 +105,6 @@ void addOptions(CLI::App& app, Options& opts) {
                    "Additive slack added to repulsion query radii; the spatial index is only rebuilt once accumulated "
                    "node movement exceeds it. Negative = auto (3/dim), 0 = rebuild every iteration")
         ->capture_default_str()->group(embedding);
-    app.add_option("--dyn-min-reuses", eo.dynamicQueryMinReuses,
-                   "Only over-query if the buffer is expected to survive this many steps of the current movement")
-        ->capture_default_str()->group(embedding);
     app.add_option("--centre,--center", eo.centreScale,
                    "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01-0.1). "
                    "Default 0 disables it.")
@@ -163,15 +160,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--stop-displacement-patience", eo.stopDisplacementPatience,
                    "Settled steps in a row before stopping (criterion 0)")
         ->capture_default_str()->group(stopping);
-    app.add_option("--loss-smoothing", eo.lossSmoothingFactor,
-                   "EMA weight of the newest loss sample before the loss-progress monitor sees it "
-                   "(1.0 disables smoothing)")
-        ->capture_default_str()->group(stopping);
-    app.add_option("--loss-rate-window", eo.lossRateWindow,
-                   "Steps over which the relative loss-decrease rate rate(t) is measured")
-        ->capture_default_str()->group(stopping);
     app.add_option("--stop-loss-tol", eo.stopLossTol,
-                   "ftol: converged once rate(t) stays below this relative loss decrease (criterion 1)")
+                   "Converged once the relative loss decrease over a 30-step window stays below this (criterion 1)")
         ->capture_default_str()->group(stopping);
     app.add_option("--stop-loss-patience", eo.stopLossPatience,
                    "Sub-tolerance steps in a row before stopping (criterion 1)")

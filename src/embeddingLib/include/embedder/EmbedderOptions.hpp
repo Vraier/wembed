@@ -39,7 +39,8 @@ struct EmbedderOptions {
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
     double doublingFactor = 4.0;  // growth of the weight-class bounds; 4 was briefly benchmarked
     double dynamicQueryBuffer = -1.0;  // rembed DynamicQuery: 3/d was briefly benchmarked
-    double dynamicQueryMinReuses = 2.0;  // steps a fresh buffer must be expected to survive to be worth filling
+    double dynamicQueryMinReuses = 2.0;  // internal: steps a fresh buffer must be expected to survive to be worth
+                                         // filling; swept 1..8 with no measurable effect
     double centreScale = 0.0; //factor by which each node is drawn to the centre
     double expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 
@@ -70,11 +71,15 @@ struct EmbedderOptions {
     int stopDisplacementPatience = 5;   // settled steps in a row before stopping
 
     // Shared loss-progress signal (loss* prefix): windowed relative loss decrease rate(t),
-    // consumed by both the loss stop criterion and the LossAdaptive schedule.
+    // consumed by both the loss stop criterion and the LossAdaptive schedule. Internal:
+    // window and smoothing were swept (W in 10..100, smoothing in 0.15..1) without effect
+    // at matched per-step tolerance, so they are not part of the public interface.
     double lossSmoothingFactor = 0.3;  // EMA weight of the newest loss sample before the monitor sees it
                                        // (1.0 disables smoothing); a light denoise on rate(t)
     int lossRateWindow = 30;           // steps over which the relative loss-decrease rate is measured
                                        // (a real window; per-step change is too noisy to threshold)
+    double lossFloor = 1e-5;           // per node; rate(t) denominator is floored at lossFloor * n so that
+                                       // a loss near 0 (perfectly embeddable graph) is stagnation, not noise
 
     // Loss stagnation stopping criterion (StopCriterionType::Loss).
     double stopLossTol = 1e-3;   // ftol: converged once rate(t) stays below this (relative decrease over the window)

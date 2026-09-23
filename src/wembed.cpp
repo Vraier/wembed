@@ -202,7 +202,6 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.dimensionHint = options.dimensionHint;
     opts.indexType = toInternalIndexType(options.indexType);
     opts.dynamicQueryBuffer = options.dynamicQueryBuffer;
-    opts.dynamicQueryMinReuses = options.dynamicQueryMinReuses;
     opts.centreScale = options.centreScale;
     opts.expansionStretch = options.expansionStretch;
     opts.optimizerType = toInternalOptimizerType(options.optimizerType);
@@ -220,8 +219,6 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.stopCriterion = toInternalStopCriterion(options.stopCriterion);
     opts.stopDisplacementTol = options.stopDisplacementTol;
     opts.stopDisplacementPatience = options.stopDisplacementPatience;
-    opts.lossSmoothingFactor = options.lossSmoothingFactor;
-    opts.lossRateWindow = options.lossRateWindow;
     opts.stopLossTol = options.stopLossTol;
     opts.stopLossPatience = options.stopLossPatience;
 

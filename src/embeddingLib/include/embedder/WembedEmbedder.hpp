@@ -102,7 +102,8 @@ class WembedEmbedder : public EmbedderInterface {
                         posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
                         convergenceMonitor(std::make_unique<ConvergenceMonitor>(opts.stopLossTol, opts.stopLossPatience,
                                                                                 opts.lossSmoothingFactor,
-                                                                                opts.lossRateWindow)),
+                                                                                opts.lossRateWindow,
+                                                                                opts.lossFloor * g.getNumVertices())),
                         displacementMonitor(std::make_unique<DisplacementMonitor>(opts.stopDisplacementTol,
                                                                                   opts.stopDisplacementPatience)),
                         lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
