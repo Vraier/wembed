@@ -85,7 +85,7 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
         return 0.0;
     }
 
-    vectorOperations::differentiateDotProductNorm(posU, posV, dist, result);
+    vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
 
     const double lossContribution = dist - this->opts.edgeLength;
     if (dist >= this->opts.edgeLength) { // if dot product distance it greater or equal to 1
@@ -137,7 +137,7 @@ double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1>
     if (dist < this->opts.edgeLength) {
         result *= 0;
     } else {
-        result *= this->opts.repulsionScale;
+        result *= -1.0 * this->opts.repulsionScale; // * -1 to repel
         lossContribution = this->opts.edgeLength - dist;
     }
 

@@ -47,8 +47,12 @@ static inline double calculateDotProductNorm(const CVecRef& x, const CVecRef& y)
     return sum;
 }
 
-static inline void differentiateDotProductNorm(const CVecRef& x, const CVecRef& y, double norm, TmpVec<0>& result) {
-    //TODO:
+/*
+ * Given x and y, computes sigma/sigma_x <x,y>
+ */
+static inline void differentiateDotProductNorm([[maybe_unused]]const CVecRef& x, const CVecRef& y,
+                                               [[maybe_unused]]double norm, TmpVec<0>& result) {
+    result = y;
 }
 
 static inline void differentiateDotProductNorm(const CVecRef& x, const CVecRef& y, TmpVec<0>& result) {
