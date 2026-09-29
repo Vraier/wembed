@@ -31,7 +31,7 @@ std::string formatSeconds(double seconds) {
 
 void printLayerSummary(const wembed::Progress& p, const wembed::Embedder& embedder, int maxIterations) {
     std::cerr << "Layer summary: layer=" << p.layer << " n=" << p.numVertices << " iterations=" << p.iteration
-              << " loss=" << embedder.getLoss().total << " lr=" << embedder.getCurrentLearningRate()
+              << " expected=" << p.expectedIterations << " loss=" << embedder.getLoss().total << " lr=" << embedder.getCurrentLearningRate()
               << " stop=" << (p.iteration >= maxIterations ? "max_iterations" : "converged")
               << " time_s=" << p.layerSeconds << std::endl;
 }

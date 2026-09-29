@@ -1,4 +1,6 @@
 import argparse
+import time
+
 import wembed
 
 
@@ -35,12 +37,31 @@ def main():
     options.centreScale = args.centre
 
     embedder = wembed.createEmbedder(graph, options)
-    embedder.calculateEmbedding()
+    embed_with_progress(embedder)
 
     print(wembed.timingsToString(embedder.getTimings()))
 
     if args.output is not None:
         embedder.writeCoordinates(args.output)
+
+
+def embed_with_progress(embedder, report_every=30.0):
+    """Step through the embedding and print its progress every report_every seconds.
+
+    embedder.calculateEmbedding() does the same silently.
+    """
+    last_report = time.monotonic()
+    while not embedder.isFinished():
+        embedder.calculateStep()
+        if time.monotonic() - last_report >= report_every:
+            p = embedder.getProgress()
+            line = f"layer {p.layer}, iteration {p.iteration}"
+            if p.expectedIterations >= 0:
+                line += f" of ~{p.expectedIterations}"
+            if p.etaSeconds >= 0:
+                line += f", ETA {p.etaSeconds:.0f}s"
+            print(line)
+            last_report = time.monotonic()
 
 
 def graph_from_networkx(nx_graph):
