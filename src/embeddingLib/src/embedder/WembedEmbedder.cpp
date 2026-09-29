@@ -3,10 +3,11 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include <sstream>
+#include <stdexcept>
 
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
+#include "ProgressEstimate.hpp"
 #include "VectorOperations.hpp"
 #include "WeightedIndex.hpp"
 
@@ -17,6 +18,7 @@
 //
 // ======================================================================================
 void WembedEmbedder::calculateStep() {
+    const auto stepStart = std::chrono::steady_clock::now();
 
     //Increase current step
     state.nextStep();
@@ -66,6 +68,7 @@ void WembedEmbedder::calculateStep() {
     observeDisplacement();
     this->convergenceMonitor->observe(this->state.lastAttractLoss + this->state.lastRepelLoss);
     this->state.lastRelLossImprovement = this->convergenceMonitor->relImprovement();
+    this->state.stepSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - stepStart).count();
 }
 
 bool WembedEmbedder::isFinished() {
@@ -77,34 +80,25 @@ bool WembedEmbedder::isFinished() {
     return this->convergenceMonitor->converged();
 }
 
+EmbeddingProgress WembedEmbedder::getProgress() {
+    EmbeddingProgress progress;
+    progress.numVertices = static_cast<int>(graphSize());
+    progress.iteration = static_cast<int>(this->state.currentIteration);
+    progress.expectedIterations = progressEstimate::priorLayerIterations(this->opts);
+    progress.layerSeconds = this->state.stepSeconds;
+    progress.etaSeconds =
+        progressEstimate::remainingLayerSeconds(progress.iteration, progress.expectedIterations, progress.layerSeconds);
+    progress.layerFinished = isFinished();
+    return progress;
+}
+
 void WembedEmbedder::calculateEmbedding() {
-    LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
-    const auto start = std::chrono::steady_clock::now();
     this->state.currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << this->state.currentIteration);
-    LOG_INFO("Layer summary: layer=0 " << runSummary() << " time_s="
-                                       << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
-}
-
-std::string WembedEmbedder::runSummary() const {
-    const char* stopReason = "converged";
-    if (graphSize() <= 1) {
-        stopReason = "trivial";
-    } else if (this->state.currentIteration >= this->opts.maxIterations) {
-        stopReason = "max_iterations";
-    }
-    std::ostringstream out;
-    out << "n=" << graphSize() << " iterations=" << this->state.currentIteration
-        << " loss=" << this->state.lastAttractLoss + this->state.lastRepelLoss
-        << " lr=" << this->state.lastLearningRate << " stop=" << stopReason
-        << " index_updates=" << this->state.currentWeightedIndex.numUpdates()
-        << " index_rebuilds=" << this->state.currentWeightedIndex.numRebuilds();
-    return out.str();
 }
 
 Graph WembedEmbedder::getCurrentGraph() {
@@ -124,17 +118,19 @@ std::vector<util::TimingResult> WembedEmbedder::getTimings() {
 }
 
 void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coordinates) {
-    const int coordDim = coordinates.empty() ? 0 : static_cast<int>(coordinates[0].size());
-    ASSERT(graphSize() == coordinates.size());
-
-    if (coordDim != this->opts.embeddingDimension)
-        LOG_WARNING("Dimension of coordinates (" << coordDim << ") does not match embedding dimension ("
-                                                 << opts.embeddingDimension << ")");
-
+    const int dim = this->opts.embeddingDimension;
+    if (coordinates.size() != graphSize()) {
+        throw std::invalid_argument("got coordinates for " + std::to_string(coordinates.size()) +
+                                    " vertices, the graph has " + std::to_string(graphSize()));
+    }
+    // extra columns are ignored, e.g. the weight column of a written embedding that is resumed
     for (size_t i = 0; i < graphSize(); i++) {
-        ASSERT(coordinates[i].size() == coordDim,
-               "coordinates[" << i << "].size()=" << coordinates[i].size() << ", dim=" << coordDim);
-        for (int d = 0; d < std::min(this->opts.embeddingDimension, coordDim); d++) {
+        if (coordinates[i].size() < static_cast<size_t>(dim)) {
+            throw std::invalid_argument("vertex " + std::to_string(i) + " has " +
+                                        std::to_string(coordinates[i].size()) + " coordinates, expected " +
+                                        std::to_string(dim));
+        }
+        for (int d = 0; d < dim; d++) {
             state.currentPositions[i][d] = coordinates[i][d];
         }
     }
@@ -143,7 +139,10 @@ void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coo
 }
 
 void WembedEmbedder::setWeights(const std::vector<double> &weights) {
-    ASSERT(graphSize() == weights.size());
+    if (weights.size() != graphSize()) {
+        throw std::invalid_argument("got weights for " + std::to_string(weights.size()) +
+                                    " vertices, the graph has " + std::to_string(graphSize()));
+    }
 
     this->state.currentWeights = weights;
     sortNodes();

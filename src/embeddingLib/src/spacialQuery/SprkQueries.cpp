@@ -1,5 +1,8 @@
 #include "SprkQueries.hpp"
 
+#include <stdexcept>
+#include <string>
+
 SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimension)
     : handle_(nullptr),
       dimension(dimension) {
@@ -17,7 +20,8 @@ SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimens
         handle_ = sprk_create(data.data(), rows, dimension);
         // without a tree, all queries would silently come back empty
         if (!handle_) {
-            LOG_ERROR("sprk could not build a tree for dimension " << dimension << " (it supports 2 to 16)");
+            throw std::runtime_error("sprk could not build a tree for dimension " + std::to_string(dimension) +
+                                     " (it supports 2 to 16)");
         }
     }
 }

@@ -1,39 +1,98 @@
 #include <chrono>
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 #include "Options.hpp"
 #include "wembed.h"
 
 void addOptions(CLI::App& app, Options& opts);
 
-// steps through the embedding manually and writes one csv row per iteration
-void calculateEmbeddingWithTrace(wembed::Embedder& embedder, const std::string& tracePath) {
-    std::ofstream trace(tracePath);
-    if (!trace) {
-        std::cerr << "Could not open trace file " << tracePath << std::endl;
-        std::exit(1);
+namespace {
+
+constexpr std::chrono::seconds progressInterval{30};
+
+std::string formatSeconds(double seconds) {
+    const long s = std::lround(seconds);
+    std::ostringstream out;
+    out << std::setfill('0');
+    if (s >= 3600) {
+        out << s / 3600 << "h" << std::setw(2) << (s % 3600) / 60 << "m";
+    } else if (s >= 60) {
+        out << s / 60 << "m" << std::setw(2) << s % 60 << "s";
+    } else {
+        out << s << "s";
     }
-    trace << std::setprecision(12);
-    trace << "iteration,elapsed_ms,num_vertices,loss_attract,loss_repel,loss_total,learning_rate,rel_displacement,"
-             "rel_loss_improvement\n";
+    return out.str();
+}
+
+void printLayerSummary(const wembed::Progress& p, const wembed::Embedder& embedder, int maxIterations) {
+    std::cerr << "Layer summary: layer=" << p.layer << " n=" << p.numVertices << " iterations=" << p.iteration
+              << " loss=" << embedder.getLoss().total << " lr=" << embedder.getCurrentLearningRate()
+              << " stop=" << (p.iteration >= maxIterations ? "max_iterations" : "converged")
+              << " time_s=" << p.layerSeconds << std::endl;
+}
+
+void printProgress(const wembed::Progress& p) {
+    std::cerr << "Progress:";
+    if (p.numLayers > 1) {
+        std::cerr << " layer " << p.layer << " (n=" << p.numVertices << "),";
+    }
+    std::cerr << " iteration " << p.iteration;
+    if (p.expectedIterations >= 0) {
+        std::cerr << " of ~" << p.expectedIterations;
+    }
+    if (p.etaSeconds >= 0.0) {
+        std::cerr << ", ETA " << formatSeconds(p.etaSeconds);
+    }
+    std::cerr << std::endl;
+}
+
+// steps through the embedding, reports every layer and the progress, and optionally writes
+// one csv row per iteration
+void runEmbedding(wembed::Embedder& embedder, int maxIterations, const std::string& tracePath) {
+    std::ofstream trace;
+    if (!tracePath.empty()) {
+        trace.open(tracePath);
+        if (!trace) {
+            throw std::runtime_error("could not open trace file " + tracePath);
+        }
+        trace << std::setprecision(12);
+        trace << "iteration,elapsed_ms,num_vertices,loss_attract,loss_repel,loss_total,learning_rate,"
+                 "rel_displacement,rel_loss_improvement\n";
+    }
 
     const auto start = std::chrono::steady_clock::now();
+    auto lastReport = start;
     int iteration = 0;
     while (!embedder.isFinished()) {
         embedder.calculateStep();
         iteration++;
-        const double elapsedMs =
-            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count();
-        const wembed::Loss loss = embedder.getLoss();
-        trace << iteration << ',' << elapsedMs << ',' << embedder.getNumVertices() << ',' << loss.attractive << ','
-              << loss.repulsive << ',' << loss.total << ',' << embedder.getCurrentLearningRate() << ','
-              << embedder.getLastRelDisplacement() << ',' << embedder.getLastRelLossImprovement() << '\n';
+        const wembed::Progress progress = embedder.getProgress();
+        const auto now = std::chrono::steady_clock::now();
+
+        if (trace.is_open()) {
+            const wembed::Loss loss = embedder.getLoss();
+            trace << iteration << ',' << std::chrono::duration<double, std::milli>(now - start).count() << ','
+                  << progress.numVertices << ',' << loss.attractive << ',' << loss.repulsive << ',' << loss.total
+                  << ',' << embedder.getCurrentLearningRate() << ',' << embedder.getLastRelDisplacement() << ','
+                  << embedder.getLastRelLossImprovement() << '\n';
+        }
+        if (progress.layerFinished) {
+            printLayerSummary(progress, embedder, maxIterations);
+        } else if (now - lastReport >= progressInterval) {
+            printProgress(progress);
+            lastReport = now;
+        }
     }
+    const double seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+    std::cerr << "Finished after " << iteration << " iterations in " << formatSeconds(seconds) << std::endl;
 }
 
-int main(int argc, char* argv[]) {
+int run(int argc, char* argv[]) {
     CLI::App app("Embedder CLI");
     Options opts;
     addOptions(app, opts);
@@ -53,11 +112,7 @@ int main(int argc, char* argv[]) {
         embedder.setCoordinates(coords);
     }
 
-    if (!opts.tracePath.empty()) {
-        calculateEmbeddingWithTrace(embedder, opts.tracePath);
-    } else {
-        embedder.calculateEmbedding();
-    }
+    runEmbedding(embedder, opts.embedderOptions.maxIterations, opts.tracePath);
 
     if (opts.showTimings) {
         std::cout << wembed::timingsToString(embedder.getTimings());
@@ -67,6 +122,17 @@ int main(int argc, char* argv[]) {
         embedder.writeCoordinates(opts.embeddingPath);
     }
     return 0;
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "error: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 void addOptions(CLI::App& app, Options& opts) {

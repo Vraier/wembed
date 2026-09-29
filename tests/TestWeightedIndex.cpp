@@ -37,11 +37,11 @@ INSTANTIATE_TEST_SUITE_P(IndexTypes, TestWeightedIndex, testing::ValuesIn(availa
                          [](const testing::TestParamInfo<IndexType>& info) { return indexTypeMap.at(info.param); });
 
 // Nobody should end up with the slower KD-tree, or without repulsion, by accident
-TEST(TestWeightedIndexDeathTest, UnusableSprkTreeIsAnError) {
-    EXPECT_DEATH(WeightedIndex(IndexType::Sprk, 17, 4.0, 0.0), "");
-    EXPECT_DEATH(WeightedIndex(IndexType::Sprk, 1, 4.0, 0.0), "");
+TEST(TestWeightedIndexOptions, UnusableSprkTreeIsAnError) {
+    EXPECT_THROW(WeightedIndex(IndexType::Sprk, 17, 4.0, 0.0), std::invalid_argument);
+    EXPECT_THROW(WeightedIndex(IndexType::Sprk, 1, 4.0, 0.0), std::invalid_argument);
 #ifndef WEMBED_HAS_SPRK
-    EXPECT_DEATH(WeightedIndex(IndexType::Sprk, DIM, 4.0, 0.0), "");
+    EXPECT_THROW(WeightedIndex(IndexType::Sprk, DIM, 4.0, 0.0), std::invalid_argument);
 #endif
 }
 

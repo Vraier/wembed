@@ -1,4 +1,5 @@
 #include <CLI/CLI.hpp>
+#include <iostream>
 
 #include "EmbeddingIO.hpp"
 #include "GirgGenerator.hpp"
@@ -9,7 +10,7 @@
 
 void addOptions(CLI::App& app, Options& opts);
 
-int main(int argc, char* argv[]) {
+int run(int argc, char* argv[]) {
     // Parse command line arguments
     CLI::App app("CLI Generator");
     Options options;
@@ -31,6 +32,15 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+int main(int argc, char* argv[]) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "error: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 void addOptions(CLI::App& app, Options& options) {

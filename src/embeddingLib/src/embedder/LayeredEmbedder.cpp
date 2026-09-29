@@ -1,50 +1,50 @@
 #include "LayeredEmbedder.hpp"
 
+#include <algorithm>
+#include <stdexcept>
+
 #include "Macros.hpp"
+#include "ProgressEstimate.hpp"
 
 void LayeredEmbedder::calculateStep() {
-    currentIteration++;
     if (currentEmbedder->isFinished()) {
         expandPositions();
     }
     currentEmbedder->calculateStep();
-    // stepping callers (cli --trace) never reach calculateEmbedding, so the last layer reports here
-    if (isFinished()) {
-        logLayerSummary();
-    }
-}
-
-void LayeredEmbedder::logLayerSummary() {
-    const auto now = std::chrono::steady_clock::now();
-    LOG_INFO("Layer summary: layer=" << currentLayer << " " << currentEmbedder->runSummary()
-                                     << " time_s=" << std::chrono::duration<double>(now - layerStart).count());
-    layerStart = now;
 }
 
 bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder->isFinished(); }
 
+EmbeddingProgress LayeredEmbedder::getProgress() {
+    EmbeddingProgress progress = currentEmbedder->getProgress();
+    progress.layer = currentLayer;
+    progress.numLayers = hierarchy->getNumLayers();
+    if (finishedLayers > 0) {
+        progress.expectedIterations = std::min(finishedLayerIterations / finishedLayers, opts.maxIterations);
+    }
+    // a coarse layer can't estimate the finer layers still to come
+    progress.etaSeconds =
+        currentLayer == 0
+            ? progressEstimate::remainingLayerSeconds(progress.iteration, progress.expectedIterations,
+                                                      progress.layerSeconds)
+            : -1.0;
+    return progress;
+}
+
 void LayeredEmbedder::calculateEmbedding() {
-    LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
-    currentIteration = 0;
-    layerStart = std::chrono::steady_clock::now();
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
 }
 
-void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>& coordinates) {
-    LOG_WARNING("Setting coordinates for layered embedder has no effect");
-    unused(coordinates);
-    return;
+void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>&) {
+    throw std::logic_error("setCoordinates is not supported by the layered embedder");
 }
 
-void LayeredEmbedder::setWeights(const std::vector<double>& weights) {
-    LOG_WARNING("Setting weights for layered embedder has no effect");
-    unused(weights);
-    return;
+void LayeredEmbedder::setWeights(const std::vector<double>&) {
+    throw std::logic_error("setWeights is not supported by the layered embedder");
 }
 
 std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
@@ -56,8 +56,12 @@ std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->ge
 Graph LayeredEmbedder::getCurrentGraph() { return hierarchy->graphs[currentLayer]; }
 
 void LayeredEmbedder::expandPositions() {
-    logLayerSummary();
-    LOG_INFO("Expanding positions to layer " << currentLayer - 1 << " in iteration " << currentIteration);
+    const EmbeddingProgress finished = currentEmbedder->getProgress();
+    if (finished.numVertices > 1) {
+        finishedLayers++;
+        finishedLayerIterations += finished.iteration;
+    }
+
     timer->startTiming("expanding", "Expanding Positions");
 
     VecBuffer<1> buffer(opts.embeddingDimension);
@@ -78,7 +82,7 @@ void LayeredEmbedder::expandPositions() {
     } else if (opts.weightType == WeightType::Unit) {
         newWeights = WembedEmbedder::constructUnitWeights(newN);
     } else {
-        LOG_ERROR("Weight type not supported");
+        throw std::invalid_argument("weight type not supported");
     }
 
     // calculate new positions

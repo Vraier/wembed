@@ -142,6 +142,12 @@ Loss Embedder::getLoss() const {
     return {internal.attractive, internal.repulsive, internal.total};
 }
 
+Progress Embedder::getProgress() const {
+    const auto p = _embedder->getProgress();
+    return {p.layer, p.numLayers, p.numVertices, p.iteration, p.expectedIterations,
+            p.layerSeconds, p.etaSeconds, p.layerFinished};
+}
+
 double Embedder::getCurrentLearningRate() const {
     return _embedder->getCurrentLearningRate();
 }

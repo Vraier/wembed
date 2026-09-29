@@ -3,17 +3,13 @@
 #include "GraphAlgorithms.hpp"
 
 GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) {
-    LOG_INFO("Starting to build graph hierarchy");
-
     ParentPointerTree parentPointer = coarsener.coarsenAllLayers();
     NUMLAYERS = parentPointer.size();
 
     // coarsen the graphs and convert them to embedded graphs
-    LOG_INFO("Coarsening graphs");
     std::vector<std::vector<EdgeId>> edgeParentPointers;
     Graph currGraph = graph;
     for (int i = 0; i < NUMLAYERS; i++) {
-        LOG_INFO("... in layer " << i << " with " << parentPointer[i].size() << " nodes");
         graphs.push_back(currGraph);
         if (i < NUMLAYERS - 1) {
             auto coarsened = GraphAlgo::coarsenGraph(currGraph, parentPointer[i]);
@@ -81,7 +77,6 @@ GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) 
             }
         }
     }
-    LOG_INFO("Finished building hierarchy");
 }
 
 int GraphHierarchy::getNumLayers() const {

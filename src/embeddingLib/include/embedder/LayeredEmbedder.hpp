@@ -1,6 +1,5 @@
 #pragma once
 
-#include <chrono>
 #include <memory>
 
 #include "EmbedderInterface.hpp"
@@ -25,6 +24,7 @@ class LayeredEmbedder : public EmbedderInterface {
 
     virtual void calculateStep();
     virtual bool isFinished();
+    EmbeddingProgress getProgress() override;
     virtual void calculateEmbedding();
 
     virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates);
@@ -48,13 +48,13 @@ class LayeredEmbedder : public EmbedderInterface {
 
     // decreases the layer and initializes a new embedder
     virtual void expandPositions();
-    void logLayerSummary();
 
     std::shared_ptr<GraphHierarchy> hierarchy;
 
-    int currentIteration = 0;
     int currentLayer;
-    std::chrono::steady_clock::time_point layerStart = std::chrono::steady_clock::now();
+    // non-trivial layers only, their mean iteration count estimates the current layer
+    int finishedLayers = 0;
+    int finishedLayerIterations = 0;
 
     // stores positions and weights of all graphs in the hierarchy
     std::unique_ptr<WembedEmbedder> currentEmbedder;

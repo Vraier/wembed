@@ -1,6 +1,7 @@
 #include "WeightedIndex.hpp"
 
 #include <limits>
+#include <stdexcept>
 
 #include "KdTreeQueries.hpp"
 #ifdef WEMBED_HAS_SPRK
@@ -11,12 +12,14 @@
 IndexType WeightedIndex::checkedIndexType(const IndexType type, const int dimension) {
     if (type == IndexType::Sprk) {
 #ifndef WEMBED_HAS_SPRK
-        LOG_ERROR("wembed was built without the sprk tree (WEMBED_USE_SPRK=OFF). "
-                  "Select the slower KD-tree explicitly (index type 0).");
+        throw std::invalid_argument(
+            "wembed was built without the sprk tree (WEMBED_USE_SPRK=OFF). "
+            "Select the slower KD-tree explicitly (index type 0).");
 #endif
         if (dimension < 2 || dimension > 16) {
-            LOG_ERROR("The sprk tree supports 2 to 16 dimensions, got "
-                      << dimension << ". Select the slower KD-tree explicitly (index type 0).");
+            throw std::invalid_argument("The sprk tree supports 2 to 16 dimensions, got " +
+                                        std::to_string(dimension) +
+                                        ". Select the slower KD-tree explicitly (index type 0).");
         }
     }
     return type;
@@ -95,8 +98,7 @@ void WeightedIndex::rebuildClasses() {
                 break;
 #endif
             default:
-                LOG_ERROR("Unknown index type");
-                break;
+                throw std::logic_error("unknown index type");
         }
     }
 }

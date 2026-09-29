@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+// The library never prints. Invalid input or options throw std::invalid_argument, misuse
+// std::logic_error, and failing file IO std::runtime_error.
 namespace wembed {
 
 #ifndef _WEMBED_IS_IMPL
@@ -61,6 +63,20 @@ struct Loss {
     double attractive;
     double repulsive;
     double total;
+};
+
+// Progress after the most recent embedding step. A layered embedding counts its layers down to 0,
+// the input graph. Estimates are typically within 2x.
+struct Progress {
+    int32_t layer;               // 0 is the input graph (always 0 without layering)
+    int32_t numLayers;           // 1 without layering
+    int32_t numVertices;         // of the current layer
+    int32_t iteration;           // steps done in the current layer
+    int32_t expectedIterations;  // estimated steps of the current layer, -1 if unknown
+    double layerSeconds;         // time spent inside calculateStep in the current layer
+    double etaSeconds;           // estimated time until the embedding finishes, -1 if unknown
+                                 // (only in layer 0, after a few steps, until it runs past the estimate)
+    bool layerFinished;          // the current layer has stopped; the next step moves on to the next layer
 };
 
 struct Options {
@@ -170,6 +186,8 @@ class Embedder {
     Graph getCurrentGraph() const;
     std::vector<std::vector<double>> getCoordinates() const;
     std::vector<double> getWeights() const;
+    // One row per vertex. Columns beyond the embedding dimension are ignored (e.g. the weight column
+    // of a written embedding). Not supported by the layered embedder.
     void setCoordinates(const std::vector<std::vector<double>>& coordinates);
     void setWeights(const std::vector<double>& weights);
 
@@ -178,6 +196,9 @@ class Embedder {
 
     // Loss from the most recent step.
     Loss getLoss() const;
+
+    // Cheap, safe to call after every step.
+    Progress getProgress() const;
 
     // Learning rate the optimizer used in the most recent step
     // (before the first step: the initial learning rate).
@@ -203,6 +224,7 @@ Embedder createEmbedder(const Graph& g, const Options& options);
 // Vertex IDs must be consecutive starting at 0.
 // The graph has (largest id in edges + 1) vertices, or numVertices if that is larger. Pass numVertices
 // if there are vertices without edges at the end of the id range, they are not part of the graph otherwise.
+// Self loops are ignored.
 Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices = 0);
 
 Graph graphFromEdgeListFile(const std::string& filePath,

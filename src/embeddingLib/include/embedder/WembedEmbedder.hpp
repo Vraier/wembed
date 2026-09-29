@@ -131,10 +131,8 @@ class WembedEmbedder : public EmbedderInterface {
     WembedEmbedder& operator=(WembedEmbedder&&) = default;
     virtual void calculateStep() override;
     virtual bool isFinished() override;
+    virtual EmbeddingProgress getProgress() override;
     virtual void calculateEmbedding() override;
-
-    // key=value summary of the finished run, machine-parsed by the experiment pipeline
-    std::string runSummary() const;
     virtual Graph getCurrentGraph() override;
     virtual std::vector<std::vector<double>> getCoordinates() override;
     virtual std::vector<double> getWeights() override;

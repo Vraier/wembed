@@ -54,6 +54,22 @@ PYBIND11_MODULE(wembed, m) {
                    ", total=" + std::to_string(l.total) + ")";
         });
 
+    py::class_<wembed::Progress>(m, "Progress")
+        .def_readonly("layer", &wembed::Progress::layer)
+        .def_readonly("numLayers", &wembed::Progress::numLayers)
+        .def_readonly("numVertices", &wembed::Progress::numVertices)
+        .def_readonly("iteration", &wembed::Progress::iteration)
+        .def_readonly("expectedIterations", &wembed::Progress::expectedIterations)
+        .def_readonly("layerSeconds", &wembed::Progress::layerSeconds)
+        .def_readonly("etaSeconds", &wembed::Progress::etaSeconds)
+        .def_readonly("layerFinished", &wembed::Progress::layerFinished)
+        .def("__repr__", [](const wembed::Progress& p) {
+            return "Progress(layer=" + std::to_string(p.layer) + ", numLayers=" + std::to_string(p.numLayers) +
+                   ", iteration=" + std::to_string(p.iteration) +
+                   ", expectedIterations=" + std::to_string(p.expectedIterations) +
+                   ", etaSeconds=" + std::to_string(p.etaSeconds) + ")";
+        });
+
     py::class_<wembed::Options>(m, "Options")
         .def(py::init<>())
         .def_readwrite("embeddingDimension", &wembed::Options::embeddingDimension)
@@ -106,6 +122,7 @@ PYBIND11_MODULE(wembed, m) {
         .def("setWeights", &wembed::Embedder::setWeights)
         .def("getTimings", &wembed::Embedder::getTimings)
         .def("getLoss", &wembed::Embedder::getLoss)
+        .def("getProgress", &wembed::Embedder::getProgress)
         .def("getCurrentLearningRate", &wembed::Embedder::getCurrentLearningRate)
         .def("getLastRelDisplacement", &wembed::Embedder::getLastRelDisplacement)
         .def("getLastRelLossImprovement", &wembed::Embedder::getLastRelLossImprovement)
