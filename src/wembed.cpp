@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <stdexcept>
+
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "EmbeddingIO.hpp"
@@ -248,6 +251,28 @@ Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices) {
         neighbors[numVertices - 1];
     }
     return Graph(std::make_unique<impl::EmbeddingGraph>(neighbors));
+}
+
+Graph graphFromNeighborhoods(const std::vector<EdgeId>& offsets, const std::vector<NodeId>& neighbors) {
+    if (offsets.empty() || offsets.front() != 0 || static_cast<size_t>(offsets.back()) != neighbors.size() ||
+        !std::is_sorted(offsets.begin(), offsets.end())) {
+        throw std::invalid_argument("offsets must start at 0, never decrease and end at neighbors.size() = " +
+                                    std::to_string(neighbors.size()));
+    }
+    const auto n = static_cast<NodeId>(offsets.size() - 1);
+    std::map<int, std::set<int>> adjacency;
+    for (NodeId v = 0; v < n; ++v) {
+        auto& adjacent = adjacency[v];
+        for (EdgeId i = offsets[v]; i < offsets[v + 1]; ++i) {
+            const NodeId u = neighbors[i];
+            if (u < 0 || u >= n) {
+                throw std::invalid_argument("neighbor " + std::to_string(u) + " of vertex " + std::to_string(v) +
+                                            " is not in [0, " + std::to_string(n) + ")");
+            }
+            adjacent.insert(u);
+        }
+    }
+    return Graph(std::make_unique<impl::EmbeddingGraph>(adjacency));
 }
 
 Graph graphFromEdgeListFile(const std::string& filePath,

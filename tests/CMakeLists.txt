@@ -16,6 +16,7 @@ add_executable(UnitTests
     TestHierarchy.cpp
     TestLossFunction.cpp
     TestMetrics.cpp
+    TestPublicInterface.cpp
     TestSpatialIndex.cpp
     TestTimings.cpp
     TestWeightedIndex.cpp

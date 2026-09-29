@@ -45,7 +45,7 @@ embedder.writeCoordinates("example.emb")
 ```
 
 * Start by creating a graph object.
-  This can be done with a file (`graphFromEdgeListFile`) or a list of `wembed.Edge` objects (`graphFromEdges`).
+  This can be done with a file (`graphFromEdgeListFile`), a list of `wembed.Edge` objects (`graphFromEdges`) or offset and neighbor arrays in CSR form (`graphFromNeighborhoods`).
   The graph is assumed to be undirected, connected and with consecutive vertex ids starting at zero.
   The file is expected to contain one line per edge. Each edge should only be given in one direction.
   The repository contains a small [example graph file](https://github.com/Vraier/wembed/blob/main/assets/small_graph.edg).
@@ -107,7 +107,7 @@ include(FetchContent)
 FetchContent_Declare(
     wembed
     GIT_REPOSITORY https://github.com/Vraier/wembed.git
-    GIT_TAG        v0.2.0
+    GIT_TAG        v0.3.0
 )
 FetchContent_MakeAvailable(wembed)
 

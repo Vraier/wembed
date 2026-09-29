@@ -92,7 +92,10 @@ struct Options {
                                                  // rebuilds are skipped while accumulated node movement fits in
                                                  // it. Negative = auto (3 / embeddingDimension, benchmarked),
                                                  // 0 = rebuild every iteration (old behavior)
-    double centreScale = 0.0;                    // pull toward origin; nonzero enables it (useful for unconnected graphs)
+    double centreScale = 0.0;                    // pull toward the origin, nonzero enables it. Keeps the components of an
+                                                 // unconnected graph together; sensible range 1e-4 to 1e-3 (1e-4 for large
+                                                 // graphs in low dimensions). Below that components drift apart, from 1e-2
+                                                 // on it compresses the embedding and costs quality
     double expansionStretch = 1.0;               // stretch applied during layer expansion
 
     // Gradient descent parameters
@@ -226,6 +229,12 @@ Embedder createEmbedder(const Graph& g, const Options& options);
 // if there are vertices without edges at the end of the id range, they are not part of the graph otherwise.
 // Self loops are ignored.
 Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices = 0);
+
+// Build a graph from adjacency arrays (CSR): the neighbors of vertex v are neighbors[offsets[v]] up to
+// neighbors[offsets[v + 1] - 1]. The graph has exactly offsets.size() - 1 vertices, so vertices without edges are
+// kept. offsets starts at 0, never decreases and ends at neighbors.size(). An edge may be listed at one or both
+// endpoints. Self loops are ignored.
+Graph graphFromNeighborhoods(const std::vector<EdgeId>& offsets, const std::vector<NodeId>& neighbors);
 
 Graph graphFromEdgeListFile(const std::string& filePath,
                             const std::string& comment = "#",

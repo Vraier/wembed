@@ -29,6 +29,18 @@ std::string formatSeconds(double seconds) {
     return out.str();
 }
 
+// the graph gets (largest id + 1) vertices, so gaps in the ids silently add vertices without edges
+void warnAboutIsolatedVertices(const wembed::Graph& graph) {
+    int isolated = 0;
+    for (wembed::NodeId v = 0; v < graph.getNumVertices(); v++) {
+        isolated += graph.getNumNeighbors(v) == 0;
+    }
+    if (isolated > 0) {
+        std::cerr << "warning: " << isolated << " of " << graph.getNumVertices()
+                  << " vertices have no edges (gaps in the vertex ids?)" << std::endl;
+    }
+}
+
 void printLayerSummary(const wembed::Progress& p, const wembed::Embedder& embedder, int maxIterations) {
     std::cerr << "Layer summary: layer=" << p.layer << " n=" << p.numVertices << " iterations=" << p.iteration
               << " expected=" << p.expectedIterations << " loss=" << embedder.getLoss().total << " lr=" << embedder.getCurrentLearningRate()
@@ -103,6 +115,7 @@ int run(int argc, char* argv[]) {
     }
 
     wembed::Graph graph = wembed::graphFromEdgeListFile(opts.graphPath);
+    warnAboutIsolatedVertices(graph);
 
     wembed::Embedder embedder = wembed::createEmbedder(graph, opts.embedderOptions);
 
@@ -172,7 +185,7 @@ void addOptions(CLI::App& app, Options& opts) {
                    "node movement exceeds it. Negative = auto (3/dim), 0 = rebuild every iteration")
         ->capture_default_str()->group(embedding);
     app.add_option("--centre,--center", eo.centreScale,
-                   "Strength of the centre-pull force. Useful for unconnected graphs (try ~0.01-0.1). "
+                   "Strength of the centre-pull force. Useful for unconnected graphs (try 1e-4 to 1e-3). "
                    "Default 0 disables it.")
         ->capture_default_str()->group(embedding);
     app.add_option("--expansion", eo.expansionStretch,

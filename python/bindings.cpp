@@ -131,6 +131,7 @@ PYBIND11_MODULE(wembed, m) {
 
     m.def("createEmbedder", &wembed::createEmbedder, py::arg("graph"), py::arg("options"));
     m.def("graphFromEdges", &wembed::graphFromEdges, py::arg("edges"), py::arg("numVertices") = 0);
+    m.def("graphFromNeighborhoods", &wembed::graphFromNeighborhoods, py::arg("offsets"), py::arg("neighbors"));
     m.def("graphFromEdgeListFile", &wembed::graphFromEdgeListFile,
           py::arg("filePath"), py::arg("comment") = "#", py::arg("delimiter") = " ");
     m.def("readCoordinatesFromFile", &wembed::readCoordinatesFromFile,

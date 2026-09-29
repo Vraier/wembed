@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28...4.1)
 
-project(WEmbed VERSION 0.2.0 LANGUAGES CXX)
+project(WEmbed VERSION 0.3.0 LANGUAGES CXX)
 
 # The wembed library is always built. The tools default to OFF when wembed is part of another project.
 option(WEMBED_BUILD_TOOLS "Build the command line tools and unit tests." ${PROJECT_IS_TOP_LEVEL})

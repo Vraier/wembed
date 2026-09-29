@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "wembed"
-version = "0.2.0"
+version = "0.3.0"
 authors = [
   { name = "Jean-Pierre von der Heydt", email = "heydt@kit.edu" },
   { name = "Nikolai Maas", email = "nikolai.maas@kit.edu" },
