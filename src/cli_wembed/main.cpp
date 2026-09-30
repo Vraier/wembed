@@ -90,6 +90,8 @@ void addOptions(CLI::App& app, Options& opts) {
     const std::string embedding = "Embedding";
     app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")
         ->capture_default_str()->group(embedding);
+    app.add_flag("--dot-product", eo.dotProductNorm, "Use dot product norm")
+        ->group(embedding);
     app.add_flag("--layered", eo.layeredEmbedding, "Use layered embedding")
         ->group(embedding);
     app.add_option("--dim", eo.embeddingDimension, "Embedding dimension")

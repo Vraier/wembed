@@ -67,6 +67,7 @@ struct Options {
     bool useUnitWeights = false;                      // true: degree-based weights; false: unit weights
     double dimensionHint = -1.0;                 // hint for the dimension of the input graph (-1 = auto)
     bool layeredEmbedding = false;               // multilevel embedding via graph coarsening
+    bool dotProductNorm = false;
 
     // Force parameters
     SpatialIndex indexType = IndexSprk;

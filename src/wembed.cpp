@@ -8,6 +8,7 @@
 #include "WembedEmbedder.hpp"
 #include "Partitioner.hpp"
 #include "Rand.hpp"
+#include "SimpleDotProductEmbedder.hpp"
 #include "Timings.hpp"
 
 namespace impl {
@@ -230,9 +231,10 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
         std::vector<double> edgeWeights(g.getNumEdges() * 2, 1.0);
         auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
         return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
-    } else {
-        return Embedder(std::make_unique<WembedEmbedder>(graph, opts));
     }
+    if (options.dotProductNorm)
+        return {std::make_unique<SimpleDotProductEmbedder>(graph, opts)};
+    return {std::make_unique<WembedEmbedder>(graph, opts)};
 }
 
 Graph graphFromEdges(const std::vector<Edge>& edges) {
