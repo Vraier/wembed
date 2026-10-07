@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+// The library never prints. Invalid input or options throw std::invalid_argument, misuse
+// std::logic_error, and failing file IO std::runtime_error.
 namespace wembed {
 
 #ifndef _WEMBED_IS_IMPL
@@ -22,7 +24,9 @@ using EdgeId = int32_t;
 class Embedder;
 
 enum SpatialIndex : int32_t {
-    IndexSprk = 2,
+    IndexKdTree = 0,  // bundled KD-tree: slower, but always available
+    IndexSprk = 1,    // sprk tree (default): needs wembed to be built with Rust, supports 2 to 16 dimensions.
+                      // It is an error to use it otherwise, select IndexKdTree explicitly in that case
 };
 
 enum OptimizerType : int32_t {
@@ -61,6 +65,20 @@ struct Loss {
     float total;
 };
 
+// Progress after the most recent embedding step. A layered embedding counts its layers down to 0,
+// the input graph. Estimates are typically within 2x.
+struct Progress {
+    int32_t layer;               // 0 is the input graph (always 0 without layering)
+    int32_t numLayers;           // 1 without layering
+    int32_t numVertices;         // of the current layer
+    int32_t iteration;           // steps done in the current layer
+    int32_t expectedIterations;  // estimated steps of the current layer, -1 if unknown
+    double layerSeconds;         // time spent inside calculateStep in the current layer
+    double etaSeconds;           // estimated time until the embedding finishes, -1 if unknown
+                                 // (only in layer 0, after a few steps, until it runs past the estimate)
+    bool layerFinished;          // the current layer has stopped; the next step moves on to the next layer
+};
+
 struct Options {
     // Embedding parameters
     int32_t embeddingDimension = 4;
@@ -70,11 +88,15 @@ struct Options {
 
     // Force parameters
     SpatialIndex indexType = IndexSprk;
-    float attractionScale = 1.0;
-    float repulsionScale = 1.0;
-    float centreScale = 0.0;                    // pull toward origin; nonzero enables it (useful for unconnected graphs)
-    float edgeLength = 1.0;
-    float expansionStretch = 1.0;               // stretch applied during layer expansion
+    float dynamicQueryBuffer = -1.0f;            // absolute slack added to repulsion query radii; spatial-index
+                                                 // rebuilds are skipped while accumulated node movement fits in
+                                                 // it. Negative = auto (3 / embeddingDimension, benchmarked),
+                                                 // 0 = rebuild every iteration (old behavior)
+    float centreScale = 0.0f;                    // pull toward the origin, nonzero enables it. Keeps the components of an
+                                                 // unconnected graph together; sensible range 1e-4 to 1e-3 (1e-4 for large
+                                                 // graphs in low dimensions). Below that components drift apart, from 1e-2
+                                                 // on it compresses the embedding and costs quality
+    float expansionStretch = 1.0f;               // stretch applied during layer expansion
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerAdam;
@@ -97,18 +119,13 @@ struct Options {
     StopCriterion stopCriterion = StopLoss;  // which signal terminates the run
 
     // Displacement stopping criterion (StopDisplacement).
-    float stopDisplacementTol = 3e-4;           // relative per-step node movement (mean displacement / radius of
+    float stopDisplacementTol = 3e-4f;           // relative per-step node movement (mean displacement / radius of
                                                  // gyration) below which the layout counts as settled
     int32_t stopDisplacementPatience = 5;        // settled steps in a row before stopping
 
-    // Shared loss-progress signal (loss* prefix): windowed relative loss decrease rate(t),
-    // read by both the loss stop criterion and the LRLossAdaptive schedule.
-    float lossSmoothingFactor = 0.3;            // EMA weight of the newest loss sample before the monitor sees it
-                                                 // (1.0 disables smoothing); a light denoise on rate(t)
-    int32_t lossRateWindow = 30;                 // steps over which the relative loss-decrease rate is measured
-
     // Loss stagnation stopping criterion (StopLoss).
-    float stopLossTol = 1e-3;                   // ftol: converged once rate(t) stays below this (relative decrease over window)
+    float stopLossTol = 1e-3f;                   // ftol: converged once the relative loss decrease over a 30-step window
+                                                 // stays below this (also read by LRLossAdaptive's rate signal)
     int32_t stopLossPatience = 50;               // sub-tolerance steps in a row before stopping
 };
 
@@ -172,6 +189,8 @@ class Embedder {
     Graph getCurrentGraph() const;
     std::vector<std::vector<float>> getCoordinates() const;
     std::vector<float> getWeights() const;
+    // One row per vertex. Columns beyond the embedding dimension are ignored (e.g. the weight column
+    // of a written embedding). Not supported by the layered embedder.
     void setCoordinates(const std::vector<std::vector<float>>& coordinates);
     void setWeights(const std::vector<float>& weights);
 
@@ -180,6 +199,9 @@ class Embedder {
 
     // Loss from the most recent step.
     Loss getLoss() const;
+
+    // Cheap, safe to call after every step.
+    Progress getProgress() const;
 
     // Learning rate the optimizer used in the most recent step
     // (before the first step: the initial learning rate).
@@ -203,7 +225,16 @@ Embedder createEmbedder(const Graph& g, const Options& options);
 
 // Build a graph from an edge list. Each undirected edge should appear exactly once.
 // Vertex IDs must be consecutive starting at 0.
-Graph graphFromEdges(const std::vector<Edge>& edges);
+// The graph has (largest id in edges + 1) vertices, or numVertices if that is larger. Pass numVertices
+// if there are vertices without edges at the end of the id range, they are not part of the graph otherwise.
+// Self loops are ignored.
+Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices = 0);
+
+// Build a graph from adjacency arrays (CSR): the neighbors of vertex v are neighbors[offsets[v]] up to
+// neighbors[offsets[v + 1] - 1]. The graph has exactly offsets.size() - 1 vertices, so vertices without edges are
+// kept. offsets starts at 0, never decreases and ends at neighbors.size(). An edge may be listed at one or both
+// endpoints. Self loops are ignored.
+Graph graphFromNeighborhoods(const std::vector<EdgeId>& offsets, const std::vector<NodeId>& neighbors);
 
 Graph graphFromEdgeListFile(const std::string& filePath,
                             const std::string& comment = "#",

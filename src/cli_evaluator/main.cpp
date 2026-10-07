@@ -1,5 +1,7 @@
 #include <CLI/CLI.hpp>
 #include <algorithm>
+#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 #include "ConfigParser.hpp"
@@ -16,7 +18,7 @@
 
 void addOptions(CLI::App& app, Options& opts);
 
-int main(int argc, char* argv[]) {
+int run(int argc, char* argv[]) {
     // Parse command line arguments
     CLI::App app("CLI Evaluator");
     Options options;
@@ -34,13 +36,8 @@ int main(int argc, char* argv[]) {
     std::vector<std::vector<float>> coords = EmbeddingIO::readCoordinatesFromFile(
         options.embeddingPath, options.embeddingComment, options.embeddingDelimiter);
     std::shared_ptr<Embedding> embedding = EmbeddingIO::parseEmbedding(options.embType, coords, options.lPNorm);
-    if (embedding == nullptr) {
-        LOG_ERROR("Embedding could not be parsed");
-        return 0;
-    }
     if (embedding->getDimension() == 0) {
-        LOG_ERROR("Embedding dimension is 0");
-        return 0;
+        throw std::invalid_argument("embedding " + options.embeddingPath + " has dimension 0");
     }
 
     // construct metrics
@@ -85,6 +82,15 @@ int main(int argc, char* argv[]) {
     }
     Metric::printCSVToConsole(valueMetrics);
     return 0;
+}
+
+int main(int argc, char* argv[]) {
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& e) {
+        std::cerr << "error: " << e.what() << std::endl;
+        return 1;
+    }
 }
 
 void addOptions(CLI::App& app, Options& options) {

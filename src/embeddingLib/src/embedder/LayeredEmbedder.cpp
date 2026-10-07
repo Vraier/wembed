@@ -1,9 +1,12 @@
 #include "LayeredEmbedder.hpp"
 
+#include <algorithm>
+#include <stdexcept>
+
 #include "Macros.hpp"
+#include "ProgressEstimate.hpp"
 
 void LayeredEmbedder::calculateStep() {
-    currentIteration++;
     if (currentEmbedder->isFinished()) {
         expandPositions();
     }
@@ -12,27 +15,36 @@ void LayeredEmbedder::calculateStep() {
 
 bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder->isFinished(); }
 
+EmbeddingProgress LayeredEmbedder::getProgress() {
+    EmbeddingProgress progress = currentEmbedder->getProgress();
+    progress.layer = currentLayer;
+    progress.numLayers = hierarchy->getNumLayers();
+    if (finishedLayers > 0) {
+        progress.expectedIterations = std::min(finishedLayerIterations / finishedLayers, opts.maxIterations);
+    }
+    // a coarse layer can't estimate the finer layers still to come
+    progress.etaSeconds =
+        currentLayer == 0
+            ? progressEstimate::remainingLayerSeconds(progress.iteration, progress.expectedIterations,
+                                                      progress.layerSeconds)
+            : -1.0;
+    return progress;
+}
+
 void LayeredEmbedder::calculateEmbedding() {
-    LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
-    currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << currentIteration);
 }
 
-void LayeredEmbedder::setCoordinates(const std::vector<std::vector<float>>& coordinates) {
-    LOG_WARNING("Setting coordinates for layered embedder has no effect");
-    unused(coordinates);
-    return;
+void LayeredEmbedder::setCoordinates(const std::vector<std::vector<float>>&) {
+    throw std::logic_error("setCoordinates is not supported by the layered embedder");
 }
 
-void LayeredEmbedder::setWeights(const std::vector<float>& weights) {
-    LOG_WARNING("Setting weights for layered embedder has no effect");
-    unused(weights);
-    return;
+void LayeredEmbedder::setWeights(const std::vector<float>&) {
+    throw std::logic_error("setWeights is not supported by the layered embedder");
 }
 
 std::vector<std::vector<float>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
@@ -44,7 +56,12 @@ std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->ge
 Graph LayeredEmbedder::getCurrentGraph() { return hierarchy->graphs[currentLayer]; }
 
 void LayeredEmbedder::expandPositions() {
-    LOG_INFO("Expanding positions to layer " << currentLayer - 1 << " in iteration " << currentIteration);
+    const EmbeddingProgress finished = currentEmbedder->getProgress();
+    if (finished.numVertices > 1) {
+        finishedLayers++;
+        finishedLayerIterations += finished.iteration;
+    }
+
     timer->startTiming("expanding", "Expanding Positions");
 
     VecBuffer<1> buffer(opts.embeddingDimension);
@@ -53,7 +70,7 @@ void LayeredEmbedder::expandPositions() {
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
     int oldN = hierarchy->graphs[currentLayer].getNumVertices();
     std::vector<std::vector<float>> oldPostions = currentEmbedder->getCoordinates();
-    std::vector<std::vector<float>> newPositions(newN, std::vector<float>(opts.embeddingDimension, 0.0));
+    std::vector<std::vector<float>> newPositions(newN, std::vector<float>(opts.embeddingDimension, 0.0f));
     ASSERT(oldN == oldPostions.size(), "Old positions size mismatch: " << oldN << " vs " << oldPostions.size());
 
     // calculate new weights
@@ -65,7 +82,7 @@ void LayeredEmbedder::expandPositions() {
     } else if (opts.weightType == WeightType::Unit) {
         newWeights = WembedEmbedder::constructUnitWeights(newN);
     } else {
-        LOG_ERROR("Weight type not supported");
+        throw std::invalid_argument("weight type not supported");
     }
 
     // calculate new positions
@@ -74,10 +91,16 @@ void LayeredEmbedder::expandPositions() {
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldN, "Parent node " << parent << " is out of bounds " << oldN);
-        float numSiblings = static_cast<float>(hierarchy->nodeLayers[currentLayer][parent].totalContainedNodes);
+        // direct child count, not total contained leaves: children.size()^(1/d) spheres
+        // tile the stretched layout (volume ~ newN) at unit density
+        float numSiblings = hierarchy->nodeLayers[currentLayer][parent].children.size();
 
         tmpVec.setToRandomUnitVector();
-        float sphere_size = Toolkit::myPowf(numSiblings, 1.0f / static_cast<float>(opts.embeddingDimension));
+        // clusters pack tighter than unit density since internal edges don't repel; measured
+        // converged rms spreads: ~0.2*k^(1/d) at d=2, ~0.4 at d=4, ~0.5 at d=8, but end
+        // quality and iteration count are insensitive to this factor in [0.15,1] at d=2 and 8
+        constexpr float scatterPacking = 0.3f;
+        float sphere_size = scatterPacking * Toolkit::myPowf(numSiblings, 1.0f / static_cast<float>(opts.embeddingDimension));
         tmpVec *= sphere_size;
         for (int d = 0; d < opts.embeddingDimension; d++) {
             newPositions[v][d] = geometricStretch * oldPostions[parent][d] + static_cast<float>(tmpVec[d]);
@@ -85,6 +108,7 @@ void LayeredEmbedder::expandPositions() {
     }
 
     currentLayer--;
+    // initializeState=false skips the constructor's throwaway random coordinate/weight
     currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer, false);
     currentEmbedder->setCoordinates(newPositions);
     currentEmbedder->setWeights(newWeights);

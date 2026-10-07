@@ -3,11 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <stdexcept>
 
 #include "Macros.hpp"
 
 void Graph::setSize(NodeId n, EdgeId m) {
-    // LOG_DEBUG( "Setting the size of a graph to n=" << n << " m=" << m);
     nodes.resize(n + 1);
     edges.resize(m * 2);
 }
@@ -85,7 +85,6 @@ bool Graph::areNeighbors(NodeId v, NodeId u) const {
 bool Graph::areInSameColorClass(NodeId v, NodeId u) const { return colors[v] == colors[u]; }
 
 void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
-    LOG_DEBUG("Constructing graph from map");
     // make map symmetric
     std::map<NodeId, std::set<NodeId>> symmetric_map = map;
     for (auto iter = symmetric_map.begin(); iter != symmetric_map.end(); ++iter) {
@@ -94,25 +93,24 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
             symmetric_map[iter->first].insert(u);
         }
     }
-
-    // number of nodes = largest id of a node +1 (for 0 node)
-    int n = symmetric_map.empty() ? 0 : symmetric_map.rbegin()->first + 1;
-    ASSERT(n >= 0);
-    if (n != symmetric_map.size()) {
-        LOG_WARNING(
-            "The map does not contain consecutive node ids. This may lead to unexpected behavior. Filling up missing "
-            "nodes.");
+    if (!symmetric_map.empty() && symmetric_map.begin()->first < 0) {
+        throw std::invalid_argument("vertex ids must be non-negative, got " +
+                                    std::to_string(symmetric_map.begin()->first));
     }
+    for (auto& [v, neighbors] : symmetric_map) {
+        neighbors.erase(v);  // self loops are ignored
+    }
+
+    // number of nodes = largest id of a node +1 (for 0 node), missing ids become isolated nodes
+    int n = symmetric_map.empty() ? 0 : symmetric_map.rbegin()->first + 1;
 
     int m = 0;
     for (auto iter = symmetric_map.begin(); iter != symmetric_map.end(); ++iter) {
         m += iter->second.size();
     }
     setSize(n, m / 2);
-    LOG_DEBUG("Constructing graph from map with n=" << n << " m=" << m / 2);
 
     int currentNode = 0;
-    bool firstWarning = true;
     for (auto iter = symmetric_map.begin(); iter != symmetric_map.end(); ++iter) {
         while (iter->first != currentNode) {
             //  the node does not exist in the map
@@ -121,11 +119,6 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
             currentNode++;
         }
         for (NodeId u : iter->second) {
-            if (u == iter->first && firstWarning) {
-                LOG_WARNING("Node " + std::to_string(u) + " is connected to itself. Self loops are ignored.");
-                firstWarning = false;
-                continue;
-            }
             addEdge(u);
         }
         nextNode();
@@ -139,7 +132,6 @@ void Graph::constructFromMap(const std::map<int, std::set<int>>& map) {
 }
 
 void Graph::constructFromEdges(const std::vector<std::pair<NodeId, NodeId>>& edges) {
-    LOG_DEBUG("Converting vector to map");
     std::map<NodeId, std::set<NodeId>> set;
     for (auto e : edges) {
         set[e.first].insert(e.second);

@@ -1,6 +1,7 @@
 #include "SprkQueries.hpp"
 
 #include <stdexcept>
+#include <string>
 
 SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimension)
     : handle_(nullptr),
@@ -17,6 +18,11 @@ SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimens
             }
         }
         handle_ = sprk_create(data.data(), rows, dimension);
+        // without a tree, all queries would silently come back empty
+        if (!handle_) {
+            throw std::runtime_error("sprk could not build a tree for dimension " + std::to_string(dimension) +
+                                     " (it supports 2 to 16)");
+        }
     }
 }
 
@@ -42,6 +48,7 @@ SprkQueries& SprkQueries::operator=(SprkQueries&& other) noexcept {
 
 size_t SprkQueries::query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
+    out.clear();
 
     if (handle_) {
         std::vector<float> query(dimension);
@@ -60,12 +67,4 @@ size_t SprkQueries::query_sphere(CVecRef point, float radius, std::vector<uint64
         sprk_free_results(ids, count);
     }
     return out.size();
-}
-
-size_t SprkQueries::query_nearest(CVecRef, unsigned int, std::vector<uint64_t>&) const {
-    throw std::runtime_error("Not implemented!");
-}
-
-size_t SprkQueries::query_box(CVecRef, CVecRef, std::vector<uint64_t>&) const {
-    throw std::runtime_error("Not implemented!");
 }

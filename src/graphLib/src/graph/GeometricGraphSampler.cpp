@@ -16,8 +16,6 @@ GraphCoordinatesPair GeometricGraphSampler::generateRandomGraphWithCoordinates(i
 Graph GeometricGraphSampler::generateRandomGraph(int n) { return generateRandomGraphWithCoordinates(n).first; }
 
 GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, float gridSize, float radius) {
-    LOG_INFO("Constructing random graph...");
-
     // sample random coordinates
     std::vector<std::vector<float>> coords(n);
     for (int i = 0; i < n; i++) {
@@ -44,7 +42,6 @@ GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, float gri
     }
     Graph g(graphMap);
 
-    LOG_INFO("Finished construction");
     ASSERT(g.getNumVertices() == coords.size());
     GraphCoordinatesPair graphCoords = std::make_pair(g, coords);
     return findLargesConnectedComponent(graphCoords);

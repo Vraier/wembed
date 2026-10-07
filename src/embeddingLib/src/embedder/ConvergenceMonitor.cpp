@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow)
+ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow
+                                       float lossFloor)
     : relTol(relTol),
+      lossFloor(std::max(lossFloor, TINY)),
       patience(patience),
       smoothingFactor(smoothingFactor),
       rateWindow(rateWindow < 1 ? 1 : rateWindow),
@@ -28,13 +30,16 @@ void ConvergenceMonitor::observe(float loss) {
 
     if (ringCount >= static_cast<int>(ring.size())) {
         const float windowStart = ring[ringHead];  // Lbar(t - rateWindow)
-        const float denom = std::max(std::abs(windowStart), TINY);
+        const float denom = std::max(std::abs(windowStart), lossFloor);
         lastRate = (windowStart - smoothedLoss) / denom;
     } else {
         lastRate = STILL_IMPROVING;
     }
 
-    if (lastRate < relTol) {
+    // two-sided: a rising loss (rate << 0, e.g. the bump right after a layer expansion)
+    // is not stagnation and must reset the counter, otherwise the stop fires after
+    // window + patience steps at 10x the converged loss on some high-dim runs
+    if (std::abs(lastRate) < relTol) {
         numStagnantSteps++;
     } else {
         numStagnantSteps = 0;

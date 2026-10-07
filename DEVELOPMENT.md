@@ -20,26 +20,27 @@ virtualisation.podman.enable = true;
 ## Building
 
 The project uses CMake (with Ninja, which automatically uses all available CPU cores).
-A `bin/` and `lib/` folder will be created inside the build directory containing the executables and libraries.
+The build configurations are defined in `CMakePresets.json`:
+
+| Preset    | Purpose                                                          |
+|-----------|------------------------------------------------------------------|
+| `release` | optimized build                                                  |
+| `debug`   | debug build with address and undefined behavior sanitizers       |
+| `profile` | optimized build with debug info and frame pointers (perf/samply) |
+
+Each preset builds into a folder with its name, which contains a `bin/` and `lib/` folder with the executables and libraries.
 ```
-mkdir release
-cd release
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-ninja
+cmake --preset release
+cmake --build --preset release
 ```
 
-To rebuild after source changes:
-```
-cd release
-ninja
-```
+To rebuild after source changes, only the second command is needed.
 
 
 ## Running Tests
 
 ```
-cd release
-ctest
+ctest --preset release
 ```
 
 

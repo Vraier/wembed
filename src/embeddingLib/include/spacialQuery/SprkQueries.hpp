@@ -9,7 +9,6 @@
 
 class SprkQueries : public SpatialIndex {
    public:
-    //TODO: Remove passing of NodeIDs entirely?
     SprkQueries(const std::vector<CVecRef>& points, size_t dimension);
     ~SprkQueries() override;
 
@@ -20,8 +19,6 @@ class SprkQueries : public SpatialIndex {
     SprkQueries& operator=(const SprkQueries&) = delete;
 
     size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const override;
-    size_t query_nearest(CVecRef point, unsigned int number, std::vector<uint64_t>& out) const override;
-    size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<uint64_t>& out) const override;
 
    private:
     SprkHandle* handle_;

@@ -7,7 +7,9 @@ enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1 };
 
-enum class IndexType {Sprk = 2 };
+// Sprk needs Rust at build time (WEMBED_USE_SPRK) and supports 2 to 16 dimensions.
+// The slower KdTree always works, but has to be selected explicitly.
+enum class IndexType { KdTree = 0, Sprk = 1 };
 
 enum class LRScheduleType { ExponentialCooling = 0, LossAdaptive = 1 };
 
@@ -26,7 +28,7 @@ inline std::map<StopCriterionType, std::string> stopCriterionTypeMap = {
 inline std::map<WeightType, std::string> weightTypeMap = {
     {WeightType::Unit, "Unit"}, {WeightType::Degree, "Degree"}};
 
-inline std::map<IndexType, std::string> indexTypeMap = { {IndexType::Sprk, "Sprk"}};
+inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::KdTree, "KdTree"}, {IndexType::Sprk, "Sprk"}};
 
 struct EmbedderOptions {
     int embeddingDimension = 4;
@@ -34,18 +36,13 @@ struct EmbedderOptions {
 
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
-    int numNegativeSamples = -1;           // determines the number of negative samples. -1 means spacial index is used.
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
-    float IndexSize = 1.0;                // fraction of nodes that get inserted into the spacial index
-    float doublingFactor = 2.0;           // determines how the weight buckets are calculated
-    float attractionScale = 1.0;                   // factor by which attracting forces are scaled
-    float repulsionScale = 1.0;                    // factor by which repulsion forces are scaled
-                                                    //(usually best to set to same as attraction)
-    float centreScale = 0.0; //factor by which each node is drawn to the centre
-    float edgeLength = 1.0;
-    float expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
-
-    bool additiveWeights = false;
+    float doublingFactor = 4.0f;  // growth of the weight-class bounds; 4 was briefly benchmarked
+    float dynamicQueryBuffer = -1.0f;  // rembed DynamicQuery: 3/d was briefly benchmarked
+    float dynamicQueryMinReuses = 2.0f;  // internal: steps a fresh buffer must be expected to survive to be worth
+                                         // filling; swept 1..8 with no measurable effect
+    float centreScale = 0.0f; //factor by which each node is drawn to the centre
+    float expansionStretch = 1.0f;  // relative amount by which the embeddings is stretched during layer expansion
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerType::Adam;
@@ -74,11 +71,15 @@ struct EmbedderOptions {
     int stopDisplacementPatience = 5;   // settled steps in a row before stopping
 
     // Shared loss-progress signal (loss* prefix): windowed relative loss decrease rate(t),
-    // consumed by both the loss stop criterion and the LossAdaptive schedule.
+    // consumed by both the loss stop criterion and the LossAdaptive schedule. Internal:
+    // window and smoothing were swept (W in 10..100, smoothing in 0.15..1) without effect
+    // at matched per-step tolerance, so they are not part of the public interface.
     float lossSmoothingFactor = 0.3;  // EMA weight of the newest loss sample before the monitor sees it
                                        // (1.0 disables smoothing); a light denoise on rate(t)
     int lossRateWindow = 30;           // steps over which the relative loss-decrease rate is measured
                                        // (a real window; per-step change is too noisy to threshold)
+    float lossFloor = 1e-5;           // per node; rate(t) denominator is floored at lossFloor * n so that
+                                       // a loss near 0 (perfectly embeddable graph) is stagnation, not noise
 
     // Loss stagnation stopping criterion (StopCriterionType::Loss).
     float stopLossTol = 1e-3;   // ftol: converged once rate(t) stays below this (relative decrease over the window)

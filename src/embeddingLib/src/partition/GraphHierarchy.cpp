@@ -3,17 +3,13 @@
 #include "GraphAlgorithms.hpp"
 
 GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) {
-    LOG_INFO("Starting to build graph hierarchy");
-
     ParentPointerTree parentPointer = coarsener.coarsenAllLayers();
     NUMLAYERS = parentPointer.size();
 
     // coarsen the graphs and convert them to embedded graphs
-    LOG_INFO("Coarsening graphs");
     std::vector<std::vector<EdgeId>> edgeParentPointers;
     Graph currGraph = graph;
     for (int i = 0; i < NUMLAYERS; i++) {
-        LOG_INFO("... in layer " << i << " with " << parentPointer[i].size() << " nodes");
         graphs.push_back(currGraph);
         if (i < NUMLAYERS - 1) {
             auto coarsened = GraphAlgo::coarsenGraph(currGraph, parentPointer[i]);
@@ -55,7 +51,32 @@ GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) 
             }
         }
     }
-    LOG_INFO("Finished building hierarchy");
+
+    // aggregate contained-node/edge statistics bottom-up
+    int numLeaves = graphs[0].getNumVertices();
+    for (int v = 0; v < numLeaves; v++) {
+        nodeLayers[0][v].totalContainedNodes = 1;
+        nodeLayers[0][v].nodeWeightSum = graphs[0].getNumNeighbors(v);
+    }
+    int numLeafEdges = edgeLayers[0].size();
+    for (int e = 0; e < numLeafEdges; e++) {
+        edgeLayers[0][e].totalContainedEdges = 1;
+    }
+    for (int l = 0; l < NUMLAYERS - 1; l++) {
+        int nodeLayerSize = nodeLayers[l].size();
+        for (int i = 0; i < nodeLayerSize; i++) {
+            NodeInformation& parent = nodeLayers[l + 1][nodeLayers[l][i].parentNode];
+            parent.totalContainedNodes += nodeLayers[l][i].totalContainedNodes;
+            parent.nodeWeightSum += nodeLayers[l][i].nodeWeightSum;
+        }
+        int edgeLayerSize = edgeLayers[l].size();
+        for (int i = 0; i < edgeLayerSize; i++) {
+            if (edgeLayers[l][i].parentEdge != -1) {
+                edgeLayers[l + 1][edgeLayers[l][i].parentEdge].totalContainedEdges +=
+                    edgeLayers[l][i].totalContainedEdges;
+            }
+        }
+    }
 }
 
 int GraphHierarchy::getNumLayers() const {

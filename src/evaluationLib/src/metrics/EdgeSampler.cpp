@@ -15,8 +15,6 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     int numSampledNonEdges = 0;
     int numSampledEdges = 0;
 
-    LOG_INFO("Sampling a histogram in graph with n:" << N << ", m:" << M << ", no m:" << noM);
-
     // calculate all edges
     for (int v = 0; v < N; v++) {
         for (int w : graph.getNeighbors(v)) {
@@ -32,7 +30,6 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     int w = 0;
     // scale determines how much more non edges than edges
     double nonEdgeProb = std::min(1.0, sampleingScale * M / noM);
-    LOG_INFO("Choosing non-edges with probability " << nonEdgeProb);
     ll totalJumpSize = 0;
     while (true) {
         // calculate how many nodes should be skipped
@@ -57,7 +54,5 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     }
 
     std::sort(histogram.begin(), histogram.end(), histComparator);
-    LOG_INFO("Choose " << numSampledEdges << " edges and " << numSampledNonEdges << " non edges for a total of "
-                       << histogram.size() << " node pairs");
     return histInfo{histogram, numSampledEdges, numSampledNonEdges};
 }

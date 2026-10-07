@@ -1,8 +1,8 @@
 #include "FileOperations.hpp"
 
 #include <fstream>
+#include <stdexcept>
 
-#include "Macros.hpp"
 
 namespace util {
 
@@ -12,8 +12,7 @@ std::vector<std::string> readLinesFromFile(std::string pathToFile) {
     // check if file exists
     std::ifstream input(pathToFile);
     if (!input.good()) {
-        LOG_ERROR( "Error while reading file: " << pathToFile);
-        return lines;
+        throw std::runtime_error("could not open file " + pathToFile);
     }
 
     // read in the lines

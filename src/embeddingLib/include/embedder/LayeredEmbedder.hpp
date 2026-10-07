@@ -18,13 +18,13 @@ class LayeredEmbedder : public EmbedderInterface {
         : EmbedderInterface(g, opts),
           timer(std::make_shared<Timer>()),
           hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
-          currentLayer(hierarchy->getNumLayers() - 1)
-    {
+          currentLayer(hierarchy->getNumLayers() - 1) {
         currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
     }
 
     virtual void calculateStep();
     virtual bool isFinished();
+    EmbeddingProgress getProgress() override;
     virtual void calculateEmbedding();
 
     virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates);
@@ -51,8 +51,10 @@ class LayeredEmbedder : public EmbedderInterface {
 
     std::shared_ptr<GraphHierarchy> hierarchy;
 
-    int currentIteration = 0;
     int currentLayer;
+    // non-trivial layers only, their mean iteration count estimates the current layer
+    int finishedLayers = 0;
+    int finishedLayerIterations = 0;
 
     // stores positions and weights of all graphs in the hierarchy
     std::unique_ptr<WembedEmbedder> currentEmbedder;

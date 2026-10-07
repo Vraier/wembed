@@ -175,13 +175,11 @@ std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin
 }
 
 std::vector<std::vector<int>> GraphAlgo::calculateAllPairShortestPaths(const Graph &g) {
-    LOG_DEBUG("Calculating all pair shortest paths");
     const int N = g.getNumVertices();
     std::vector<std::vector<int>> allDistances(N);
 
     for (NodeId v = 0; v < N; v++) {
         allDistances[v] = calculateShortestPaths(g, v);
     }
-    LOG_DEBUG("Finished calculating all pair shortest paths");
     return allDistances;
 }

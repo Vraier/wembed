@@ -10,18 +10,7 @@ class SpatialIndex {
    public:
     virtual ~SpatialIndex() = default;
 
-    // Query for nearest neighbors (point-based query)
-    virtual size_t query_nearest(CVecRef point, unsigned int number, std::vector<uint64_t>& out) const = 0;
-
-    // Query for points within a certain radius from a point (range query)
+    // Query for points within a certain radius from a point (range query).
+    // Returned ids are positions in the point array the index was built from.
     virtual size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const = 0;
-
-    // Query for points in a box (range query)
-    virtual size_t query_box(CVecRef minCorner, CVecRef maxCorner, std::vector<uint64_t>& out) const = 0;
-
-    // Check if the index is empty
-    // virtual bool is_empty() const = 0;
-
-    // Get the number of elements in the index
-    // virtual size_t size() const = 0;
 };
