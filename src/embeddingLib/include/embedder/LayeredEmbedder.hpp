@@ -27,21 +27,21 @@ class LayeredEmbedder : public EmbedderInterface {
     EmbeddingProgress getProgress() override;
     virtual void calculateEmbedding();
 
-    virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates);
-    virtual void setWeights(const std::vector<float> &weights);
+    virtual void setCoordinates(const std::vector<std::vector<flt_t>> &coordinates);
+    virtual void setWeights(const std::vector<flt_t> &weights);
 
-    virtual std::vector<std::vector<float>> getCoordinates();
-    virtual std::vector<float> getWeights();
+    virtual std::vector<std::vector<flt_t>> getCoordinates();
+    virtual std::vector<flt_t> getWeights();
     virtual std::vector<util::TimingResult> getTimings();
     virtual Graph getCurrentGraph();
 
     int getNumVertices() const override { return currentEmbedder->getNumVertices(); }
     int getEmbeddingDimension() const override { return currentEmbedder->getEmbeddingDimension(); }
-    void copyCoordinatesTo(float* out) const override { currentEmbedder->copyCoordinatesTo(out); }
+    void copyCoordinatesTo(flt_t* out) const override { currentEmbedder->copyCoordinatesTo(out); }
     EmbeddingLoss getLoss() const override { return currentEmbedder->getLoss(); }
-    float getCurrentLearningRate() const override { return currentEmbedder->getCurrentLearningRate(); }
-    float getLastRelDisplacement() const override { return currentEmbedder->getLastRelDisplacement(); }
-    float getLastRelLossImprovement() const override { return currentEmbedder->getLastRelLossImprovement(); }
+    flt_t getCurrentLearningRate() const override { return currentEmbedder->getCurrentLearningRate(); }
+    flt_t getLastRelDisplacement() const override { return currentEmbedder->getLastRelDisplacement(); }
+    flt_t getLastRelLossImprovement() const override { return currentEmbedder->getLastRelLossImprovement(); }
 
    private:
     std::shared_ptr<Timer> timer;

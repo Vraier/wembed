@@ -27,7 +27,7 @@ std::ofstream openForWriting(const std::string& filePath) {
 }
 }  // namespace
 
-std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<float>>& coordinates, int lpNorm) {
+std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<flt_t>>& coordinates, int lpNorm) {
     switch (type) {
         case WeightedEmb:
             // weighted
@@ -55,16 +55,16 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
             // mercator
             {
                 // split into kappa and rest;
-                std::vector<float> kappa;
-                std::vector<std::vector<float>> rest;
+                std::vector<flt_t> kappa;
+                std::vector<std::vector<flt_t>> rest;
                 std::tie(kappa, rest) = splitFirstColumn(coordinates);
                 unused(kappa);
 
                 // one dimensional embedding
                 if (rest[0].size() <= 2) {
                     // split into theta and radius
-                    std::vector<float> theta;
-                    std::vector<float> radius;
+                    std::vector<flt_t> theta;
+                    std::vector<flt_t> radius;
                     std::tie(theta, rest) = splitFirstColumn(rest);
                     std::tie(radius, rest) = splitFirstColumn(rest);
                     ASSERT(rest[0].size() == 0);
@@ -74,8 +74,8 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
                 else {
                     ASSERT(rest[0].size() >= 3);
                     // split into radius and rest
-                    std::vector<float> radius;
-                    std::vector<std::vector<float>> coordinates;
+                    std::vector<flt_t> radius;
+                    std::vector<std::vector<flt_t>> coordinates;
                     std::tie(radius, coordinates) = splitFirstColumn(rest);
                     return std::make_unique<MercatorEmbedding>(radius, coordinates);
                 }
@@ -107,7 +107,7 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
     }
 }
 
-std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
+std::vector<std::vector<flt_t>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
                                                                       std::string delimiter) {
     std::ifstream input(filePath);
     if (!input.good()) {
@@ -115,7 +115,7 @@ std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string
     }
 
     // read in the coordinates
-    std::map<NodeId, std::vector<float>> coords_dict;
+    std::map<NodeId, std::vector<flt_t>> coords_dict;
     int coord_size = -1; //dimension of the embedding
     std::string line;
     int lineNumber = 0;
@@ -131,7 +131,7 @@ std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string
         // splitIntoTokens consumes its argument
         std::string rest = line;
         std::vector<std::string> tokens = util::splitIntoTokens(rest, delimiter);
-        std::vector<float> coord(tokens.size() - 1); // dimension of node a
+        std::vector<flt_t> coord(tokens.size() - 1); // dimension of node a
         if (coord_size == -1) {
             coord_size = coord.size();
         } else if (coord_size != static_cast<int>(coord.size())) {
@@ -158,17 +158,17 @@ std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string
         }
     }
 
-    std::vector<std::vector<float>> result;
+    std::vector<std::vector<flt_t>> result;
     for (auto& [name, coord] : coords_dict) {
         result.push_back(coord);
     }
     return result;
 }
 
-std::pair<std::vector<std::vector<float>>, std::vector<float>> EmbeddingIO::splitLastColumn(
-    const std::vector<std::vector<float>>& coordinates) {
-    std::vector<std::vector<float>> coords(coordinates.size());
-    std::vector<float> weights(coordinates.size());
+std::pair<std::vector<std::vector<flt_t>>, std::vector<flt_t>> EmbeddingIO::splitLastColumn(
+    const std::vector<std::vector<flt_t>>& coordinates) {
+    std::vector<std::vector<flt_t>> coords(coordinates.size());
+    std::vector<flt_t> weights(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         for (int j = 0; j < coordinates[i].size() - 1; j++) {
@@ -180,10 +180,10 @@ std::pair<std::vector<std::vector<float>>, std::vector<float>> EmbeddingIO::spli
     return std::make_pair(coords, weights);
 }
 
-std::pair<std::vector<float>, std::vector<std::vector<float>>> EmbeddingIO::splitFirstColumn(
-    const std::vector<std::vector<float>>& coordinates) {
-    std::vector<float> weights(coordinates.size());
-    std::vector<std::vector<float>> coords(coordinates.size());
+std::pair<std::vector<flt_t>, std::vector<std::vector<flt_t>>> EmbeddingIO::splitFirstColumn(
+    const std::vector<std::vector<flt_t>>& coordinates) {
+    std::vector<flt_t> weights(coordinates.size());
+    std::vector<std::vector<flt_t>> coords(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         weights[i] = coordinates[i][0];
@@ -195,10 +195,10 @@ std::pair<std::vector<float>, std::vector<std::vector<float>>> EmbeddingIO::spli
     return std::make_pair(weights, coords);
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions,
-                                   const std::vector<float>& weights) {
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<flt_t>>& positions,
+                                   const std::vector<flt_t>& weights) {
     std::ofstream fil = openForWriting(filePath);
-    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
+    fil << std::setprecision(std::numeric_limits<flt_t>::digits10 + 1);
     for (int i = 0; i < positions.size(); i++) {
         fil << i;
         for (int j = 0; j < positions[i].size(); j++) {
@@ -209,9 +209,9 @@ void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::
     fil.close();
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions) {
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<flt_t>>& positions) {
     std::ofstream fil = openForWriting(filePath);
-    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
+    fil << std::setprecision(std::numeric_limits<flt_t>::digits10 + 1);
     for(int i = 0; i < positions.size(); i++) {
         fil << i;
         for(int j = 0; j < positions[i].size(); j++) {

@@ -1,3 +1,4 @@
+#include "Concepts.hpp"
 #include "Rand.hpp"
 #include "Macros.hpp"
 
@@ -49,8 +50,8 @@ double Rand::randomDouble(double lowerBound, double upperBound) {
     return distribution(get()->generator);
 }
 
-double Rand::gaussDistribution(double mean, double deviation) {
-    std::normal_distribution<double> distribution{mean, deviation};
+flt_t Rand::gaussDistribution(flt_t mean, flt_t deviation) {
+    std::normal_distribution<flt_t> distribution{mean, deviation};
     return distribution(get()->generator);
 }
 
@@ -88,27 +89,21 @@ std::vector<int> Rand::randomSample(int n, int k) {
     return result;
 }
 
-std::vector<std::vector<float>> Rand::randomCoordinatesf(const int k, const int dim, const float bound) {
-    std::vector<std::vector<float>> coords(k, std::vector<float>(dim));
+std::vector<std::vector<flt_t>> Rand::randomCoordinates(const int k, const int dim, const flt_t bound) {
+    std::vector<std::vector<flt_t>> coords(k, std::vector<flt_t>(dim));
     for (auto& coord : coords) {
         for (auto& c : coord) {
-            c = randomFloat(0, bound);
+            if constexpr (std::is_same_v<flt_t, float>) {
+                c = randomFloat(0, bound);
+            } else {
+                c = randomDouble(0, bound);
+            }
         }
     }
     return coords;
 }
 
-std::vector<std::vector<double>> Rand::randomCoordinates(const int k, const int dim, const double bound) {
-    std::vector<std::vector<double>> coords(k, std::vector<double>(dim));
-    for (auto& coord : coords) {
-        for (auto& c : coord) {
-            c = randomDouble(0, bound);
-        }
-    }
-    return coords;
-}
-
-int Rand::geometricVariable(double prob) {
+int Rand::geometricVariable(flt_t prob) {
     std::geometric_distribution<int> distribution(prob);
     return distribution(get()->generator);
 }

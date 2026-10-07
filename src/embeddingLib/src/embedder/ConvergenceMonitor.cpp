@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow, float lossFloor)
+ConvergenceMonitor::ConvergenceMonitor(flt_t relTol, int patience, flt_t smoothingFactor, int rateWindow, flt_t lossFloor)
     : relTol(relTol),
       lossFloor(std::max(lossFloor, TINY)),
       patience(patience),
@@ -12,7 +12,7 @@ ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothi
       // rateWindow intervals span rateWindow + 1 samples (endpoints included)
       ring(static_cast<std::size_t>(this->rateWindow) + 1, 0.0) {}
 
-void ConvergenceMonitor::observe(float loss) {
+void ConvergenceMonitor::observe(flt_t loss) {
     if (numObserved == 0) {
         smoothedLoss = loss;
     } else {
@@ -28,8 +28,8 @@ void ConvergenceMonitor::observe(float loss) {
     }
 
     if (ringCount >= static_cast<int>(ring.size())) {
-        const float windowStart = ring[ringHead];  // Lbar(t - rateWindow)
-        const float denom = std::max(std::abs(windowStart), lossFloor);
+        const flt_t windowStart = ring[ringHead];  // Lbar(t - rateWindow)
+        const flt_t denom = std::max(std::abs(windowStart), lossFloor);
         lastRate = (windowStart - smoothedLoss) / denom;
     } else {
         lastRate = STILL_IMPROVING;

@@ -22,8 +22,8 @@
  */
 class WeightedIndex {
    public:
-    WeightedIndex(IndexType type, int dimension, float doublingFactor, float dynamicBuffer,
-                  float minExpectedReuses = 2.0)
+    WeightedIndex(IndexType type, int dimension, flt_t doublingFactor, flt_t dynamicBuffer,
+                  flt_t minExpectedReuses = 2.0)
         : indexType(checkedIndexType(type, dimension)),
           DIMENSION(dimension),
           doublingFactor(doublingFactor),
@@ -36,14 +36,14 @@ class WeightedIndex {
 
     // refreshes the index; maxDisplacement is the largest single-node movement since the
     // previous call (pass infinity after any discontinuous position/weight change)
-    void update(const VecList<>& positions, const std::vector<float>& weights, float maxDisplacement);
+    void update(const VecList<>& positions, const std::vector<flt_t>& weights, flt_t maxDisplacement);
 
     // exactly the pairs v owns with weighted distance < 1
     void getOwnedRepellingPairs(NodeId v, std::vector<NodeId>& out);
 
     // heavier endpoint owns a pair, ties towards the smaller id; also used by the
     // attraction pass to cancel owned neighbor pairs out of the loss
-    static bool ownsPair(float weightV, float weightU, NodeId v, NodeId u) {
+    static bool ownsPair(flt_t weightV, flt_t weightU, NodeId v, NodeId u) {
         return weightV > weightU || (weightV == weightU && v < u);
     }
 
@@ -58,19 +58,19 @@ class WeightedIndex {
     };
 
     void rebuildClasses();
-    void queryClass(size_t weightClass, CVecRef p, float weight, float radiusSlack,
+    void queryClass(size_t weightClass, CVecRef p, flt_t weight, flt_t radiusSlack,
                     std::vector<NodeId>& output) const;
 
     IndexType indexType;
     int DIMENSION;
-    float doublingFactor;
-    float dynamicBuffer;
+    flt_t doublingFactor;
+    flt_t dynamicBuffer;
     // a fill (inflated radii) only pays off if the buffer survives a few steps of the
     // current movement; below that, query tight like before
-    float minExpectedReuses;
+    flt_t minExpectedReuses;
 
     QueryMode mode = QueryMode::Plain;
-    float remainingBudget = -1.0;
+    flt_t remainingBudget = -1.0;
     size_t updateCalls = 0;
     size_t rebuildCalls = 0;
     // per node: owned candidates within the inflated radius at fill time.
@@ -79,14 +79,14 @@ class WeightedIndex {
 
     // borrowed from update(); valid until the next update()
     const VecList<>* positions = nullptr;
-    const std::vector<float>* weights = nullptr;
+    const std::vector<flt_t>* weights = nullptr;
 
-    std::vector<float> invExpWeights;  // w^(-1/d), for the exact threshold check
+    std::vector<flt_t> invExpWeights;  // w^(-1/d), for the exact threshold check
 
     // one index per weight class; nodes in class i have weight <= maxWeightOfClass[i],
     // so querying with the class max misses no pair
     std::vector<std::shared_ptr<SpatialIndex>> spacialIndices;
-    std::vector<float> maxWeightOfClass;
-    std::vector<float> classBounds;                 // upper bounds used for class assignment
+    std::vector<flt_t> maxWeightOfClass;
+    std::vector<flt_t> classBounds;                 // upper bounds used for class assignment
     std::vector<std::vector<NodeId>> classToGlobal;  // per class: local query id -> node id
 };

@@ -5,16 +5,16 @@
  */
 namespace lossFunction {
 
-inline double attractionLoss(double weightedDistance) { return weightedDistance > 1.0 ? weightedDistance - 1.0 : 0.0; }
+inline flt_t attractionLoss(flt_t weightedDistance) { return weightedDistance > flt_t{1.0} ? weightedDistance - flt_t{1.0} : 0.0; }
 
-inline double attractionForceFactor(double weightedDistance) { return weightedDistance > 1.0 ? 1.0 : 0.0; }
+inline flt_t attractionForceFactor(flt_t weightedDistance) { return weightedDistance > flt_t{1.0} ? 1.0 : 0.0; }
 
 // repulsion loss/force are exactly 0 for weightedDistance >= 1
-inline double repulsionLoss(double weightedDistance) { return weightedDistance < 1.0 ? 1.0 - weightedDistance : 0.0; }
+inline flt_t repulsionLoss(flt_t weightedDistance) { return weightedDistance < flt_t{1.0} ? flt_t{1.0} - weightedDistance : 0.0; }
 
-inline double repulsionForceFactor(double weightedDistance) { return weightedDistance < 1.0 ? 1.0 : 0.0; }
+inline flt_t repulsionForceFactor(flt_t weightedDistance) { return weightedDistance < flt_t{1.0} ? 1.0 : 0.0; }
 
-// loss of two idential points, the maximal violation
-inline double maxRepulsionLoss() { return repulsionLoss(0.0); }
+// loss of two identical points, the maximal violation
+inline flt_t maxRepulsionLoss() { return repulsionLoss(0.0); }
 
 }  // namespace lossFunction

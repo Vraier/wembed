@@ -40,19 +40,19 @@ class VecBase {
         return coord.dimension();
     }
 
-    ALWAYS_INLINE float operator[](int i) const {
+    ALWAYS_INLINE flt_t operator[](int i) const {
         return coord[i];
     }
 
-    ALWAYS_INLINE float norm() const {
+    ALWAYS_INLINE flt_t norm() const {
         return std::sqrt(sqNorm());
     }
 
-    ALWAYS_INLINE float infNorm() const {
+    ALWAYS_INLINE flt_t infNorm() const {
         return coord.infNorm();
     }
 
-    ALWAYS_INLINE float sqNorm() const {
+    ALWAYS_INLINE flt_t sqNorm() const {
         return coord.sqNorm();
     }
 
@@ -83,7 +83,7 @@ class VecBase {
     template <typename E>
     friend class MultExpr;
     template <typename E>
-    friend MultExpr<typename E::ExprType> operator*(float, const E&);
+    friend MultExpr<typename E::ExprType> operator*(flt_t, const E&);
 
     VecBase() : coord() {
         // fail hard in case of invalid access
@@ -155,7 +155,7 @@ struct MultExpr {
     using ChunkType = typename E::ChunkType;
     using ExprType = MultExpr<E>;
 
-    float scalar;
+    flt_t scalar;
     E vec;
 
     ALWAYS_INLINE ChunkType chunkAt(unsigned int i) const {
@@ -166,12 +166,12 @@ struct MultExpr {
 };
 
 template <typename E>
-ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(float scalar, const E& vec) {
+ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(flt_t scalar, const E& vec) {
     return MultExpr<typename E::ExprType>{scalar, vec};
 }
 
 template <typename E>
-ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(const E& vec, float scalar) {
+ALWAYS_INLINE MultExpr<typename E::ExprType> operator*(const E& vec, flt_t scalar) {
     return scalar * vec;
 }
 
@@ -259,7 +259,7 @@ class VecRefImpl {
     }
 
     template <unsigned int N_SLOTS>
-    VecRefImpl(Buffer<N_SLOTS>& buffer, float default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
+    VecRefImpl(Buffer<N_SLOTS>& buffer, flt_t default_value) : coord(buffer.template construct<ContainedType, SLOT>()) {
         static_assert(SLOT >= 0, "TmpVec with negative slot not allowed!");
         static_assert(SLOT < N_SLOTS, "Invalid slot!");
         setAll(default_value);
@@ -302,27 +302,27 @@ class VecRefImpl {
         return static_cast<Vec>(*this).dimension();
     }
 
-    ALWAYS_INLINE void setAll(float value) {
+    ALWAYS_INLINE void setAll(flt_t value) {
         coord.get().setAll(value);
     }
 
-    ALWAYS_INLINE float operator[](int i) const {
+    ALWAYS_INLINE flt_t operator[](int i) const {
         return static_cast<Vec>(*this)[i];
     }
 
-    ALWAYS_INLINE float& operator[](int i) {
+    ALWAYS_INLINE flt_t& operator[](int i) {
         return coord.get()[i];
     }
 
-    ALWAYS_INLINE float norm() const {
+    ALWAYS_INLINE flt_t norm() const {
         return static_cast<Vec>(*this).norm();
     }
 
-    ALWAYS_INLINE float infNorm() const {
+    ALWAYS_INLINE flt_t infNorm() const {
         return static_cast<Vec>(*this).infNorm();
     }
 
-    ALWAYS_INLINE float sqNorm() const {
+    ALWAYS_INLINE flt_t sqNorm() const {
         return static_cast<Vec>(*this).sqNorm();
     }
 
@@ -344,34 +344,34 @@ class VecRefImpl {
         return *this;
     }
 
-    ALWAYS_INLINE Self& operator*=(const float scalar) {
+    ALWAYS_INLINE Self& operator*=(const flt_t scalar) {
         for (size_t i = 0; i < coord.get().numChunks(); ++i) {
             coord.get().chunkAt(i) *= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE Self& operator/=(const float scalar) {
+    ALWAYS_INLINE Self& operator/=(const flt_t scalar) {
         for (size_t i = 0; i < coord.get().numChunks(); ++i) {
             coord.get().chunkAt(i) /= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE void cWiseMax(const float scalar) {
+    ALWAYS_INLINE void cWiseMax(const flt_t scalar) {
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = std::max(scalar, coord.get()[i]);
         }
     }
 
-    ALWAYS_INLINE void cWiseMin(const float scalar) {
+    ALWAYS_INLINE void cWiseMin(const flt_t scalar) {
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = std::min(scalar, coord.get()[i]);
         }
     }
 
     ALWAYS_INLINE void normed() {
-        float norm = this->norm();
+        flt_t norm = this->norm();
         if (norm > 0) {
             for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] /= norm;
@@ -387,7 +387,7 @@ class VecRefImpl {
      */
     ALWAYS_INLINE void infNormed() {
         int maxIndex = this->maxIndex();
-        float sign = coord.get()[maxIndex] > 0 ? 1 : -1;
+        flt_t sign = coord.get()[maxIndex] > 0 ? 1 : -1;
         for (int i = 0; i < this->dimension(); i++) {
             coord.get()[i] = 0;
         }
@@ -399,7 +399,7 @@ class VecRefImpl {
     */
     ALWAYS_INLINE int maxIndex() const {
         int maxIndex = 0;
-        float max = 0;
+        flt_t max = 0;
         for(int i = 0; i < this->dimension(); i++) {
             if(std::abs(coord.get()[i]) > max) {
                 max = std::abs(coord.get()[i]);
@@ -414,10 +414,10 @@ class VecRefImpl {
     // deterministic generator (Rand::localGenerator) so the tie-break direction
     // for coincident nodes does not depend on thread count or scheduling.
     ALWAYS_INLINE void setToRandomUnitVector(std::mt19937& gen = Rand::globalGenerator()) {
-        float norm = 0;
+        flt_t norm = 0;
         for (int i = 0; i < dimension(); i++) {
-            std::normal_distribution<float> dist(0.0, 1.0);
-            const float x = dist(gen);
+            std::normal_distribution<flt_t> dist(0.0, 1.0);
+            const flt_t x = dist(gen);
             coord.get()[i] = x;
             norm += x * x;
         }
@@ -430,7 +430,7 @@ class VecRefImpl {
     ALWAYS_INLINE void setToRandomVectorInSphere() {
         setToRandomUnitVector();
 
-        float radius = Toolkit::myPowf(Rand::randomFloat(0.0, 1.0), 1.0 / dimension());
+        flt_t radius = Toolkit::myPow(Rand::randomFloat(0.0, 1.0), 1.0 / dimension());
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] *= radius;
         }
@@ -644,29 +644,29 @@ struct ValueImpl {
         return data.size();
     }
 
-    ALWAYS_INLINE float& operator[](int i) {
+    ALWAYS_INLINE flt_t& operator[](int i) {
         ASSERT(i < dimension());
         return data[i];
     }
 
-    ALWAYS_INLINE float operator[](int i) const {
+    ALWAYS_INLINE flt_t operator[](int i) const {
         ASSERT(i < dimension());
         return data[i];
     }
 
-    ALWAYS_INLINE void setAll(float value) {
+    ALWAYS_INLINE void setAll(flt_t value) {
         data.setConstant(value);
     }
 
-    ALWAYS_INLINE float sqNorm() const {
+    ALWAYS_INLINE flt_t sqNorm() const {
         return data.squaredNorm();
     }
 
-    ALWAYS_INLINE float infNorm() const {
+    ALWAYS_INLINE flt_t infNorm() const {
         // NOTE: maybe this is inefficient?
-        float max = 0;
+        flt_t max = 0;
         for (int i = 0; i < dimension(); i++) {
-            max = std::max(static_cast<float>(std::abs(data[i])), max);
+            max = std::max(static_cast<flt_t>(std::abs(data[i])), max);
         }
         return max;
     }
@@ -716,23 +716,23 @@ struct ArrayBaseType {
     ArrayBaseType(const ArrayBaseType&) = default;
     ArrayBaseType& operator=(const ArrayBaseType&) = default;
 
-    ArrayBaseType(const std::array<float, D>& data) : data(data) {}
+    ArrayBaseType(const std::array<flt_t, D>& data) : data(data) {}
 
     ALWAYS_INLINE unsigned int size() const {
         return D;
     }
 
-    ALWAYS_INLINE float& operator[](int i) {
+    ALWAYS_INLINE flt_t& operator[](int i) {
         ASSERT(i < D);
         return data[i];
     }
 
-    ALWAYS_INLINE float operator[](int i) const {
+    ALWAYS_INLINE flt_t operator[](int i) const {
         ASSERT(i < D);
         return data[i];
     }
 
-    ALWAYS_INLINE void setConstant(float value) {
+    ALWAYS_INLINE void setConstant(flt_t value) {
         for (int i = 0; i < D; i++) {
             data[i] = value;
         }
@@ -752,30 +752,30 @@ struct ArrayBaseType {
         return *this;
     }
 
-    ALWAYS_INLINE ArrayBaseType& operator*=(const float scalar) {
+    ALWAYS_INLINE ArrayBaseType& operator*=(const flt_t scalar) {
         for (int i = 0; i < D; i++) {
             data[i] *= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE ArrayBaseType& operator/=(const float scalar) {
+    ALWAYS_INLINE ArrayBaseType& operator/=(const flt_t scalar) {
         for (int i = 0; i < D; i++) {
             data[i] /= scalar;
         }
         return *this;
     }
 
-    ALWAYS_INLINE float squaredNorm() const {
-        float sum = 0;
+    ALWAYS_INLINE flt_t squaredNorm() const {
+        flt_t sum = 0;
         for (int i = 0; i < D; i++) {
             sum += data[i] * data[i];
         }
         return sum;
     }
 
-    ALWAYS_INLINE float infNorm() const {
-        float max = 0;
+    ALWAYS_INLINE flt_t infNorm() const {
+        flt_t max = 0;
         for (int i = 0; i < D; i++) {
             max = std::max(std::abs(data[i]), max);
         }
@@ -783,19 +783,19 @@ struct ArrayBaseType {
     }
 
    private:
-    std::array<float, D> data;
+    std::array<flt_t, D> data;
 };
 
 template <unsigned int D>
 struct ConstructArray {
-    static constexpr std::array<float, D> construct() {
-        return std::array<float, D>();
+    static constexpr std::array<flt_t, D> construct() {
+        return std::array<flt_t, D>();
     }
 };
 
 struct IndirectionImpl {
-    using MemoryType = float;
-    using ChunkType = float;
+    using MemoryType = flt_t;
+    using ChunkType = flt_t;
     using RefType = IndirectionImpl;
     using TmpValueType = IndirectionImpl;
 
@@ -817,32 +817,32 @@ struct IndirectionImpl {
         return dim;
     }
 
-    ALWAYS_INLINE float& operator[](int i) {
+    ALWAYS_INLINE flt_t& operator[](int i) {
         ASSERT(i < dim);
         return ptr[i];
     }
 
-    ALWAYS_INLINE float operator[](int i) const {
+    ALWAYS_INLINE flt_t operator[](int i) const {
         ASSERT(i < dim);
         return ptr[i];
     }
 
-    ALWAYS_INLINE void setAll(float value) {
+    ALWAYS_INLINE void setAll(flt_t value) {
         for (int i = 0; i < dim; i++) {
             ptr[i] = value;
         }
     }
 
-    ALWAYS_INLINE float sqNorm() const {
-        float sum = 0;
+    ALWAYS_INLINE flt_t sqNorm() const {
+        flt_t sum = 0;
         for (int i = 0; i < dim; i++) {
             sum += ptr[i] * ptr[i];
         }
         return sum;
     }
 
-    ALWAYS_INLINE float infNorm() const {
-        float max = 0;
+    ALWAYS_INLINE flt_t infNorm() const {
+        flt_t max = 0;
         for (int i = 0; i < dim; i++) {
             max = std::max(std::abs(ptr[i]), max);
         }
@@ -881,7 +881,7 @@ struct IndirectionImpl {
     }
 
    private:
-    float* ptr;
+    flt_t* ptr;
     unsigned int dim;
 };
 

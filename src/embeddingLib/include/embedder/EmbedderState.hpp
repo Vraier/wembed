@@ -19,7 +19,7 @@
 struct EmbedderState {
     // Current layout
     VecList<> currentPositions;
-    std::vector<float> currentWeights;
+    std::vector<flt_t> currentWeights;
     std::vector<int32_t> sortedNodeIDs;  // node IDs sorted by descending weight
 
     // Per-step working buffers
@@ -29,17 +29,17 @@ struct EmbedderState {
     WeightedIndex currentWeightedIndex;
 
     // Observables of the most recent step
-    float lastAttractLoss = 0.0;
-    float lastRepelLoss = 0.0;
-    float lastLearningRate = 0.0;
-    float lastRelDisplacement = 0.0;     // rate the displacement stop watches
-    float lastRelLossImprovement = 0.0;  // rate(t) the loss stop watches
-    float stepSeconds = 0.0;             // time spent inside calculateStep so far
+    flt_t lastAttractLoss = 0.0;
+    flt_t lastRepelLoss = 0.0;
+    flt_t lastLearningRate = 0.0;
+    flt_t lastRelDisplacement = 0.0;     // rate the displacement stop watches
+    flt_t lastRelLossImprovement = 0.0;  // rate(t) the loss stop watches
+    flt_t stepSeconds = 0.0;             // time spent inside calculateStep so far
     // consumed by the dynamic-query budget in WeightedIndex; infinity forces a rebuild
-    float lastMaxDisplacement = std::numeric_limits<float>::infinity();
+    flt_t lastMaxDisplacement = std::numeric_limits<flt_t>::infinity();
 
-    EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType, float doublingFactor,
-                  float dynamicQueryBuffer, float dynamicQueryMinReuses)
+    EmbedderState(uint32_t graphSize, int32_t dimension, IndexType indexType, flt_t doublingFactor,
+                  flt_t dynamicQueryBuffer, flt_t dynamicQueryMinReuses)
         : currentPositions(dimension, graphSize),
           currentWeights(graphSize),
           sortedNodeIDs(graphSize),

@@ -12,9 +12,9 @@
  * Loss values from the last completed force computation.
  */
 struct EmbeddingLoss {
-    float attractive;
-    float repulsive;
-    float total;
+    flt_t attractive;
+    flt_t repulsive;
+    flt_t total;
 };
 
 /**
@@ -46,7 +46,7 @@ class EmbedderInterface {
                           opts(opts),
                           // negative buffer = auto;
                           state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor,
-                                opts.dynamicQueryBuffer < 0.0 ? 3.0 / opts.embeddingDimension
+                                opts.dynamicQueryBuffer < flt_t{0.0} ? flt_t{3.0} / static_cast<flt_t>(opts.embeddingDimension)
                                                               : opts.dynamicQueryBuffer,
                                 opts.dynamicQueryMinReuses)
     {
@@ -75,10 +75,10 @@ class EmbedderInterface {
      * randomly places the nodes in the embedding space
      * @return A vector of coordinates, where vector[v] are the coordinates of the node with ID v
      */
-    [[nodiscard]] std::vector<std::vector<float>> constructRandomCoordinates() const {
+    [[nodiscard]] std::vector<std::vector<flt_t>> constructRandomCoordinates() const {
         const int32_t dimension = this->opts.embeddingDimension;
-        const float CUBE_SIDE_LENGTH = Toolkit::myPowf(static_cast<float>(graphSize()), 1.0f / static_cast<float>(dimension));
-        return Rand::randomCoordinatesf(static_cast<int>(graphSize()), dimension, CUBE_SIDE_LENGTH);
+        const flt_t CUBE_SIDE_LENGTH = Toolkit::myPow(static_cast<flt_t>(graphSize()), flt_t{1.0} / static_cast<flt_t>(dimension));
+        return Rand::randomCoordinates(static_cast<int>(graphSize()), dimension, CUBE_SIDE_LENGTH);
     }
 
 
@@ -108,7 +108,7 @@ class EmbedderInterface {
      * Copy coordinates row-major into a caller-owned buffer of at least
      * getNumVertices() * getEmbeddingDimension() floats. Zero allocation.
      */
-    virtual void copyCoordinatesTo(float* out) const {
+    virtual void copyCoordinatesTo(flt_t* out) const {
         this->state.currentPositions.copyToFlat(out);
     }
 
@@ -125,21 +125,21 @@ class EmbedderInterface {
      * Learning rate the optimizer used in the most recent step
      * (before the first step: the initial learning rate).
      */
-    virtual float getCurrentLearningRate() const {
+    virtual flt_t getCurrentLearningRate() const {
         return this->state.lastLearningRate;
     }
 
     /**
      * This is the signal the displacement stopping criterion watches.
      */
-    virtual float getLastRelDisplacement() const {
+    virtual flt_t getLastRelDisplacement() const {
         return this->state.lastRelDisplacement;
     }
 
     /**
      * This is the signal the loss stopping criterion watches.
      */
-    virtual float getLastRelLossImprovement() const {
+    virtual flt_t getLastRelLossImprovement() const {
         return this->state.lastRelLossImprovement;
     }
 
@@ -168,12 +168,12 @@ class EmbedderInterface {
     /**
      * Returns the current coordinates of the nodes.
      */
-    virtual std::vector<std::vector<float>> getCoordinates() = 0;
+    virtual std::vector<std::vector<flt_t>> getCoordinates() = 0;
 
     /**
      * Returns the current weights of the nodes.
      */
-    virtual std::vector<float> getWeights() = 0;
+    virtual std::vector<flt_t> getWeights() = 0;
 
     /*
      * Returns timing results for the duration of different phases of the embedding
@@ -184,11 +184,11 @@ class EmbedderInterface {
      * Sets the coordinates of the nodes.
      * Can be used to set initial coordinates.
      */
-    virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates) = 0;
+    virtual void setCoordinates(const std::vector<std::vector<flt_t>> &coordinates) = 0;
 
     /**
      * Sets the weights of the nodes.
      * Can be used to set initial weights.
      */
-    virtual void setWeights(const std::vector<float> &weights) = 0;
+    virtual void setWeights(const std::vector<flt_t> &weights) = 0;
 };

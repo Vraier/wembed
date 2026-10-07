@@ -3,6 +3,8 @@
 #include <limits>
 #include <vector>
 
+#include <Concepts.hpp>
+
 /**
  * Tracks the EMA-smoothed training loss and exposes the windowed relative loss
  * decrease
@@ -14,36 +16,36 @@
  */
 class ConvergenceMonitor {
    public:
-    static constexpr float STILL_IMPROVING = std::numeric_limits<float>::infinity();
+    static constexpr flt_t STILL_IMPROVING = std::numeric_limits<flt_t>::infinity();
 
     // lossFloor: lower bound of the rate's denominator. Below it the tolerance acts on the
     // absolute loss change, so a (nearly) perfectly embedded graph with loss ~ 0 still stops
-    ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow, float lossFloor = TINY);
+    ConvergenceMonitor(flt_t relTol, int patience, flt_t smoothingFactor, int rateWindow, flt_t lossFloor = TINY);
 
-    void observe(float loss);
+    void observe(flt_t loss);
 
     bool converged() const { return numStagnantSteps >= patience; }
     int stagnantSteps() const { return numStagnantSteps; }
-    float relImprovement() const { return lastRate; }  // rate(t); STILL_IMPROVING during warmup
+    flt_t relImprovement() const { return lastRate; }  // rate(t); STILL_IMPROVING during warmup
     int numObservations() const { return numObserved; }
-    float lastLoss() const { return lastObservedLoss; }
+    flt_t lastLoss() const { return lastObservedLoss; }
 
    private:
-    static constexpr float TINY = 1e-12f;
+    static constexpr flt_t TINY = 1e-12;
 
-    float relTol;
-    float lossFloor;
+    flt_t relTol;
+    flt_t lossFloor;
     int patience;
-    float smoothingFactor;
+    flt_t smoothingFactor;
     int rateWindow;
 
-    std::vector<float> ring;  // last rateWindow + 1 smoothed losses
+    std::vector<flt_t> ring;  // last rateWindow + 1 smoothed losses
     int ringHead = 0;          // next write slot == oldest retained sample once full
     int ringCount = 0;
 
-    float smoothedLoss = 0.0f;
+    flt_t smoothedLoss = 0.0;
     int numObserved = 0;
-    float lastObservedLoss = 0.0f;
-    float lastRate = STILL_IMPROVING;
+    flt_t lastObservedLoss = 0.0;
+    flt_t lastRate = STILL_IMPROVING;
     int numStagnantSteps = 0;
 };

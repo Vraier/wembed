@@ -26,17 +26,17 @@ class WembedEmbedder : public EmbedderInterface {
     std::vector<NodeId> inOwner;                        // flat array indicating who w is owned by
                                                         // owned by subarrays are sorted to enforce determinism
 
-    std::vector<float> invExpWeights;
+    std::vector<flt_t> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
     // written by exactly one thread, then reduced deterministically (so the
     // stopping-criterion signal does not depend on thread count)
-    std::vector<float> lossPerNode;
+    std::vector<flt_t> lossPerNode;
     // positions at the start of the current step and the per-node displacement /
     // squared radius derived from them; written one-thread-per-node then reduced
     // deterministically, exactly like lossPerNode
     VecList<> previousPositions;
-    std::vector<float> perNodeDisplacement;
-    std::vector<float> perNodeRadiusSq;
+    std::vector<flt_t> perNodeDisplacement;
+    std::vector<flt_t> perNodeRadiusSq;
     std::unique_ptr<Optimizer> posOptimizer;
     // heap-owned and declared before the scheduler: LossAdaptive holds a reference to the monitor,
     // which stays valid when the embedder is moved (LayeredEmbedder moves it on layer expansion)
@@ -62,12 +62,12 @@ class WembedEmbedder : public EmbedderInterface {
     void calculateAllRepellingForces();
     void calculateAllCentreForces();
     // returns the loss contribution of this pair so the caller can accumulate it
-    float attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
+    flt_t attractionForce(NodeId v, NodeId u, VecBuffer<1>& forceBuffer);
     void applyGravityCentre();
 
     // computes the repulsion push on `a` away from `b` into `out` (no state writes)
     // and returns the pair's loss; coincident pairs get a random kick + maximal loss
-    float pairRepulsion(NodeId a, NodeId b, TmpVec<0>& out) const;
+    flt_t pairRepulsion(NodeId a, NodeId b, TmpVec<0>& out) const;
 
     /**
      * Computes the relative node displacement of the step just applied
@@ -134,14 +134,14 @@ class WembedEmbedder : public EmbedderInterface {
     virtual EmbeddingProgress getProgress() override;
     virtual void calculateEmbedding() override;
     virtual Graph getCurrentGraph() override;
-    virtual std::vector<std::vector<float>> getCoordinates() override;
-    virtual std::vector<float> getWeights() override;
+    virtual std::vector<std::vector<flt_t>> getCoordinates() override;
+    virtual std::vector<flt_t> getWeights() override;
     virtual std::vector<util::TimingResult> getTimings() override;
-    virtual void setCoordinates(const std::vector<std::vector<float>> &coordinates) override;
-    virtual void setWeights(const std::vector<float>& weights) override;
+    virtual void setCoordinates(const std::vector<std::vector<flt_t>> &coordinates) override;
+    virtual void setWeights(const std::vector<flt_t>& weights) override;
 
-    [[nodiscard]] static std::vector<float> rescaleWeights(float dimensionHint, float embeddingDimension,
-                                                const std::vector<float>& weights);
-    [[nodiscard]] static std::vector<float> constructDegreeWeights(const Graph& g);
-    [[nodiscard]] static std::vector<float> constructUnitWeights(int N);
+    [[nodiscard]] static std::vector<flt_t> rescaleWeights(flt_t dimensionHint, flt_t embeddingDimension,
+                                                const std::vector<flt_t>& weights);
+    [[nodiscard]] static std::vector<flt_t> constructDegreeWeights(const Graph& g);
+    [[nodiscard]] static std::vector<flt_t> constructUnitWeights(int N);
 };

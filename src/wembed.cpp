@@ -105,7 +105,7 @@ int32_t Embedder::getEmbeddingDimension() const {
     return static_cast<int32_t>(_embedder->getEmbeddingDimension());
 }
 
-void Embedder::copyCoordinatesTo(float* out) const {
+void Embedder::copyCoordinatesTo(flt_t* out) const {
     _embedder->copyCoordinatesTo(out);
 }
 
@@ -114,19 +114,19 @@ Graph Embedder::getCurrentGraph() const {
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<float>> Embedder::getCoordinates() const {
+std::vector<std::vector<flt_t>> Embedder::getCoordinates() const {
     return _embedder->getCoordinates();
 }
 
-std::vector<float> Embedder::getWeights() const {
+std::vector<flt_t> Embedder::getWeights() const {
     return _embedder->getWeights();
 }
 
-void Embedder::setCoordinates(const std::vector<std::vector<float>>& coordinates) {
+void Embedder::setCoordinates(const std::vector<std::vector<flt_t>>& coordinates) {
     _embedder->setCoordinates(coordinates);
 }
 
-void Embedder::setWeights(const std::vector<float>& weights) {
+void Embedder::setWeights(const std::vector<flt_t>& weights) {
     _embedder->setWeights(weights);
 }
 
@@ -135,7 +135,7 @@ std::vector<TimingResult> Embedder::getTimings() const {
     std::vector<TimingResult> out;
     out.reserve(internal.size());
     for (const auto& t : internal) {
-        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, static_cast<float>(t.value)});
+        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, static_cast<flt_t>(t.value)});
     }
     return out;
 }
@@ -151,15 +151,15 @@ Progress Embedder::getProgress() const {
             p.layerSeconds, p.etaSeconds, p.layerFinished};
 }
 
-float Embedder::getCurrentLearningRate() const {
+flt_t Embedder::getCurrentLearningRate() const {
     return _embedder->getCurrentLearningRate();
 }
 
-float Embedder::getLastRelDisplacement() const {
+flt_t Embedder::getLastRelDisplacement() const {
     return _embedder->getLastRelDisplacement();
 }
 
-float Embedder::getLastRelLossImprovement() const {
+flt_t Embedder::getLastRelLossImprovement() const {
     return _embedder->getLastRelLossImprovement();
 }
 
@@ -233,7 +233,7 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
 
     const auto& graph = *g._graph;
     if (options.layeredEmbedding) {
-        std::vector<float> edgeWeights(g.getNumEdges() * 2, 1.0);
+        std::vector<flt_t> edgeWeights(g.getNumEdges() * 2, 1.0);
         auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
         return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
     } else {
@@ -282,7 +282,7 @@ Graph graphFromEdgeListFile(const std::string& filePath,
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<float>> readCoordinatesFromFile(const std::string& filePath,
+std::vector<std::vector<flt_t>> readCoordinatesFromFile(const std::string& filePath,
                                                           const std::string& comment,
                                                           const std::string& delimiter) {
     return EmbeddingIO::readCoordinatesFromFile(filePath, comment, delimiter);

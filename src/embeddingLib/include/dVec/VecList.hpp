@@ -6,7 +6,7 @@
 #include "Concepts.hpp"
 #include "Macros.hpp"
 
-template <FLT_T T = float>
+template <FLT_T T = flt_t>
 class VecList {
     using Memory = VecRef::MemoryType;
     // TODO: support iteration
@@ -36,7 +36,7 @@ class VecList {
         // ASSERT(size() == 0);
         setSize(new_size);
         for (size_t i = 0; i < size(); ++i) {
-            (*this)[i].setAll(static_cast<float>(default_value));
+            (*this)[i].setAll(default_value);
         }
     }
 

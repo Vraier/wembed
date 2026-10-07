@@ -25,8 +25,8 @@ IndexType WeightedIndex::checkedIndexType(const IndexType type, const int dimens
     return type;
 }
 
-void WeightedIndex::update(const VecList<>& newPositions, const std::vector<float>& newWeights,
-                           float maxDisplacement) {
+void WeightedIndex::update(const VecList<>& newPositions, const std::vector<flt_t>& newWeights,
+                           flt_t maxDisplacement) {
     ASSERT(newPositions.size() == newWeights.size(), "Positions and weights must have the same size");
     ASSERT(newPositions.dimension() == DIMENSION, "Positions must have the same dimension as the index");
     if (newWeights.size() != invExpWeights.size()) {
@@ -59,7 +59,7 @@ void WeightedIndex::update(const VecList<>& newPositions, const std::vector<floa
 }
 
 void WeightedIndex::rebuildClasses() {
-    const std::vector<float>& newWeights = *weights;
+    const std::vector<flt_t>& newWeights = *weights;
     const VecList<>& newPositions = *positions;
 
     invExpWeights.resize(newWeights.size());
@@ -159,7 +159,7 @@ void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& 
     }
 }
 
-void WeightedIndex::queryClass(const size_t weightClass, CVecRef p, const float weight, const float radiusSlack,
+void WeightedIndex::queryClass(const size_t weightClass, CVecRef p, const flt_t weight, const flt_t radiusSlack,
                                std::vector<NodeId>& output) const {
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
     ASSERT(weightClass < maxWeightOfClass.size());

@@ -5,17 +5,17 @@
 
 class WeightedGeometricInf : public Embedding {
    public:
-    WeightedGeometricInf(const std::vector<std::vector<float>> &coords, const std::vector<float> &weights);
+    WeightedGeometricInf(const std::vector<std::vector<flt_t>> &coords, const std::vector<flt_t> &weights);
     virtual ~WeightedGeometricInf(){};
 
-    virtual float getSimilarity(NodeId a, NodeId b) const;
+    virtual flt_t getSimilarity(NodeId a, NodeId b) const;
     virtual int getDimension() const;
-    float getDistance(NodeId a, NodeId b) const;
-    float getNodeWeight(NodeId a) const;
+    flt_t getDistance(NodeId a, NodeId b) const;
+    flt_t getNodeWeight(NodeId a) const;
 
    private:
     const int DIMENSION;
-    const float DINVERSE;
+    const flt_t DINVERSE;
     VecList<> coordinates;
-    std::vector<float> weights;
+    std::vector<flt_t> weights;
 };

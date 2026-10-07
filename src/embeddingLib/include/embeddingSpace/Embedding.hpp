@@ -15,5 +15,5 @@ class Embedding {
      * CAUTION: A low values indicates a high similarity. A high value indicates a low similarity.
      * Think of it like the euclidean distance.
     */
-    virtual float getSimilarity(NodeId a, NodeId b) const = 0;
+    virtual flt_t getSimilarity(NodeId a, NodeId b) const = 0;
 };

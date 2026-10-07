@@ -1,32 +1,25 @@
 #include "DVec.hpp"
 
 namespace vectorOperations {
-static inline float calculateLPNormf(const CVecRef& x, const CVecRef& y) {
-    float sum = 0.0;
+
+static inline flt_t calculateLPNorm(const CVecRef& x, const CVecRef& y) {
+    flt_t sum = 0.0;
     for (size_t i = 0; i < x.dimension(); i++) {
-        sum += Toolkit::myPowf(static_cast<float>(std::abs(x[i] - y[i])), 2);
+        sum += Toolkit::myPow(std::abs(x[i] - y[i]), flt_t{2});
     }
     return std::sqrt(sum);
 }
 
-static inline double calculateLPNorm(const CVecRef& x, const CVecRef& y) {
-    double sum = 0.0;
-    for (size_t i = 0; i < x.dimension(); i++) {
-        sum += Toolkit::myPow(std::abs(x[i] - y[i]), 2);
-    }
-    return std::sqrt(sum);
-}
-
-static inline void differentiateLPNormDifference(const CVecRef& x, const CVecRef& y, const double lpNorm, TmpVec<0>& result) {
-    if (lpNorm == 0.0) {
+static inline void differentiateLPNormDifference(const CVecRef& x, const CVecRef& y, const flt_t lpNorm, TmpVec<0>& result) {
+    if (lpNorm == flt_t{0.0}) {
         result.setAll(0.0);
         return;
     }
 
     for (size_t i = 0; i < x.dimension(); i++) {
-        const double diff = std::abs(x[i] - y[i]);
-        const double sign = (x[i] - y[i]) < 0 ? -1.0 : 1.0;
-        const double derivative = diff / lpNorm * sign;
+        const flt_t diff = std::abs(x[i] - y[i]);
+        const flt_t sign = (x[i] - y[i]) < flt_t{0} ? -1.0 : 1.0;
+        const flt_t derivative = diff / lpNorm * sign;
         result[i] = derivative;
     }
 }

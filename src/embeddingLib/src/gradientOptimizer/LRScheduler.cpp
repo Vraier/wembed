@@ -13,7 +13,7 @@ float LRScheduler::learningRate(int iteration) {
 }
 
 float ExponentialCoolingSchedule::scheduleRate(int iteration) {
-    return initialRate * Toolkit::myPowf(lrCoolingFactor, static_cast<float>(iteration));
+    return initialRate * Toolkit::myPow(lrCoolingFactor, static_cast<float>(iteration));
 }
 
 float LossAdaptiveSchedule::scheduleRate(int /*iteration*/) {

@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 
+#include <Concepts.hpp>
+
 namespace Toolkit {
 std::map<int, int> createIdentity(int max);
 
@@ -25,33 +27,7 @@ double averageFromVector(const std::vector<double>& values);
  * The pow operation takes a lot of computing time. 
  * We could try to improve this by allowing for less precision
  */
-inline double myPow(double base, double exp) {
+inline flt_t myPow(flt_t base, flt_t exp) {
     return std::pow(base, exp);
-    // https://martin.ankerl.com/2012/01/25/optimized-approximative-pow-in-c-and-cpp/
-    int e = (int)exp;
-    union {
-        double d;
-        int x[2];
-    } u = {base};
-    u.x[1] = (int)((exp - e) * (u.x[1] - 1072632447) + 1072632447);
-    u.x[0] = 0;
-
-    // exponentiation by squaring with the exponent's integer part
-    // double r = u.d makes everything much slower, not sure why
-    double r = 1.0;
-    while (e) {
-        if (e & 1) {
-            r *= base;
-        }
-        base *= base;
-        e >>= 1;
-    }
-
-    return r * u.d;
-}
-
-inline float myPowf(float base, float exp) {
-    return ::powf(base, exp);
-    //TODO: Optimized algo
 }
 };  // namespace Toolkit
