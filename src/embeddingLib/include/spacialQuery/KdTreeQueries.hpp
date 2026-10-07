@@ -26,7 +26,7 @@ class KdTreeQueries : public SpatialIndex {
    public:
     KdTreeQueries(const std::vector<CVecRef>& points, size_t dimension);
 
-    size_t query_sphere(CVecRef point, double radius, std::vector<uint64_t>& out) const override;
+    size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const override;
 
     // largest number of points in a leaf; leaves hold between LEAF_SIZE / 2 and LEAF_SIZE points
     static constexpr uint32_t LEAF_SIZE = 32;

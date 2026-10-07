@@ -67,7 +67,7 @@ class WembedEmbedder : public EmbedderInterface {
 
     // computes the repulsion push on `a` away from `b` into `out` (no state writes)
     // and returns the pair's loss; coincident pairs get a random kick + maximal loss
-    double pairRepulsion(NodeId a, NodeId b, TmpVec<0>& out) const;
+    float pairRepulsion(NodeId a, NodeId b, TmpVec<0>& out) const;
 
     /**
      * Computes the relative node displacement of the step just applied

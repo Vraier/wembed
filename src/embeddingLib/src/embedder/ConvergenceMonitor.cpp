@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow
-                                       float lossFloor)
+ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow, float lossFloor)
     : relTol(relTol),
       lossFloor(std::max(lossFloor, TINY)),
       patience(patience),

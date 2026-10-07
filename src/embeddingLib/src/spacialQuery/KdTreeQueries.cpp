@@ -119,7 +119,7 @@ void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const float*
     }
 }
 
-size_t KdTreeQueries::query_sphere(CVecRef point, const double radius, std::vector<uint64_t>& out) const {
+size_t KdTreeQueries::query_sphere(CVecRef point, const float radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
     ASSERT(radius >= 0.0);
     out.clear();
