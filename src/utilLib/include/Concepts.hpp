@@ -4,5 +4,4 @@
 template <typename T>
 concept FLT_T = std::is_same_v<T, float> || std::is_same_v<T, double>;
 
-//using flt_t = WEMBED_FLT_T;
-using flt_t = double;
+using flt_t = WEMBED_FLT_T;

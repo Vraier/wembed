@@ -7,8 +7,7 @@
 
 using NodeId = int32_t;
 using EdgeId = int32_t;
-//using flt_t = WEMBED_FLT_T;
-using flt_t = double;
+using flt_t = WEMBED_FLT_T;
 
 struct NodeContent {
     EdgeId firstEdge;

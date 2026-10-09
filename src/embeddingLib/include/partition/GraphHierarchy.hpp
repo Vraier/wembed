@@ -13,7 +13,7 @@ struct NodeInformation {
 
     // information about all contained finest-layer nodes
     int totalContainedNodes = 0;
-    double nodeWeightSum = 0;  // sum of contained finest-layer degrees
+    flt_t nodeWeightSum = 0;  // sum of contained finest-layer degrees
 };
 
 struct EdgeInformation {

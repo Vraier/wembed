@@ -30,7 +30,7 @@ void WeightedIndex::update(const VecList<>& newPositions, const std::vector<flt_
     ASSERT(newPositions.size() == newWeights.size(), "Positions and weights must have the same size");
     ASSERT(newPositions.dimension() == DIMENSION, "Positions must have the same dimension as the index");
     if (newWeights.size() != invExpWeights.size()) {
-        maxDisplacement = std::numeric_limits<double>::infinity();
+        maxDisplacement = std::numeric_limits<flt_t>::infinity();
     }
     this->positions = &newPositions;
     this->weights = &newWeights;
@@ -65,13 +65,13 @@ void WeightedIndex::rebuildClasses() {
     invExpWeights.resize(newWeights.size());
 #pragma omp parallel for default(none) shared(newWeights) schedule(static)
     for (size_t i = 0; i < newWeights.size(); i++) {
-        invExpWeights[i] = 1.0 / Toolkit::myPow(newWeights[i], 1.0 / static_cast<double>(DIMENSION));
+        invExpWeights[i] = flt_t{1.0} / Toolkit::myPow(newWeights[i], flt_t{1.0} / static_cast<flt_t>(DIMENSION));
     }
 
-    const double minWeight = *std::min_element(newWeights.begin(), newWeights.end());
-    double maxWeight = *std::max_element(newWeights.begin(), newWeights.end());
+    const flt_t minWeight = *std::min_element(newWeights.begin(), newWeights.end());
+    flt_t maxWeight = *std::max_element(newWeights.begin(), newWeights.end());
     classBounds.clear();
-    for (double bound = minWeight * doublingFactor; bound < maxWeight; bound *= doublingFactor) {
+    for (flt_t bound = minWeight * doublingFactor; bound < maxWeight; bound *= doublingFactor) {
         classBounds.push_back(bound);
     }
 
@@ -106,15 +106,15 @@ void WeightedIndex::rebuildClasses() {
 void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& out) {
     ASSERT(positions != nullptr, "update() must run before queries");
     out.clear();
-    const double weight = (*weights)[v];
-    const double invV = invExpWeights[v];
+    const flt_t weight = (*weights)[v];
+    const flt_t invV = invExpWeights[v];
 
     if (mode == QueryMode::Reuse) {
         std::vector<NodeId>& cache = cachedPairs[v];
         size_t keep = 0;
         for (const NodeId u : cache) {
-            const double dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
-            const double weightedDist = dist * invV * invExpWeights[u];
+            const flt_t dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
+            const flt_t weightedDist = dist * invV * invExpWeights[u];
             // a pair beyond threshold + budget cannot come back below the threshold
             // before the next rebuild, so it is dropped for good
             if (weightedDist >= 1.0 + remainingBudget * invV * invExpWeights[u]) continue;
@@ -128,7 +128,7 @@ void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& 
     thread_local std::vector<NodeId> candidates;
     candidates.clear();
     const auto ownClass = std::upper_bound(classBounds.begin(), classBounds.end(), weight) - classBounds.begin();
-    const double radiusSlack = mode == QueryMode::Fill ? dynamicBuffer : 0.0;
+    const flt_t radiusSlack = mode == QueryMode::Fill ? dynamicBuffer : 0.0;
     for (size_t i = 0; i <= static_cast<size_t>(ownClass) && i < spacialIndices.size(); i++) {
         queryClass(i, (*positions)[v], weight, radiusSlack, candidates);
     }
@@ -138,13 +138,13 @@ void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& 
         cache.clear();
         for (const NodeId u : candidates) {
             if (u == v || !ownsPair(weight, (*weights)[u], v, u)) continue;
-            const double dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
-            const double weightedDist = dist * invV * invExpWeights[u];
+            const flt_t dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
+            const flt_t weightedDist = dist * invV * invExpWeights[u];
             // the class query radius over-covers light partners; keep only what can
             // reach the threshold within the buffer
-            if (weightedDist >= 1.0 + dynamicBuffer * invV * invExpWeights[u]) continue;
+            if (weightedDist >= flt_t{1.0} + dynamicBuffer * invV * invExpWeights[u]) continue;
             cache.push_back(u);
-            if (weightedDist < 1.0) out.push_back(u);
+            if (weightedDist < flt_t{1.0}) out.push_back(u);
         }
         return;
     }
@@ -153,8 +153,8 @@ void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& 
     for (const NodeId u : candidates) {
         if (u == v || !ownsPair(weight, (*weights)[u], v, u)) continue;
         // pairs at weighted distance >= 1 contribute zero force and zero loss
-        const double dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
-        if (dist * invV * invExpWeights[u] >= 1.0) continue;
+        const flt_t dist = vectorOperations::calculateLPNorm((*positions)[v], (*positions)[u]);
+        if (dist * invV * invExpWeights[u] >= flt_t{1.0}) continue;
         out.push_back(u);
     }
 }
@@ -164,8 +164,8 @@ void WeightedIndex::queryClass(const size_t weightClass, CVecRef p, const flt_t 
     ASSERT(spacialIndices.size() == maxWeightOfClass.size(), "Indices and weight classes must have the same size");
     ASSERT(weightClass < maxWeightOfClass.size());
 
-    const double queryRadius =
-        Toolkit::myPow(weight * maxWeightOfClass[weightClass], 1.0 / (double)DIMENSION) + radiusSlack;
+    const flt_t queryRadius =
+        Toolkit::myPow(weight * maxWeightOfClass[weightClass], flt_t{1.0} / static_cast<flt_t>(DIMENSION)) + radiusSlack;
     ASSERT(queryRadius > 0);
 
     thread_local std::vector<uint64_t> localIds;

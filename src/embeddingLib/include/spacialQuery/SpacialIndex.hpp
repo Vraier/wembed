@@ -12,5 +12,5 @@ class SpatialIndex {
 
     // Query for points within a certain radius from a point (range query).
     // Returned ids are positions in the point array the index was built from.
-    virtual size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const = 0;
+    virtual size_t query_sphere(CVecRef point, flt_t radius, std::vector<uint64_t>& out) const = 0;
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include "Concepts.hpp"
 
 /**
  * Tracks the per-step relative node displacement (mean node movement / radius of
@@ -7,19 +8,19 @@
  */
 class DisplacementMonitor {
    public:
-    DisplacementMonitor(float relTol, int patience);
+    DisplacementMonitor(flt_t relTol, int patience);
 
-    void observe(float relDisplacement);
+    void observe(flt_t relDisplacement);
 
     bool converged() const { return numSettledSteps >= patience; }
     int settledSteps() const { return numSettledSteps; }
     int numObservations() const { return numObserved; }
-    float lastDisplacement() const { return lastRelDisplacement; }
+    flt_t lastDisplacement() const { return lastRelDisplacement; }
 
    private:
-    float relTol;
+    flt_t relTol;
     int patience;
     int numSettledSteps = 0;
     int numObserved = 0;
-    float lastRelDisplacement = 0.0;
+    flt_t lastRelDisplacement = 0.0;
 };

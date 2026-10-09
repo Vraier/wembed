@@ -7,6 +7,7 @@ option(WEMBED_BUILD_TOOLS "Build the command line tools and unit tests." ${PROJE
 option(WEMBED_BUILD_PYTHON "Build the python module." OFF)
 option(WEMBED_USE_SPRK "Use the sprk tree as spatial index (needs Rust). If OFF, a bundled KD-tree is used instead." ON)
 option(WEMBED_USE_DOUBLE "Uses 64bit floating point" OFF)
+#option(WEMBED_USE_DOUBLE "Uses 64bit floating point" ON)
 option(EMBEDDING_USE_ASSERTIONS "Explicitely activates assertions (even in release mode)." OFF)
 
 # Compiler flags for our own targets.

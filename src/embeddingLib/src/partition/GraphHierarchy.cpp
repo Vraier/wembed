@@ -56,7 +56,7 @@ GraphHierarchy::GraphHierarchy(const Graph& graph, LabelPropagation& coarsener) 
     int numLeaves = graphs[0].getNumVertices();
     for (int v = 0; v < numLeaves; v++) {
         nodeLayers[0][v].totalContainedNodes = 1;
-        nodeLayers[0][v].nodeWeightSum = graphs[0].getNumNeighbors(v);
+        nodeLayers[0][v].nodeWeightSum = static_cast<flt_t>(graphs[0].getNumNeighbors(v));
     }
     int numLeafEdges = edgeLayers[0].size();
     for (int e = 0; e < numLeafEdges; e++) {

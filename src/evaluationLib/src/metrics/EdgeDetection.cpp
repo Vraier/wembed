@@ -19,12 +19,12 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
     numSampledNonEdges = tmp.numNonEdges;
 
     // find the optimal index that minimizes F1 score
-    double wrongEdgesPercent = 1.0;  // percent of how many edges are wrongly classified at the current index
-    double wrongNonEdgesPercent = 0.0;
+    flt_t wrongEdgesPercent = 1.0;  // percent of how many edges are wrongly classified at the current index
+    flt_t wrongNonEdgesPercent = 0.0;
     int bestF1Idx = -1;
-    double bestF1 = -1;
-    double bestPrecision = -1;
-    double bestRecall = -1;
+    flt_t bestF1 = -1;
+    flt_t bestPrecision = -1;
+    flt_t bestRecall = -1;
 
     // find optimal position
     for (int i = 0; i < histogram.size(); i++) {
@@ -36,13 +36,13 @@ std::vector<std::string> EdgeDetection::getMetricValues() {
 
         // calculate current F1 score
         // see: https://en.wikipedia.org/wiki/F-score
-        double truePositives = (1.0 - wrongEdgesPercent) * M;
-        double retrievedElements = ((1.0 - wrongEdgesPercent) * M) + (wrongNonEdgesPercent * noM);
-        double relevantElemets = M;
+        flt_t truePositives = (flt_t{1.0} - wrongEdgesPercent) * static_cast<flt_t>(M);
+        flt_t retrievedElements = ((flt_t{1.0} - wrongEdgesPercent) * static_cast<flt_t>(M)) + (wrongNonEdgesPercent * static_cast<flt_t>(noM));
+        flt_t relevantElemets = static_cast<flt_t>(M);
 
-        double precision = truePositives / retrievedElements;
-        double recall = truePositives / relevantElemets;
-        double F1 = 2.0 / (1.0 / precision + 1.0 / recall);
+        flt_t precision = truePositives / retrievedElements;
+        flt_t recall = truePositives / relevantElemets;
+        flt_t F1 = flt_t{2.0} / (flt_t{1.0} / precision + flt_t{1.0} / recall);
 
         // std::vector<int> interestingKs{1, 2, 4, 8, 16, 32, 128, 265, 512};
         // if (std::find(interestingKs.begin(), interestingKs.end(), i) != interestingKs.end()) {

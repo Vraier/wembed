@@ -7,7 +7,7 @@
 #include "WeightedGeometric.hpp"
 
 struct histEntry {
-    double similarity;
+    flt_t similarity;
 
     NodeId v;
     NodeId w;
@@ -30,5 +30,5 @@ bool histComparator(const histEntry& a, const histEntry& b);
  */
 class EdgeSampler {
    public:
-    static histInfo sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding, double sampleingScale);
+    static histInfo sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding, flt_t sampleingScale);
 };

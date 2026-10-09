@@ -9,12 +9,12 @@ SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimens
     ASSERT(dimension >= 2);
     if (!points.empty()) {
         const size_t rows = points.size();
-        std::vector<float> data(rows * dimension);
+        std::vector<flt_t> data(rows * dimension);
         for (size_t i = 0; i < rows; ++i) {
             auto p = points[i];
             ASSERT(p.dimension() == dimension);
             for (size_t j = 0; j < dimension; ++j) {
-                data[i * dimension + j] = static_cast<float>(p[j]);
+                data[i * dimension + j] = p[j];
             }
         }
         handle_ = sprk_create(data.data(), rows, dimension);
@@ -46,14 +46,14 @@ SprkQueries& SprkQueries::operator=(SprkQueries&& other) noexcept {
     return *this;
 }
 
-size_t SprkQueries::query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const {
+size_t SprkQueries::query_sphere(CVecRef point, flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
     out.clear();
 
     if (handle_) {
-        std::vector<float> query(dimension);
+        std::vector<flt_t> query(dimension);
         for (size_t i = 0; i < dimension; ++i) {
-            query[i] = static_cast<float>(point[i]);
+            query[i] = static_cast<flt_t>(point[i]);
         }
 
         uint64_t* ids = nullptr;

@@ -37,8 +37,8 @@ std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::s
         std::sort(distances.begin(), distances.end());
 
         // determine construction value (at k)
-        std::vector<double> precisions = getPrecisionsForNode(v, distances, isNeighbor);
-        std::vector<double> recalls = getRecallsForNode(v, degV, distances, isNeighbor);
+        std::vector<flt_t> precisions = getPrecisionsForNode(v, distances, isNeighbor);
+        std::vector<flt_t> recalls = getRecallsForNode(v, degV, distances, isNeighbor);
         newEntry.deg_precision = precisions[degV - 1];
         newEntry.average_precision = getAveragePrecision(v, distances, precisions, recalls, isNeighbor);
         // reset neighbors
@@ -51,12 +51,12 @@ std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::s
     return result;
 }
 
-std::vector<double> NodeSampler::getPrecisionsForNode(NodeId v, const EdgeLengthToNode& distances,
+std::vector<flt_t> NodeSampler::getPrecisionsForNode(NodeId v, const EdgeLengthToNode& distances,
                                                       const std::vector<bool>& isNeighbor) {
     ASSERT(distances.size() + 1 == isNeighbor.size());
     unused(v);
 
-    std::vector<double> precisions;
+    std::vector<flt_t> precisions;
 
     int numCorrect = 0;
     int num_inserted = 0;
@@ -65,39 +65,39 @@ std::vector<double> NodeSampler::getPrecisionsForNode(NodeId v, const EdgeLength
             numCorrect += 1;
         }
         num_inserted += 1;
-        double precision = (double)numCorrect / (double)num_inserted;
+        flt_t precision = (flt_t)numCorrect / (flt_t)num_inserted;
         precisions.push_back(precision);
     }
     return precisions;
 }
 
-std::vector<double> NodeSampler::getRecallsForNode(NodeId v, int deg, const EdgeLengthToNode& distances,
+std::vector<flt_t> NodeSampler::getRecallsForNode(NodeId v, int deg, const EdgeLengthToNode& distances,
                                                    const std::vector<bool>& isNeighbor) {
     ASSERT(distances.size() + 1 == isNeighbor.size());
     unused(v);
 
-    std::vector<double> recalls;
+    std::vector<flt_t> recalls;
     int numCorrect = 0;
 
     for (int i = 0; i < distances.size(); i++) {
         if (isNeighbor[distances[i].second]) {
             numCorrect += 1;
         }
-        double recall = (double)numCorrect / (double)deg;
+        flt_t recall = static_cast<flt_t>(numCorrect) / static_cast<flt_t>(deg);
         recalls.push_back(recall);
     }
     return recalls;
 }
 
-double NodeSampler::getAveragePrecision(NodeId v, const EdgeLengthToNode& distances,
-                                        const std::vector<double>& precisions, const std::vector<double>& recalls,
+flt_t NodeSampler::getAveragePrecision(NodeId v, const EdgeLengthToNode& distances,
+                                        const std::vector<flt_t>& precisions, const std::vector<flt_t>& recalls,
                                         const std::vector<bool>& isNeighbor) {
     ASSERT(distances.size() == precisions.size());
     ASSERT(distances.size() + 1 == isNeighbor.size());
     unused(v);
     unused(recalls);
 
-    std::vector<double> neighborPrecisions;
+    std::vector<flt_t> neighborPrecisions;
     for (int i = 0; i < distances.size(); i++) {
         const NodeId u = distances[i].second;
         if (isNeighbor[u]) {

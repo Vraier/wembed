@@ -18,7 +18,7 @@ class SprkQueries : public SpatialIndex {
     SprkQueries(const SprkQueries&) = delete;
     SprkQueries& operator=(const SprkQueries&) = delete;
 
-    size_t query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const override;
+    size_t query_sphere(CVecRef point, flt_t radius, std::vector<uint64_t>& out) const override;
 
    private:
     SprkHandle* handle_;

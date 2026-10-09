@@ -4,8 +4,8 @@
 #include <fstream>
 
 std::vector<std::string> Reconstruction::getMetricValues() {
-    std::vector<double> constructAtDegVals;
-    std::vector<double> averagePrecisions;
+    std::vector<flt_t> constructAtDegVals;
+    std::vector<flt_t> averagePrecisions;
 
     std::vector<nodeEntry> hist = NodeSampler::sampleHistEntries(graph, embedding, numNodeSamples);
     for (auto e : hist) {

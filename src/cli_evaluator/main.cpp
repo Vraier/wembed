@@ -33,7 +33,7 @@ int run(int argc, char* argv[]) {
     Graph inputGraph = GraphIO::readEdgeList(options.edgeListPath, options.edgeListComment, options.edgeListDelimiter);
 
     // read in embedding
-    std::vector<std::vector<float>> coords = EmbeddingIO::readCoordinatesFromFile(
+    std::vector<std::vector<flt_t>> coords = EmbeddingIO::readCoordinatesFromFile(
         options.embeddingPath, options.embeddingComment, options.embeddingDelimiter);
     std::shared_ptr<Embedding> embedding = EmbeddingIO::parseEmbedding(options.embType, coords, options.lPNorm);
     if (embedding->getDimension() == 0) {

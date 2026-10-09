@@ -1,6 +1,6 @@
 #include "SimpleOptimizer.hpp"
 
-SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, float maxDisplacement)
+SimpleOptimizer::SimpleOptimizer(int dimension, int numNodes, flt_t maxDisplacement)
     : dimension(dimension),
       numNodes(numNodes),
       maxDisplacement(maxDisplacement),

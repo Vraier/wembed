@@ -5,7 +5,7 @@
 bool histComparator(const histEntry& a, const histEntry& b) { return a.similarity < b.similarity; }
 
 histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embedding> embedding,
-                                        double sampleingScale) {
+                                        flt_t sampleingScale) {
     const ll N = graph.getNumVertices();
     const ll M = graph.getNumEdges();
     const ll maxM = (N * (N - 1) / 2);
@@ -29,7 +29,7 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     int v = 0;
     int w = 0;
     // scale determines how much more non edges than edges
-    double nonEdgeProb = std::min(1.0, sampleingScale * M / noM);
+    flt_t nonEdgeProb = std::min(flt_t{1.0}, sampleingScale * static_cast<flt_t>(M) / static_cast<flt_t>(noM));
     ll totalJumpSize = 0;
     while (true) {
         // calculate how many nodes should be skipped

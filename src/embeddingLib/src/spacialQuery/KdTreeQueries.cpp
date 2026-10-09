@@ -22,14 +22,14 @@ KdTreeQueries::KdTreeQueries(const std::vector<CVecRef>& points, const size_t di
 
     const size_t n = numPoints;
     const size_t d = dimension;
-    std::vector<float> source(n * d);  // input order, row per point
+    std::vector<flt_t> source(n * d);  // input order, row per point
     std::vector<BuildEntry> entries(n);
-    float maxAbs = 0.0f;
+    flt_t maxAbs = 0.0f;
 #pragma omp parallel for default(none) firstprivate(n, d) shared(points, source, entries) reduction(max : maxAbs) \
     schedule(static)
     for (size_t i = 0; i < n; i++) {
         for (size_t k = 0; k < d; k++) {
-            const float value = static_cast<float>(points[i][k]);
+            const flt_t value = points[i][k];
             source[i * d + k] = value;
             maxAbs = std::max(maxAbs, std::abs(value));
         }
@@ -49,14 +49,14 @@ KdTreeQueries::KdTreeQueries(const std::vector<CVecRef>& points, const size_t di
     coordinates.resize(n * d);
     ids.resize(n);
 
-    const float* sourceData = source.data();
+    const flt_t* sourceData = source.data();
     BuildEntry* entryData = entries.data();
 #pragma omp parallel default(none) firstprivate(sourceData, entryData) if (numPoints > PARALLEL_BUILD_CUTOFF)
 #pragma omp single nowait
     build(0, 0, numPoints, sourceData, entryData);
 }
 
-void KdTreeQueries::build(const size_t node, const uint32_t lo, const uint32_t hi, const float* source,
+void KdTreeQueries::build(const size_t node, const uint32_t lo, const uint32_t hi, const flt_t* source,
                           BuildEntry* entries) {
     const uint32_t size = hi - lo;
     if (size <= LEAF_SIZE) {
@@ -84,18 +84,18 @@ void KdTreeQueries::build(const size_t node, const uint32_t lo, const uint32_t h
     build(2 * node + 2, mid, hi, source, entries);
 }
 
-uint32_t KdTreeQueries::widestDimension(const uint32_t lo, const uint32_t hi, const float* source,
+uint32_t KdTreeQueries::widestDimension(const uint32_t lo, const uint32_t hi, const flt_t* source,
                                         const BuildEntry* entries) const {
     // The exact spread needs a pass over all points of the node on every level. A strided
     // sample finds the same dimension unless two spreads are close, where it does not matter.
     const uint32_t stride = std::max<uint32_t>(1, (hi - lo) / SPREAD_SAMPLE_SIZE);
     uint32_t widest = 0;
-    float widestSpread = -1.0f;
+    flt_t widestSpread = -1.0;
     for (uint32_t k = 0; k < dimension; k++) {
-        float min = std::numeric_limits<float>::max();
-        float max = std::numeric_limits<float>::lowest();
+        flt_t min = std::numeric_limits<flt_t>::max();
+        flt_t max = std::numeric_limits<flt_t>::lowest();
         for (uint32_t i = lo; i < hi; i += stride) {
-            const float value = source[static_cast<size_t>(entries[i].id) * dimension + k];
+            const flt_t value = source[static_cast<size_t>(entries[i].id) * dimension + k];
             min = std::min(min, value);
             max = std::max(max, value);
         }
@@ -107,9 +107,9 @@ uint32_t KdTreeQueries::widestDimension(const uint32_t lo, const uint32_t hi, co
     return widest;
 }
 
-void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const float* source, const BuildEntry* entries) {
+void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const flt_t* source, const BuildEntry* entries) {
     const size_t count = hi - lo;
-    float* block = coordinates.data() + static_cast<size_t>(lo) * dimension;
+    flt_t* block = coordinates.data() + static_cast<size_t>(lo) * dimension;
     for (size_t j = 0; j < count; j++) {
         const uint32_t id = entries[lo + j].id;
         ids[lo + j] = id;
@@ -119,19 +119,19 @@ void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const float*
     }
 }
 
-size_t KdTreeQueries::query_sphere(CVecRef point, const float radius, std::vector<uint64_t>& out) const {
+size_t KdTreeQueries::query_sphere(CVecRef point, const flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
     ASSERT(radius >= 0.0);
     out.clear();
     if (numPoints == 0) return 0;
 
-    thread_local std::vector<float> buffer;
+    thread_local std::vector<flt_t> buffer;
     buffer.resize(2 * dimension);
-    float* queryPoint = buffer.data();
-    float* offsets = queryPoint + dimension;
-    float maxAbs = maxAbsCoordinate;
+    flt_t* queryPoint = buffer.data();
+    flt_t* offsets = queryPoint + dimension;
+    flt_t maxAbs = maxAbsCoordinate;
     for (size_t k = 0; k < dimension; k++) {
-        queryPoint[k] = static_cast<float>(point[k]);
+        queryPoint[k] = static_cast<flt_t>(point[k]);
         offsets[k] = 0.0f;  // the root cell is the whole space
         maxAbs = std::max(maxAbs, std::abs(queryPoint[k]));
     }
@@ -146,12 +146,12 @@ size_t KdTreeQueries::query_sphere(CVecRef point, const float radius, std::vecto
     const double relativePad = (d + 64.0) * 0x1p-23;
     const double paddedRadius = (radius + absolutePad) * (1.0 + relativePad);
 
-    Query query{queryPoint, offsets, static_cast<float>(paddedRadius * paddedRadius), &out};
+    Query query{queryPoint, offsets, static_cast<flt_t>(paddedRadius * paddedRadius), &out};
     search(0, 0, numPoints, 0.0f, query);
     return out.size();
 }
 
-void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t hi, const float sqDistToCell,
+void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t hi, const flt_t sqDistToCell,
                            Query& query) const {
     const uint32_t size = hi - lo;
     if (size <= LEAF_SIZE) {
@@ -161,7 +161,7 @@ void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t 
 
     const Node inner = nodes[node];
     const uint32_t mid = lo + size / 2;
-    const float diff = query.point[inner.dim] - inner.split;
+    const flt_t diff = query.point[inner.dim] - inner.split;
 
     // the near child contains the query (w.r.t. this split), its cell distance is unchanged
     if (diff < 0.0f) {
@@ -172,8 +172,8 @@ void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t 
 
     // the far child lies behind the split plane: along inner.dim its cell is |diff| away,
     // which replaces the distance the current cell had in that dimension
-    const float oldOffset = query.offsets[inner.dim];
-    const float farSqDist = sqDistToCell - oldOffset * oldOffset + diff * diff;
+    const flt_t oldOffset = query.offsets[inner.dim];
+    const flt_t farSqDist = sqDistToCell - oldOffset * oldOffset + diff * diff;
     if (farSqDist > query.sqRadius) return;
 
     query.offsets[inner.dim] = diff;
@@ -187,24 +187,24 @@ void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t 
 
 void KdTreeQueries::scanLeaf(const uint32_t lo, const uint32_t hi, const Query& query) const {
     const uint32_t count = hi - lo;
-    const float* block = coordinates.data() + static_cast<size_t>(lo) * dimension;
+    const flt_t* block = coordinates.data() + static_cast<size_t>(lo) * dimension;
 
     // squared distances of all points in the leaf at once, one dimension after the other
-    float sqDists[LEAF_SIZE];
+    flt_t sqDists[LEAF_SIZE];
     {
-        const float q = query.point[0];
+        const flt_t q = query.point[0];
 #pragma omp simd
         for (uint32_t j = 0; j < count; j++) {
-            const float delta = block[j] - q;
+            const flt_t delta = block[j] - q;
             sqDists[j] = delta * delta;
         }
     }
     for (size_t k = 1; k < dimension; k++) {
-        const float* column = block + k * count;
-        const float q = query.point[k];
+        const flt_t* column = block + k * count;
+        const flt_t q = query.point[k];
 #pragma omp simd
         for (uint32_t j = 0; j < count; j++) {
-            const float delta = column[j] - q;
+            const flt_t delta = column[j] - q;
             sqDists[j] += delta * delta;
         }
     }

@@ -26,8 +26,8 @@ struct EmbeddingProgress {
     int numVertices = 0;
     int iteration = 0;
     int expectedIterations = -1;
-    double layerSeconds = 0.0;
-    double etaSeconds = -1.0;
+    flt_t layerSeconds = 0.0;
+    flt_t etaSeconds = -1.0;
     bool layerFinished = false;
 };
 

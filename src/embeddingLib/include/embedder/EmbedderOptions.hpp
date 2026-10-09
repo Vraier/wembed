@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 
+#include "Concepts.hpp"
+
 enum class OptimizerType { Simple = 0, Adam = 1 };
 
 enum class WeightType { Unit = 0, Degree = 1 };
@@ -32,41 +34,41 @@ inline std::map<IndexType, std::string> indexTypeMap = {{IndexType::KdTree, "KdT
 
 struct EmbedderOptions {
     int embeddingDimension = 4;
-    float dimensionHint = -1.0;  // hint for the dimension of the input graph
+    flt_t dimensionHint = -1.0;  // hint for the dimension of the input graph
 
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
-    float doublingFactor = 4.0f;  // growth of the weight-class bounds; 4 was briefly benchmarked
-    float dynamicQueryBuffer = -1.0f;  // rembed DynamicQuery: 3/d was briefly benchmarked
-    float dynamicQueryMinReuses = 2.0f;  // internal: steps a fresh buffer must be expected to survive to be worth
+    flt_t doublingFactor = 4.0;  // growth of the weight-class bounds; 4 was briefly benchmarked
+    flt_t dynamicQueryBuffer = -1.0;  // rembed DynamicQuery: 3/d was briefly benchmarked
+    flt_t dynamicQueryMinReuses = 2.0;  // internal: steps a fresh buffer must be expected to survive to be worth
                                          // filling; swept 1..8 with no measurable effect
-    float centreScale = 0.0f; //factor by which each node is drawn to the centre
-    float expansionStretch = 1.0f;  // relative amount by which the embeddings is stretched during layer expansion
+    flt_t centreScale = 0.0; //factor by which each node is drawn to the centre
+    flt_t expansionStretch = 1.0;  // relative amount by which the embeddings is stretched during layer expansion
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerType::Adam;
     int maxIterations = 10000;
-    float simpleOptMaxDisplacement = 1.0;  // per-step displacement cap (SimpleOptimizer only)
+    flt_t simpleOptMaxDisplacement = 1.0;  // per-step displacement cap (SimpleOptimizer only)
 
     // Learning rate schedule parameters (lr* prefix). Every parameter states which schedules read it.
     LRScheduleType lrScheduleType = LRScheduleType::ExponentialCooling;
-    float learningRate = 10;       // initial learning rate (both schedules)
+    flt_t learningRate = 10;       // initial learning rate (both schedules)
     int warmupSteps = 20;           // linear LR ramp-up over the first steps (both schedules)
-    float lrCoolingFactor = 0.995;  // per-step multiplicative decay (ExponentialCooling only);
+    flt_t lrCoolingFactor = 0.995;  // per-step multiplicative decay (ExponentialCooling only);
                                     // strong influence on runtime but increases quality
-    float lrDecayFactor = 0.5;     // multiplicative drop on a decay event (LossAdaptive only)
-    float lrDecayThreshold = 1e-2;  // decay when the loss-decrease rate stays below this (LossAdaptive only)
+    flt_t lrDecayFactor = 0.5;     // multiplicative drop on a decay event (LossAdaptive only)
+    flt_t lrDecayThreshold = 1e-2;  // decay when the loss-decrease rate stays below this (LossAdaptive only)
     int lrAdaptPatience = 20;       // consecutive in-zone steps before a decay OR growth event (LossAdaptive only)
-    float lrGrowthFactor = 1.0;    // multiplicative growth while the loss keeps decreasing fast
+    flt_t lrGrowthFactor = 1.0;    // multiplicative growth while the loss keeps decreasing fast
                                     // (LossAdaptive only; 1.0 disables growth -> pure plateau decay)
-    float lrGrowthThreshold = 1e-1;  // grow when the loss-decrease rate stays above this (LossAdaptive only)
+    flt_t lrGrowthThreshold = 1e-1;  // grow when the loss-decrease rate stays above this (LossAdaptive only)
 
     // Stopping criterion (maxIterations always applies as a hard cap).
     StopCriterionType stopCriterion = StopCriterionType::Loss;  // which signal terminates the run
 
     // Displacement stopping criterion (StopCriterionType::Displacement).
-    float stopDisplacementTol = 3e-4;  // relative per-step node movement (mean displacement / radius of
+    flt_t stopDisplacementTol = 3e-4;  // relative per-step node movement (mean displacement / radius of
                                         // gyration) below which the layout counts as settled
     int stopDisplacementPatience = 5;   // settled steps in a row before stopping
 
@@ -74,15 +76,15 @@ struct EmbedderOptions {
     // consumed by both the loss stop criterion and the LossAdaptive schedule. Internal:
     // window and smoothing were swept (W in 10..100, smoothing in 0.15..1) without effect
     // at matched per-step tolerance, so they are not part of the public interface.
-    float lossSmoothingFactor = 0.3;  // EMA weight of the newest loss sample before the monitor sees it
+    flt_t lossSmoothingFactor = 0.3;  // EMA weight of the newest loss sample before the monitor sees it
                                        // (1.0 disables smoothing); a light denoise on rate(t)
     int lossRateWindow = 30;           // steps over which the relative loss-decrease rate is measured
                                        // (a real window; per-step change is too noisy to threshold)
-    float lossFloor = 1e-5;           // per node; rate(t) denominator is floored at lossFloor * n so that
+    flt_t lossFloor = 1e-5;           // per node; rate(t) denominator is floored at lossFloor * n so that
                                        // a loss near 0 (perfectly embeddable graph) is stagnation, not noise
 
     // Loss stagnation stopping criterion (StopCriterionType::Loss).
-    float stopLossTol = 1e-3;   // ftol: converged once rate(t) stays below this (relative decrease over the window)
+    flt_t stopLossTol = 1e-3;   // ftol: converged once rate(t) stays below this (relative decrease over the window)
     int stopLossPatience = 50;   // sub-tolerance steps in a row before stopping.
                                  // Recommended ordering: lrGrowthThreshold > lrDecayThreshold >= stopLossTol,
                                  // and lrAdaptPatience < stopLossPatience so LossAdaptive cools a few times first.

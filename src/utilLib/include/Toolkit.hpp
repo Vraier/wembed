@@ -21,7 +21,7 @@ std::pair<int, int> findMinMax(const std::vector<int>& numbers);
  */
 bool noGapsInVector(std::vector<int> numbers);
 
-double averageFromVector(const std::vector<double>& values);
+flt_t averageFromVector(const std::vector<flt_t>& values);
 
 /**
  * The pow operation takes a lot of computing time. 
