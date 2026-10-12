@@ -51,7 +51,7 @@ void WembedEmbedder::calculateStep() {
     this->timer->stopTiming("repelling_forces");
 
     //Compute centre forces
-    if (this->opts.centreScale != 0.0) {
+    if (this->opts.centreScale != flt_t{0.0}) {
         this->timer->startTiming("centre_forces", "Computes Centre Force");
         calculateAllCentreForces();
         this->timer->stopTiming("centre_forces");

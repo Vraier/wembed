@@ -24,7 +24,7 @@ KdTreeQueries::KdTreeQueries(const std::vector<CVecRef>& points, const size_t di
     const size_t d = dimension;
     std::vector<flt_t> source(n * d);  // input order, row per point
     std::vector<BuildEntry> entries(n);
-    flt_t maxAbs = 0.0f;
+    flt_t maxAbs = 0.0;
 #pragma omp parallel for default(none) firstprivate(n, d) shared(points, source, entries) reduction(max : maxAbs) \
     schedule(static)
     for (size_t i = 0; i < n; i++) {
@@ -121,7 +121,7 @@ void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const flt_t*
 
 size_t KdTreeQueries::query_sphere(CVecRef point, const flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
-    ASSERT(radius >= 0.0);
+    ASSERT(radius >= flt_t{0.0});
     out.clear();
     if (numPoints == 0) return 0;
 
@@ -132,7 +132,7 @@ size_t KdTreeQueries::query_sphere(CVecRef point, const flt_t radius, std::vecto
     flt_t maxAbs = maxAbsCoordinate;
     for (size_t k = 0; k < dimension; k++) {
         queryPoint[k] = static_cast<flt_t>(point[k]);
-        offsets[k] = 0.0f;  // the root cell is the whole space
+        offsets[k] = 0.0;  // the root cell is the whole space
         maxAbs = std::max(maxAbs, std::abs(queryPoint[k]));
     }
 
@@ -164,7 +164,7 @@ void KdTreeQueries::search(const size_t node, const uint32_t lo, const uint32_t 
     const flt_t diff = query.point[inner.dim] - inner.split;
 
     // the near child contains the query (w.r.t. this split), its cell distance is unchanged
-    if (diff < 0.0f) {
+    if (diff < flt_t{0.0}) {
         search(2 * node + 1, lo, mid, sqDistToCell, query);
     } else {
         search(2 * node + 2, mid, hi, sqDistToCell, query);

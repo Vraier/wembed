@@ -25,7 +25,7 @@ flt_t Poincare::getSimilarity(NodeId a, NodeId b) const {
     flt_t sqdist = tmpVec.sqNorm();
 
     flt_t x = (sqdist / ((1 - sqanorm) * (1 - sqbnorm))) * 2 + 1;
-    flt_t z = std::sqrt(std::pow(x, 2.f) - 1.f);
+    flt_t z = std::sqrt(std::pow(x, flt_t{2.0}) - flt_t{1.0});
     return std::log(x + z);
 }
 

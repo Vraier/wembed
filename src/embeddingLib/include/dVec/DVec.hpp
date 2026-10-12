@@ -429,8 +429,14 @@ class VecRefImpl {
 
     ALWAYS_INLINE void setToRandomVectorInSphere() {
         setToRandomUnitVector();
+        flt_t rand;
+        if constexpr (std::is_same_v<double, flt_t>) {
+            rand = Rand::randomDouble(0.0, 1.0);
+        } else {
+            rand = Rand::randomFloat(0.0f, 1.0f);
+        }
 
-        flt_t radius = Toolkit::myPow(Rand::randomFloat(0.0, 1.0), 1.0 / dimension());
+        flt_t radius = Toolkit::myPow(rand, flt_t{1.0} / static_cast<flt_t>(dimension()));
         for (int i = 0; i < dimension(); i++) {
             coord.get()[i] *= radius;
         }

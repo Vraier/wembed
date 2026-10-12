@@ -2,7 +2,7 @@
 
 #include "Graph.hpp"
 
-typedef std::pair<Graph, std::vector<std::vector<float>>> GraphCoordinatesPair;
+typedef std::pair<Graph, std::vector<std::vector<flt_t>>> GraphCoordinatesPair;
 
 class GeometricGraphSampler {
    public:
@@ -28,6 +28,6 @@ class GeometricGraphSampler {
     Graph generateRandomGraph(int n);
 
    private:
-    GraphCoordinatesPair generateRandomGraph(int n, float gridSize, float radius);
+    GraphCoordinatesPair generateRandomGraph(int n, flt_t gridSize, flt_t radius);
     GraphCoordinatesPair findLargesConnectedComponent(GraphCoordinatesPair &graphCoords);
 };

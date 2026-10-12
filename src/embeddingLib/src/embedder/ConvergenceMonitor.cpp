@@ -16,7 +16,7 @@ void ConvergenceMonitor::observe(flt_t loss) {
     if (numObserved == 0) {
         smoothedLoss = loss;
     } else {
-        smoothedLoss = smoothingFactor * loss + (1.0f - smoothingFactor) * smoothedLoss;
+        smoothedLoss = smoothingFactor * loss + (flt_t{1.0} - smoothingFactor) * smoothedLoss;
     }
     lastObservedLoss = smoothedLoss;
     numObserved++;

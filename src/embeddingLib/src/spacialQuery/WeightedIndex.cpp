@@ -36,10 +36,10 @@ void WeightedIndex::update(const VecList<>& newPositions, const std::vector<flt_
     this->weights = &newWeights;
     updateCalls++;
 
-    if (dynamicBuffer > 0.0) {
+    if (dynamicBuffer > flt_t{0.0}) {
         // both endpoints of a pair move, so the pair distance changes by <= 2 * maxDisplacement
-        remainingBudget -= 2.0 * maxDisplacement;
-        if (mode != QueryMode::Plain && remainingBudget >= 0.0) {
+        remainingBudget -= flt_t{2.0} * maxDisplacement;
+        if (mode != QueryMode::Plain && remainingBudget >= flt_t{0.0}) {
             mode = QueryMode::Reuse;
             return;
         }
@@ -48,7 +48,7 @@ void WeightedIndex::update(const VecList<>& newPositions, const std::vector<flt_
     rebuildClasses();
     rebuildCalls++;
 
-    if (dynamicBuffer > 0.0 && 2.0 * maxDisplacement * minExpectedReuses <= dynamicBuffer) {
+    if (dynamicBuffer > flt_t{0.0} && flt_t{2.0} * maxDisplacement * minExpectedReuses <= dynamicBuffer) {
         mode = QueryMode::Fill;
         remainingBudget = dynamicBuffer;
         cachedPairs.resize(newWeights.size());
@@ -117,9 +117,9 @@ void WeightedIndex::getOwnedRepellingPairs(const NodeId v, std::vector<NodeId>& 
             const flt_t weightedDist = dist * invV * invExpWeights[u];
             // a pair beyond threshold + budget cannot come back below the threshold
             // before the next rebuild, so it is dropped for good
-            if (weightedDist >= 1.0 + remainingBudget * invV * invExpWeights[u]) continue;
+            if (weightedDist >= flt_t{1.0} + remainingBudget * invV * invExpWeights[u]) continue;
             cache[keep++] = u;
-            if (weightedDist < 1.0) out.push_back(u);
+            if (weightedDist < flt_t{1.0}) out.push_back(u);
         }
         cache.resize(keep);
         return;

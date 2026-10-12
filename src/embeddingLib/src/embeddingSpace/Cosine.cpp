@@ -21,7 +21,7 @@ flt_t Cosine::getSimilarity(NodeId a, NodeId b) const {
 
     // high values mean high edge probability.
     // my code assumes the opposite. Therefore i invert the value
-    return -1.0 * aDotb / (aNorm * bNorm);
+    return flt_t{-1.0} * aDotb / (aNorm * bNorm);
 }
 
 int Cosine::getDimension() const {

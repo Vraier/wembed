@@ -29,7 +29,7 @@ ParentPointerTree LabelPropagation::coarsenAllLayers() {
            && coarsenedGraphs.back().getNumEdges() > 0) {
         SingleLayerNodePointer nextMapping;
 
-        if (shrinkFactor < 0.5) {
+        if (shrinkFactor < flt_t{0.5}) {
             // normal label propagation
             nextMapping = LabelPropagation::labelPropagation(coarsenedGraphs.back(), edgeWeights.back());
         } else {

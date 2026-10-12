@@ -43,7 +43,7 @@ flt_t MercatorEmbedding::S1_distance(flt_t r1, flt_t r2, flt_t theta1, flt_t the
         return std::fabs(r1 - r2);
     } else {
         auto dist =
-            0.5 * ((1 - std::cos(delta_theta)) * std::cosh(r1 + r2) + (1 + std::cos(delta_theta)) * std::cosh(r1 - r2));
+            flt_t{0.5} * ((1 - std::cos(delta_theta)) * std::cosh(r1 + r2) + (1 + std::cos(delta_theta)) * std::cosh(r1 - r2));
         return std::acosh(dist);
     }
 }
@@ -56,11 +56,11 @@ flt_t MercatorEmbedding::compute_angle_d_vectors(CVecRef v1, CVecRef v2) const {
         norm1 += v1[i] * v1[i];
         norm2 += v2[i] * v2[i];
     }
-    norm1 /= sqrt(norm1);
-    norm2 /= sqrt(norm2);
+    norm1 /= std::sqrt(norm1);
+    norm2 /= std::sqrt(norm2);
 
     const auto result = angle / (norm1 * norm2);
-    if (std::fabs(result - 1) < 1e-15)
+    if (std::fabs(result - 1) < flt_t{1e-15})
         return 0;
     else
         return std::acos(result);
@@ -76,7 +76,7 @@ flt_t MercatorEmbedding::SD_distance(flt_t r1, flt_t r2, CVecRef pos1, CVecRef p
         return std::fabs(r1 - r2);
     } else {
         auto dist =
-            0.5 * ((1 - std::cos(delta_theta)) * std::cosh(r1 + r2) + (1 + std::cos(delta_theta)) * std::cosh(r1 - r2));
+            flt_t{0.5} * ((1 - std::cos(delta_theta)) * std::cosh(r1 + r2) + (1 + std::cos(delta_theta)) * std::cosh(r1 - r2));
         return std::acosh(dist);
     }
 }

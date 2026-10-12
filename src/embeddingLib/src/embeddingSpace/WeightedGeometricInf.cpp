@@ -2,7 +2,7 @@
 
 WeightedGeometricInf::WeightedGeometricInf(const std::vector<std::vector<flt_t>> &coords,
                                      const std::vector<flt_t> &w) : DIMENSION(coords[0].size()),
-                                                                     DINVERSE(1.0 / (flt_t)DIMENSION),
+                                                                     DINVERSE(flt_t{1.0} / static_cast<flt_t>(DIMENSION)),
                                                                      coordinates(DIMENSION),
                                                                      weights(w){
     ASSERT(coords.size() == weights.size());
