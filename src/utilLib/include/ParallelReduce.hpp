@@ -4,7 +4,9 @@
 #include <cstddef>
 #include <vector>
 
-#include <Concepts.hpp>
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 namespace util {
 

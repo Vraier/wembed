@@ -57,7 +57,7 @@ target_include_directories(wembed_internal INTERFACE
     embeddingLib/include/partition
     embeddingLib/include/spacialQuery
 )
-target_link_libraries(wembed_internal INTERFACE wembed_flags OpenMP::OpenMP_CXX)
+target_link_libraries(wembed_internal INTERFACE wembed_flags wembed_types OpenMP::OpenMP_CXX)
 if(WEMBED_USE_SPRK)
     target_sources(wembed PRIVATE embeddingLib/src/spacialQuery/SprkQueries.cpp)
     target_compile_definitions(wembed_internal INTERFACE WEMBED_HAS_SPRK)
@@ -66,6 +66,7 @@ endif()
 
 target_include_directories(wembed PUBLIC "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(wembed PRIVATE wembed_internal)
+target_link_libraries(wembed PUBLIC wembed_types)
 # wembed ends up inside the shared python module
 set_target_properties(wembed PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

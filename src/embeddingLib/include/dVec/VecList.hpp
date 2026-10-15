@@ -1,10 +1,13 @@
 #pragma once
 
+#include <type_traits>
 #include <vector>
 
 #include "DVec.hpp"
-#include "Concepts.hpp"
 #include "Macros.hpp"
+
+template <typename T>
+concept FLT_T = std::is_same_v<T, float> || std::is_same_v<T, double>;
 
 template <FLT_T T = flt_t>
 class VecList {

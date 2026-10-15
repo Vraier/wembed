@@ -3,7 +3,9 @@
 #include <map>
 #include <string>
 
-#include "Concepts.hpp"
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 enum class OptimizerType { Simple = 0, Adam = 1 };
 

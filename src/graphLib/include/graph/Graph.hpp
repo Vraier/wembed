@@ -5,9 +5,11 @@
 #include <string>
 #include <vector>
 
-using NodeId = int32_t;
-using EdgeId = int32_t;
-using flt_t = WEMBED_FLT_T;
+#include "wembed_types.hpp"
+
+using wembed::NodeId;
+using wembed::EdgeId;
+using wembed::flt_t;
 
 struct NodeContent {
     EdgeId firstEdge;

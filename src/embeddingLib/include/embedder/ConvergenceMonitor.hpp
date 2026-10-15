@@ -3,7 +3,9 @@
 #include <limits>
 #include <vector>
 
-#include <Concepts.hpp>
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 /**
  * Tracks the EMA-smoothed training loss and exposes the windowed relative loss

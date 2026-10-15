@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+#include "wembed_types.hpp"
+
 // The library never prints. Invalid input or options throw std::invalid_argument, misuse
 // std::logic_error, and failing file IO std::runtime_error.
 namespace wembed {
@@ -16,10 +18,6 @@ namespace impl {
     class EmbedderInterface;
 }
 #endif
-
-using NodeId = int32_t;
-using EdgeId = int32_t;
-using flt_t = WEMBED_FLT_T;
 
 // forward declaration
 class Embedder;

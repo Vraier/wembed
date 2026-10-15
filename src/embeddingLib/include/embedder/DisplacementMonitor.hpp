@@ -1,5 +1,7 @@
 #pragma once
-#include "Concepts.hpp"
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 /**
  * Tracks the per-step relative node displacement (mean node movement / radius of
