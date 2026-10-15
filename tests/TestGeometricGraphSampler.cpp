@@ -9,7 +9,7 @@ TEST(GeometricGraphSampler, RandomGeometricGraph) {
     Graph g = sampler.generateRandomGraph(4000); 
 
     // calculate the average degree
-    double averageDegree = (double)g.getNumEdges()*2.0 / (double)g.getNumVertices();
+    flt_t averageDegree = static_cast<flt_t>(g.getNumEdges())* flt_t{2.0} / static_cast<flt_t>(g.getNumVertices());
 
     EXPECT_NEAR(averageDegree, 20, 1);
     EXPECT_NEAR(g.getNumVertices(), 4000, 200);

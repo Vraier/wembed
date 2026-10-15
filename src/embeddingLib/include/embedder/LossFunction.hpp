@@ -1,4 +1,7 @@
 #pragma once
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 /**
  * Loss and force factor are defined side by side so they cannot drift apart:

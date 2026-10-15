@@ -31,7 +31,7 @@ TEST(Metric, Reconstruction) {
     Graph g(edges);
 
     // construct embedding
-    std::vector<std::vector<double>> coords = {{0, 0}, {1, 0}, {2, 0}};
+    std::vector<std::vector<flt_t>> coords = {{0, 0}, {1, 0}, {2, 0}};
     int numNodeSamples = 3;
     std::shared_ptr<Embedding> embedding = std::make_unique<Euclidean>(coords);
 
@@ -48,7 +48,7 @@ TEST(Metric, Reconstruction) {
     EXPECT_NEAR(std::stod(values[1]), 1.0, EPSILON);
 
     // construct bad embedding
-    std::vector<std::vector<double>> badCoords = {{0, 0}, {3, 0}, {1, 0}};
+    std::vector<std::vector<flt_t>> badCoords = {{0, 0}, {3, 0}, {1, 0}};
     std::shared_ptr<Embedding> badEmbedding = std::make_unique<Euclidean>(badCoords);
 
     Reconstruction badMetric(g, badEmbedding, numNodeSamples);
@@ -63,8 +63,8 @@ TEST(Metric, EdgeDetection) {
     Graph g(edges);
 
     // construct embedding
-    std::vector<std::vector<double>> coords = {{0, 0}, {1, 0}, {2, 0}};
-    double edgeSampleScale = 1.0;
+    std::vector<std::vector<flt_t>> coords = {{0, 0}, {1, 0}, {2, 0}};
+    flt_t edgeSampleScale = 1.0;
     std::shared_ptr<Embedding> embedding = std::make_unique<Euclidean>(coords);
 
     EdgeDetection metric(g, embedding, edgeSampleScale);
@@ -81,7 +81,7 @@ TEST(Metric, EdgeDetection) {
     EXPECT_NEAR(std::stod(values[2]), 1.0, EPSILON);
 
     // construct bad embedding
-    std::vector<std::vector<double>> badCoords = {{0, 0}, {3, 0}, {1, 0}};
+    std::vector<std::vector<flt_t>> badCoords = {{0, 0}, {3, 0}, {1, 0}};
     std::shared_ptr<Embedding> badEmbedding = std::make_unique<Euclidean>(badCoords);
 
     EdgeDetection badMetric(g, badEmbedding, edgeSampleScale);
