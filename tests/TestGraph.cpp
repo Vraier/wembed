@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <filesystem>
+#include <fstream>
+
 #include "Graph.hpp"
+#include "GraphIO.hpp"
 #include "Macros.hpp"
 
 TEST(Graph, Constructor) {
@@ -26,6 +30,36 @@ TEST(Graph, SelfLoop) {
     EXPECT_EQ(g.getNumVertices(), 1);
     EXPECT_EQ(g.getNumEdges(), 0);
     EXPECT_EQ(g.getNumNeighbors(0), 0);
+}
+
+TEST(Graph, AllSelfLoopsAreIgnored) {
+    std::map<int, std::set<int>> map;
+    map[0] = {0, 1};
+    map[1] = {1};
+    map[2] = {2, 0};
+    Graph g(map);
+    EXPECT_EQ(g.getNumVertices(), 3);
+    EXPECT_EQ(g.getNumEdges(), 2);
+    EXPECT_EQ(g.getNumNeighbors(0), 2);
+    EXPECT_EQ(g.getNumNeighbors(1), 1);
+    EXPECT_EQ(g.getNumNeighbors(2), 1);
+}
+
+TEST(Graph, NegativeIdThrows) {
+    std::map<int, std::set<int>> map;
+    map[-1] = {0};
+    EXPECT_THROW(Graph g(map), std::invalid_argument);
+}
+
+TEST(GraphIO, MissingFileThrows) {
+    EXPECT_THROW(GraphIO::readEdgeList("does/not/exist.edg"), std::runtime_error);
+}
+
+TEST(GraphIO, MalformedLineThrows) {
+    const auto path = std::filesystem::temp_directory_path() / "wembed_malformed.edg";
+    std::ofstream(path) << "# comment\n0 1\n\n1 x\n";
+    EXPECT_THROW(GraphIO::readEdgeList(path.string()), std::invalid_argument);
+    std::filesystem::remove(path);
 }
 
 TEST(Graph, SingleNode) {

@@ -1,7 +1,7 @@
 #include "Additive.hpp"
 #include "VectorOperations.hpp"
 
-Additive::Additive(const std::vector<std::vector<float>> &coords, const std::vector<float> &w)
+Additive::Additive(const std::vector<std::vector<flt_t>> &coords, const std::vector<flt_t> &w)
     : DIMENSION(coords[0].size()), coordinates(DIMENSION), weights(w) {
     ASSERT(coords.size() == weights.size());
 
@@ -14,18 +14,19 @@ Additive::Additive(const std::vector<std::vector<float>> &coords, const std::vec
     }
 }
 
-float Additive::getSimilarity(NodeId a, NodeId b) const {
+flt_t Additive::getSimilarity(NodeId a, NodeId b) const {
     VecBuffer<1> buffer(DIMENSION); // i allocate the buffer locally to avoid race conditions
-    float dist = vectorOperations::calculateLPNormf(coordinates[a], coordinates[b]);
-    return dist / (Toolkit::myPowf(weights[a], 1.0f / DIMENSION) + Toolkit::myPowf(weights[b], 1.0f / DIMENSION));
+    flt_t dist = vectorOperations::calculateLPNorm(coordinates[a], coordinates[b]);
+    return dist / (Toolkit::myPow(weights[a], flt_t{1.0} / static_cast<flt_t>(DIMENSION)) +
+                   Toolkit::myPow(weights[b], flt_t{1.0} / static_cast<flt_t>(DIMENSION)));
 }
 
 int Additive::getDimension() const { return DIMENSION; }
 
-float Additive::getDistance(NodeId a, NodeId b) const {
+flt_t Additive::getDistance(NodeId a, NodeId b) const {
     VecBuffer<1> buffer(DIMENSION);
-    float dist = vectorOperations::calculateLPNormf(coordinates[a], coordinates[b]);
+    flt_t dist = vectorOperations::calculateLPNorm(coordinates[a], coordinates[b]);
     return dist;
 }
 
-float Additive::getNodeWeight(NodeId a) const { return weights[a]; }
+flt_t Additive::getNodeWeight(NodeId a) const { return weights[a]; }

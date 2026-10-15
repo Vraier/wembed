@@ -4,6 +4,8 @@
 #include <random>
 #include <vector>
 
+#include <Concepts.hpp>
+
 class Rand {
    private:
     // implements singleton pattern
@@ -46,7 +48,7 @@ class Rand {
      * Returns a variable with normal distribution
      * for the given mean and deviation
      */
-    static double gaussDistribution(double mean, double deviation);
+    static flt_t gaussDistribution(flt_t mean, flt_t deviation);
     /**
      * Random permutation of the numbers 0 to n-1
      */
@@ -58,13 +60,12 @@ class Rand {
    /**
     * Get k random float coordinates of dimension dim from the range [0, bound]
     */
-    static std::vector<std::vector<float>> randomCoordinatesf(int k, int dim, float bound);
-    static std::vector<std::vector<double>> randomCoordinates(int k, int dim, double bound);
+    static std::vector<std::vector<flt_t>> randomCoordinates(int k, int dim, flt_t bound);
 
     /**
      * positive random integer
      * represents the number of unsuccessful trials before a first success
      * success has probability prob
      */
-    static int geometricVariable(double prob);
+    static int geometricVariable(flt_t prob);
 };

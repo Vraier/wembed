@@ -3,19 +3,20 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(float relTol, int patience, float smoothingFactor, int rateWindow)
+ConvergenceMonitor::ConvergenceMonitor(flt_t relTol, int patience, flt_t smoothingFactor, int rateWindow, flt_t lossFloor)
     : relTol(relTol),
+      lossFloor(std::max(lossFloor, TINY)),
       patience(patience),
       smoothingFactor(smoothingFactor),
       rateWindow(rateWindow < 1 ? 1 : rateWindow),
       // rateWindow intervals span rateWindow + 1 samples (endpoints included)
       ring(static_cast<std::size_t>(this->rateWindow) + 1, 0.0) {}
 
-void ConvergenceMonitor::observe(float loss) {
+void ConvergenceMonitor::observe(flt_t loss) {
     if (numObserved == 0) {
         smoothedLoss = loss;
     } else {
-        smoothedLoss = smoothingFactor * loss + (1.0f - smoothingFactor) * smoothedLoss;
+        smoothedLoss = smoothingFactor * loss + (flt_t{1.0} - smoothingFactor) * smoothedLoss;
     }
     lastObservedLoss = smoothedLoss;
     numObserved++;
@@ -27,14 +28,17 @@ void ConvergenceMonitor::observe(float loss) {
     }
 
     if (ringCount >= static_cast<int>(ring.size())) {
-        const float windowStart = ring[ringHead];  // Lbar(t - rateWindow)
-        const float denom = std::max(std::abs(windowStart), TINY);
+        const flt_t windowStart = ring[ringHead];  // Lbar(t - rateWindow)
+        const flt_t denom = std::max(std::abs(windowStart), lossFloor);
         lastRate = (windowStart - smoothedLoss) / denom;
     } else {
         lastRate = STILL_IMPROVING;
     }
 
-    if (lastRate < relTol) {
+    // two-sided: a rising loss (rate << 0, e.g. the bump right after a layer expansion)
+    // is not stagnation and must reset the counter, otherwise the stop fires after
+    // window + patience steps at 10x the converged loss on some high-dim runs
+    if (std::abs(lastRate) < relTol) {
         numStagnantSteps++;
     } else {
         numStagnantSteps = 0;

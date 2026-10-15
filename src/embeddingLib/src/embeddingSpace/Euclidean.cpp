@@ -1,6 +1,6 @@
 #include "Euclidean.hpp"
 
-Euclidean::Euclidean(const std::vector<std::vector<float>> &coords)
+Euclidean::Euclidean(const std::vector<std::vector<flt_t>> &coords)
     : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
     coordinates.setSize(coords.size(), 0);
 
@@ -14,7 +14,7 @@ Euclidean::Euclidean(const std::vector<std::vector<float>> &coords)
     }
 }
 
-float Euclidean::getSimilarity(NodeId a, NodeId b) const {
+flt_t Euclidean::getSimilarity(NodeId a, NodeId b) const {
     VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];

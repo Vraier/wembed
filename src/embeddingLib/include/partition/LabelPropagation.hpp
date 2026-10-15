@@ -6,7 +6,7 @@ using SingleLayerNodePointer = std::vector<NodeId>;
 
 class LabelPropagation : public Partitioner {
    public:
-    LabelPropagation(PartitionerOptions ops, const Graph &g, const std::vector<float> &edgeWeights);
+    LabelPropagation(PartitionerOptions ops, const Graph &g, const std::vector<flt_t> &edgeWeights);
 
     /**
      * Does lable propagation and coarsening until the graph is small enough
@@ -16,7 +16,7 @@ class LabelPropagation : public Partitioner {
    private:
     PartitionerOptions options;
     Graph graph;
-    std::vector<float> initialEdgeWeights;
+    std::vector<flt_t> initialEdgeWeights;
 
     /**
      * Determines the clusterID for multiple rounds of label propagation.
@@ -24,14 +24,14 @@ class LabelPropagation : public Partitioner {
      * rounds. Chooses the order in which nodes are processed according to the
      * given options.
      */
-    SingleLayerNodePointer labelPropagation(const Graph &currG, const std::vector<float> &edgeWeights);
+    SingleLayerNodePointer labelPropagation(const Graph &currG, const std::vector<flt_t> &edgeWeights);
 
     /**
      * Will be executed when the graph does not get coarsened enough.
      * Ignores the cluster size limit but ensures that the hierarchy has
      * logarithmic hight.
      */
-    SingleLayerNodePointer aggressivePropagation(const Graph &currG, const std::vector<float> &edgeWeights,
+    SingleLayerNodePointer aggressivePropagation(const Graph &currG, const std::vector<flt_t> &edgeWeights,
                                                         const SingleLayerNodePointer &currParents);
 
     SingleLayerNodePointer calculateLabelPropagationOrder(const Graph &currG);
@@ -45,6 +45,6 @@ class LabelPropagation : public Partitioner {
     /**
      * Sums up the edge weights based on the edgeMap
      */
-    static std::vector<float> calculateNewEdgeWeights(const std::vector<float> &oldWeights,
+    static std::vector<flt_t> calculateNewEdgeWeights(const std::vector<flt_t> &oldWeights,
                                                        const std::vector<EdgeId> &edgeMap);
 };

@@ -13,7 +13,7 @@
  */
 class EdgeDetection : public Metric {
    public:
-    EdgeDetection(const Graph &g, std::shared_ptr<Embedding> embedding, double edgeSampleScale) : graph(g), embedding(embedding), edgeSampleScale(edgeSampleScale) {}
+    EdgeDetection(const Graph &g, std::shared_ptr<Embedding> embedding, flt_t edgeSampleScale) : graph(g), embedding(embedding), edgeSampleScale(edgeSampleScale) {}
 
     std::vector<std::string> getMetricValues();
     std::vector<std::string> getMetricNames();
@@ -21,5 +21,5 @@ class EdgeDetection : public Metric {
    private:
     const Graph &graph;
     std::shared_ptr<Embedding> embedding;
-    double edgeSampleScale;
+    flt_t edgeSampleScale;
 };

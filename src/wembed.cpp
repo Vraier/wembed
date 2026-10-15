@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <stdexcept>
+
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
 #include "EmbeddingIO.hpp"
@@ -102,7 +105,7 @@ int32_t Embedder::getEmbeddingDimension() const {
     return static_cast<int32_t>(_embedder->getEmbeddingDimension());
 }
 
-void Embedder::copyCoordinatesTo(float* out) const {
+void Embedder::copyCoordinatesTo(flt_t* out) const {
     _embedder->copyCoordinatesTo(out);
 }
 
@@ -111,19 +114,19 @@ Graph Embedder::getCurrentGraph() const {
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<float>> Embedder::getCoordinates() const {
+std::vector<std::vector<flt_t>> Embedder::getCoordinates() const {
     return _embedder->getCoordinates();
 }
 
-std::vector<float> Embedder::getWeights() const {
+std::vector<flt_t> Embedder::getWeights() const {
     return _embedder->getWeights();
 }
 
-void Embedder::setCoordinates(const std::vector<std::vector<float>>& coordinates) {
+void Embedder::setCoordinates(const std::vector<std::vector<flt_t>>& coordinates) {
     _embedder->setCoordinates(coordinates);
 }
 
-void Embedder::setWeights(const std::vector<float>& weights) {
+void Embedder::setWeights(const std::vector<flt_t>& weights) {
     _embedder->setWeights(weights);
 }
 
@@ -132,7 +135,7 @@ std::vector<TimingResult> Embedder::getTimings() const {
     std::vector<TimingResult> out;
     out.reserve(internal.size());
     for (const auto& t : internal) {
-        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, static_cast<float>(t.value)});
+        out.push_back({static_cast<uint64_t>(t.depth), t.display_name, static_cast<flt_t>(t.value)});
     }
     return out;
 }
@@ -142,15 +145,21 @@ Loss Embedder::getLoss() const {
     return {internal.attractive, internal.repulsive, internal.total};
 }
 
-float Embedder::getCurrentLearningRate() const {
+Progress Embedder::getProgress() const {
+    const auto p = _embedder->getProgress();
+    return {p.layer, p.numLayers, p.numVertices, p.iteration, p.expectedIterations,
+            p.layerSeconds, p.etaSeconds, p.layerFinished};
+}
+
+flt_t Embedder::getCurrentLearningRate() const {
     return _embedder->getCurrentLearningRate();
 }
 
-float Embedder::getLastRelDisplacement() const {
+flt_t Embedder::getLastRelDisplacement() const {
     return _embedder->getLastRelDisplacement();
 }
 
-float Embedder::getLastRelLossImprovement() const {
+flt_t Embedder::getLastRelLossImprovement() const {
     return _embedder->getLastRelLossImprovement();
 }
 
@@ -165,7 +174,8 @@ void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) 
 
 static IndexType toInternalIndexType(SpatialIndex idx) {
     switch (idx) {
-        case IndexSprk: return IndexType::Sprk;
+        case IndexKdTree: return IndexType::KdTree;
+        case IndexSprk:   return IndexType::Sprk;
     }
     return IndexType::Sprk;
 }
@@ -200,10 +210,8 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.weightType = options.useUnitWeights ? WeightType::Unit : WeightType::Degree;
     opts.dimensionHint = options.dimensionHint;
     opts.indexType = toInternalIndexType(options.indexType);
-    opts.attractionScale = options.attractionScale;
-    opts.repulsionScale = options.repulsionScale;
+    opts.dynamicQueryBuffer = options.dynamicQueryBuffer;
     opts.centreScale = options.centreScale;
-    opts.edgeLength = options.edgeLength;
     opts.expansionStretch = options.expansionStretch;
     opts.optimizerType = toInternalOptimizerType(options.optimizerType);
     opts.maxIterations = options.maxIterations;
@@ -220,14 +228,12 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.stopCriterion = toInternalStopCriterion(options.stopCriterion);
     opts.stopDisplacementTol = options.stopDisplacementTol;
     opts.stopDisplacementPatience = options.stopDisplacementPatience;
-    opts.lossSmoothingFactor = options.lossSmoothingFactor;
-    opts.lossRateWindow = options.lossRateWindow;
     opts.stopLossTol = options.stopLossTol;
     opts.stopLossPatience = options.stopLossPatience;
 
     const auto& graph = *g._graph;
     if (options.layeredEmbedding) {
-        std::vector<float> edgeWeights(g.getNumEdges() * 2, 1.0);
+        std::vector<flt_t> edgeWeights(g.getNumEdges() * 2, 1.0);
         auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
         return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
     } else {
@@ -235,13 +241,38 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     }
 }
 
-Graph graphFromEdges(const std::vector<Edge>& edges) {
-    std::vector<std::pair<int, int>> pairs;
-    pairs.reserve(edges.size());
+Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices) {
+    std::map<int, std::set<int>> neighbors;
     for (const auto& e : edges) {
-        pairs.emplace_back(e.src, e.dst);
+        neighbors[e.src].insert(e.dst);
     }
-    return Graph(std::make_unique<impl::EmbeddingGraph>(pairs));
+    if (numVertices > 0) {
+        // the graph gets (largest key + 1) vertices, an empty entry is enough to make it large enough
+        neighbors[numVertices - 1];
+    }
+    return Graph(std::make_unique<impl::EmbeddingGraph>(neighbors));
+}
+
+Graph graphFromNeighborhoods(const std::vector<EdgeId>& offsets, const std::vector<NodeId>& neighbors) {
+    if (offsets.empty() || offsets.front() != 0 || static_cast<size_t>(offsets.back()) != neighbors.size() ||
+        !std::is_sorted(offsets.begin(), offsets.end())) {
+        throw std::invalid_argument("offsets must start at 0, never decrease and end at neighbors.size() = " +
+                                    std::to_string(neighbors.size()));
+    }
+    const auto n = static_cast<NodeId>(offsets.size() - 1);
+    std::map<int, std::set<int>> adjacency;
+    for (NodeId v = 0; v < n; ++v) {
+        auto& adjacent = adjacency[v];
+        for (EdgeId i = offsets[v]; i < offsets[v + 1]; ++i) {
+            const NodeId u = neighbors[i];
+            if (u < 0 || u >= n) {
+                throw std::invalid_argument("neighbor " + std::to_string(u) + " of vertex " + std::to_string(v) +
+                                            " is not in [0, " + std::to_string(n) + ")");
+            }
+            adjacent.insert(u);
+        }
+    }
+    return Graph(std::make_unique<impl::EmbeddingGraph>(adjacency));
 }
 
 Graph graphFromEdgeListFile(const std::string& filePath,
@@ -251,7 +282,7 @@ Graph graphFromEdgeListFile(const std::string& filePath,
     return Graph(std::make_unique<impl::EmbeddingGraph>(std::move(graph)));
 }
 
-std::vector<std::vector<float>> readCoordinatesFromFile(const std::string& filePath,
+std::vector<std::vector<flt_t>> readCoordinatesFromFile(const std::string& filePath,
                                                           const std::string& comment,
                                                           const std::string& delimiter) {
     return EmbeddingIO::readCoordinatesFromFile(filePath, comment, delimiter);

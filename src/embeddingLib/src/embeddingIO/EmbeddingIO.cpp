@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <stdexcept>
 
 #include "Cosine.hpp"
 #include "DotProduct.hpp"
@@ -16,12 +17,21 @@
 #include "WeightedNoDim.hpp"
 #include "Additive.hpp"
 
-std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<float>>& coordinates, int lpNorm) {
+namespace {
+std::ofstream openForWriting(const std::string& filePath) {
+    std::ofstream fil(filePath);
+    if (!fil.is_open()) {
+        throw std::runtime_error("could not open " + filePath + " for writing");
+    }
+    return fil;
+}
+}  // namespace
+
+std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const std::vector<std::vector<flt_t>>& coordinates, int lpNorm) {
     switch (type) {
         case WeightedEmb:
             // weighted
             {
-                LOG_INFO("Constructing weighted geometric embedding");
                 auto pair = splitLastColumn(coordinates);
                 return std::make_unique<WeightedGeometric>(pair.first, pair.second, lpNorm);
             }
@@ -29,36 +39,32 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
         case EuclideanEmb:
             // euclidean
             {
-                LOG_INFO("Constructing euclidean embedding");
                 return std::make_unique<Euclidean>(coordinates);
             }
         case DotProductEmb:
             // dot product
             {
-                LOG_INFO("Constructing dot product embedding");
                 return std::make_unique<DotProduct>(coordinates);
             }
         case CosineEmb:
             // cosine
             {
-                LOG_INFO("Constructing cosine embedding");
                 return std::make_unique<Cosine>(coordinates);
             }
         case MercatorEmb:
             // mercator
             {
-                LOG_INFO("Constructing mercator embedding");
                 // split into kappa and rest;
-                std::vector<float> kappa;
-                std::vector<std::vector<float>> rest;
+                std::vector<flt_t> kappa;
+                std::vector<std::vector<flt_t>> rest;
                 std::tie(kappa, rest) = splitFirstColumn(coordinates);
                 unused(kappa);
 
                 // one dimensional embedding
                 if (rest[0].size() <= 2) {
                     // split into theta and radius
-                    std::vector<float> theta;
-                    std::vector<float> radius;
+                    std::vector<flt_t> theta;
+                    std::vector<flt_t> radius;
                     std::tie(theta, rest) = splitFirstColumn(rest);
                     std::tie(radius, rest) = splitFirstColumn(rest);
                     ASSERT(rest[0].size() == 0);
@@ -68,8 +74,8 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
                 else {
                     ASSERT(rest[0].size() >= 3);
                     // split into radius and rest
-                    std::vector<float> radius;
-                    std::vector<std::vector<float>> coordinates;
+                    std::vector<flt_t> radius;
+                    std::vector<std::vector<flt_t>> coordinates;
                     std::tie(radius, coordinates) = splitFirstColumn(rest);
                     return std::make_unique<MercatorEmbedding>(radius, coordinates);
                 }
@@ -77,94 +83,92 @@ std::unique_ptr<Embedding> EmbeddingIO::parseEmbedding(EmbeddingType type, const
         case WeightedNoDimEmb:
             // weighted no dim
             {
-                LOG_INFO("Constructing weighted no dim embedding");
                 auto pair = splitLastColumn(coordinates);
                 return std::make_unique<WeightedNoDim>(pair.first, pair.second);
             }
         case WeightedInfEmb:
             // weighted inf
             {
-                LOG_INFO("Constructing weighted inf embedding");
                 auto pair = splitLastColumn(coordinates);
                 return std::make_unique<WeightedGeometricInf>(pair.first, pair.second);
             }
         case PoincareEmb: {
-            LOG_INFO("Constructing poincare embedding");
             return std::make_unique<Poincare>(coordinates);
         }
         case InfNormEmb: {
-            LOG_INFO("Constructing inf norm embedding");
             return std::make_unique<InfNorm>(coordinates);
         }
         case AdditiveEmb: {
-            LOG_INFO("Constructing additive embedding");
             auto pair = splitLastColumn(coordinates);
             return std::make_unique<Additive>(pair.first, pair.second);
         }
         default:
-            LOG_ERROR("Unknown embedding type");
-            return std::unique_ptr<Embedding>(nullptr);
+            throw std::invalid_argument("unknown embedding type " + std::to_string(type));
     }
 }
 
-std::vector<std::vector<float>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
+std::vector<std::vector<flt_t>> EmbeddingIO::readCoordinatesFromFile(std::string filePath, std::string comment,
                                                                       std::string delimiter) {
-    LOG_INFO("Reading coordinates from file: " << filePath);
-    std::vector<std::vector<float>> result;
-
     std::ifstream input(filePath);
-    std::string line;
-
     if (!input.good()) {
-        LOG_ERROR("Error while reading file: " << filePath);
-        return result;
+        throw std::runtime_error("could not open coordinate file " + filePath);
     }
 
     // read in the coordinates
-    std::map<NodeId, std::vector<float>> coords_dict;
+    std::map<NodeId, std::vector<flt_t>> coords_dict;
     int coord_size = -1; //dimension of the embedding
+    std::string line;
+    int lineNumber = 0;
     while (std::getline(input, line)) {
-        if (line.rfind(comment, 0) == 0) {
-            // line starts with comment
+        lineNumber++;
+        if (line.rfind(comment, 0) == 0 || line.find_first_not_of(" \t\r") == std::string::npos) {
             continue;
         }
-        std::vector<std::string> tokens = util::splitIntoTokens(line, delimiter);
-        NodeId a = std::stoi(tokens[0]);
+        const auto invalidLine = [&](const std::string& reason) {
+            return std::invalid_argument(filePath + ":" + std::to_string(lineNumber) + ": " + reason);
+        };
 
-        std::vector<float> coord(tokens.size() - 1); // dimension of node a
+        // splitIntoTokens consumes its argument
+        std::string rest = line;
+        std::vector<std::string> tokens = util::splitIntoTokens(rest, delimiter);
+        std::vector<flt_t> coord(tokens.size() - 1); // dimension of node a
         if (coord_size == -1) {
             coord_size = coord.size();
-        } else {
-            ASSERT(coord_size == coord.size(), "Problem on line " + line + ": Expected " + std::to_string(coord_size) +
-                                                   " coordinates, but got " + std::to_string(coord.size()));
+        } else if (coord_size != static_cast<int>(coord.size())) {
+            throw invalidLine("expected " + std::to_string(coord_size) + " coordinates, got " +
+                              std::to_string(coord.size()));
         }
 
-        // pares coordinates and assign to dictionary
-        for (int i = 1; i < tokens.size(); i++) {
-            coord[i - 1] = std::stod(tokens[i]);
+        NodeId a = 0;
+        try {
+            a = std::stoi(tokens[0]);
+            for (size_t i = 1; i < tokens.size(); i++) {
+                coord[i - 1] = std::stod(tokens[i]);
+            }
+        } catch (const std::logic_error&) {
+            throw invalidLine("invalid number");
         }
         coords_dict[a] = coord;
     }
 
-    // assert that keys in coords_dict are consecutive starting from 0
-    for (NodeId i = 0; i < coords_dict.size(); i++) {
-        ASSERT(coords_dict.find(i) != coords_dict.end(), "Node " + std::to_string(i) + " is missing");
+    // ids have to be consecutive starting from 0
+    for (NodeId i = 0; i < static_cast<NodeId>(coords_dict.size()); i++) {
+        if (coords_dict.find(i) == coords_dict.end()) {
+            throw std::invalid_argument(filePath + ": vertex " + std::to_string(i) + " is missing");
+        }
     }
 
-    // write coordinates to result
+    std::vector<std::vector<flt_t>> result;
     for (auto& [name, coord] : coords_dict) {
         result.push_back(coord);
     }
-
-    LOG_INFO("Read in " << coords_dict.size() << " coordinates of dimension " << result[0].size());
-    input.close();
     return result;
 }
 
-std::pair<std::vector<std::vector<float>>, std::vector<float>> EmbeddingIO::splitLastColumn(
-    const std::vector<std::vector<float>>& coordinates) {
-    std::vector<std::vector<float>> coords(coordinates.size());
-    std::vector<float> weights(coordinates.size());
+std::pair<std::vector<std::vector<flt_t>>, std::vector<flt_t>> EmbeddingIO::splitLastColumn(
+    const std::vector<std::vector<flt_t>>& coordinates) {
+    std::vector<std::vector<flt_t>> coords(coordinates.size());
+    std::vector<flt_t> weights(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         for (int j = 0; j < coordinates[i].size() - 1; j++) {
@@ -176,10 +180,10 @@ std::pair<std::vector<std::vector<float>>, std::vector<float>> EmbeddingIO::spli
     return std::make_pair(coords, weights);
 }
 
-std::pair<std::vector<float>, std::vector<std::vector<float>>> EmbeddingIO::splitFirstColumn(
-    const std::vector<std::vector<float>>& coordinates) {
-    std::vector<float> weights(coordinates.size());
-    std::vector<std::vector<float>> coords(coordinates.size());
+std::pair<std::vector<flt_t>, std::vector<std::vector<flt_t>>> EmbeddingIO::splitFirstColumn(
+    const std::vector<std::vector<flt_t>>& coordinates) {
+    std::vector<flt_t> weights(coordinates.size());
+    std::vector<std::vector<flt_t>> coords(coordinates.size());
 
     for (int i = 0; i < coordinates.size(); i++) {
         weights[i] = coordinates[i][0];
@@ -191,12 +195,10 @@ std::pair<std::vector<float>, std::vector<std::vector<float>>> EmbeddingIO::spli
     return std::make_pair(weights, coords);
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions,
-                                   const std::vector<float>& weights) {
-    LOG_INFO("Writing coordinates to file " << filePath);
-    std::ofstream fil;
-    fil.open(filePath);
-    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<flt_t>>& positions,
+                                   const std::vector<flt_t>& weights) {
+    std::ofstream fil = openForWriting(filePath);
+    fil << std::setprecision(std::numeric_limits<flt_t>::digits10 + 1);
     for (int i = 0; i < positions.size(); i++) {
         fil << i;
         for (int j = 0; j < positions[i].size(); j++) {
@@ -207,10 +209,9 @@ void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::
     fil.close();
 }
 
-void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<float>>& positions) {
-    std::ofstream fil;
-    fil.open(filePath);
-    fil << std::setprecision(std::numeric_limits<float>::digits10 + 1);
+void EmbeddingIO::writeCoordinates(std::string filePath, const std::vector<std::vector<flt_t>>& positions) {
+    std::ofstream fil = openForWriting(filePath);
+    fil << std::setprecision(std::numeric_limits<flt_t>::digits10 + 1);
     for(int i = 0; i < positions.size(); i++) {
         fil << i;
         for(int j = 0; j < positions[i].size(); j++) {

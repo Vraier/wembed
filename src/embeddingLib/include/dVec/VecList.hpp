@@ -6,7 +6,7 @@
 #include "Concepts.hpp"
 #include "Macros.hpp"
 
-template <FLT_T T = float>
+template <FLT_T T = flt_t>
 class VecList {
     using Memory = VecRef::MemoryType;
     // TODO: support iteration

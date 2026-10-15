@@ -1,6 +1,7 @@
 #include "SprkQueries.hpp"
 
 #include <stdexcept>
+#include <string>
 
 SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimension)
     : handle_(nullptr),
@@ -8,15 +9,20 @@ SprkQueries::SprkQueries(const std::vector<CVecRef>& points, const size_t dimens
     ASSERT(dimension >= 2);
     if (!points.empty()) {
         const size_t rows = points.size();
-        std::vector<float> data(rows * dimension);
+        std::vector<flt_t> data(rows * dimension);
         for (size_t i = 0; i < rows; ++i) {
             auto p = points[i];
             ASSERT(p.dimension() == dimension);
             for (size_t j = 0; j < dimension; ++j) {
-                data[i * dimension + j] = static_cast<float>(p[j]);
+                data[i * dimension + j] = p[j];
             }
         }
         handle_ = sprk_create(data.data(), rows, dimension);
+        // without a tree, all queries would silently come back empty
+        if (!handle_) {
+            throw std::runtime_error("sprk could not build a tree for dimension " + std::to_string(dimension) +
+                                     " (it supports 2 to 16)");
+        }
     }
 }
 
@@ -40,13 +46,14 @@ SprkQueries& SprkQueries::operator=(SprkQueries&& other) noexcept {
     return *this;
 }
 
-size_t SprkQueries::query_sphere(CVecRef point, float radius, std::vector<uint64_t>& out) const {
+size_t SprkQueries::query_sphere(CVecRef point, flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
+    out.clear();
 
     if (handle_) {
-        std::vector<float> query(dimension);
+        std::vector<flt_t> query(dimension);
         for (size_t i = 0; i < dimension; ++i) {
-            query[i] = static_cast<float>(point[i]);
+            query[i] = static_cast<flt_t>(point[i]);
         }
 
         uint64_t* ids = nullptr;
@@ -60,12 +67,4 @@ size_t SprkQueries::query_sphere(CVecRef point, float radius, std::vector<uint64
         sprk_free_results(ids, count);
     }
     return out.size();
-}
-
-size_t SprkQueries::query_nearest(CVecRef, unsigned int, std::vector<uint64_t>&) const {
-    throw std::runtime_error("Not implemented!");
-}
-
-size_t SprkQueries::query_box(CVecRef, CVecRef, std::vector<uint64_t>&) const {
-    throw std::runtime_error("Not implemented!");
 }

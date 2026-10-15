@@ -1,6 +1,6 @@
 #include "InfNorm.hpp"
 
-InfNorm::InfNorm(const std::vector<std::vector<float>> &coords)
+InfNorm::InfNorm(const std::vector<std::vector<flt_t>> &coords)
     : DIMENSION(coords[0].size()), coordinates(DIMENSION) {
     coordinates.setSize(coords.size(), 0);
 
@@ -14,7 +14,7 @@ InfNorm::InfNorm(const std::vector<std::vector<float>> &coords)
     }
 }
 
-float InfNorm::getSimilarity(NodeId a, NodeId b) const {
+flt_t InfNorm::getSimilarity(NodeId a, NodeId b) const {
     VecBuffer<1> buffer(DIMENSION);
     TmpVec<0> tmpVec(buffer);
     tmpVec = coordinates[a] - coordinates[b];

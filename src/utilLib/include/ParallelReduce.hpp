@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <vector>
 
+#include <Concepts.hpp>
+
 namespace util {
 
 /**
@@ -15,21 +17,21 @@ namespace util {
  * count. For a per-dimension sum, call this once per dimension.
  */
 template <typename ElementFn>
-inline float deterministicSum(std::size_t n, ElementFn&& element, std::size_t blockSize = 4096) {
+inline flt_t deterministicSum(std::size_t n, ElementFn&& element, std::size_t blockSize = 4096) {
     if (n == 0) return 0.0;
     const std::size_t numBlocks = (n + blockSize - 1) / blockSize;
-    std::vector<float> partial(numBlocks, 0.0);
+    std::vector<flt_t> partial(numBlocks, 0.0);
 #pragma omp parallel for schedule(static)
     for (std::size_t b = 0; b < numBlocks; b++) {
         const std::size_t begin = b * blockSize;
         const std::size_t end = std::min(begin + blockSize, n);
-        float sum = 0.0;
+        flt_t sum = 0.0;
         for (std::size_t i = begin; i < end; i++) {
             sum += element(i);
         }
         partial[b] = sum;
     }
-    float total = 0.0;
+    flt_t total = 0.0;
     for (std::size_t b = 0; b < numBlocks; b++) {
         total += partial[b];
     }
