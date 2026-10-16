@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+#include "wembed_types.hpp"
+
 // The library never prints. Invalid input or options throw std::invalid_argument, misuse
 // std::logic_error, and failing file IO std::runtime_error.
 namespace wembed {
@@ -16,9 +18,6 @@ namespace impl {
     class EmbedderInterface;
 }
 #endif
-
-using NodeId = int32_t;
-using EdgeId = int32_t;
 
 // forward declaration
 class Embedder;
@@ -55,14 +54,14 @@ struct Edge {
 struct TimingResult {
     uint64_t depth;
     std::string displayName;
-    double value;
+    flt_t value;
 };
 
 // Loss values from the most recent embedding step
 struct Loss {
-    double attractive;
-    double repulsive;
-    double total;
+    flt_t attractive;
+    flt_t repulsive;
+    flt_t total;
 };
 
 // Progress after the most recent embedding step. A layered embedding counts its layers down to 0,
@@ -73,8 +72,8 @@ struct Progress {
     int32_t numVertices;         // of the current layer
     int32_t iteration;           // steps done in the current layer
     int32_t expectedIterations;  // estimated steps of the current layer, -1 if unknown
-    double layerSeconds;         // time spent inside calculateStep in the current layer
-    double etaSeconds;           // estimated time until the embedding finishes, -1 if unknown
+    flt_t layerSeconds;         // time spent inside calculateStep in the current layer
+    flt_t etaSeconds;           // estimated time until the embedding finishes, -1 if unknown
                                  // (only in layer 0, after a few steps, until it runs past the estimate)
     bool layerFinished;          // the current layer has stopped; the next step moves on to the next layer
 };
@@ -83,48 +82,48 @@ struct Options {
     // Embedding parameters
     int32_t embeddingDimension = 4;
     bool useUnitWeights = false;                      // true: degree-based weights; false: unit weights
-    double dimensionHint = -1.0;                 // hint for the dimension of the input graph (-1 = auto)
+    flt_t dimensionHint = -1.0;                 // hint for the dimension of the input graph (-1 = auto)
     bool layeredEmbedding = false;               // multilevel embedding via graph coarsening
 
     // Force parameters
     SpatialIndex indexType = IndexSprk;
-    double dynamicQueryBuffer = -1.0;            // absolute slack added to repulsion query radii; spatial-index
+    flt_t dynamicQueryBuffer = -1.0;            // absolute slack added to repulsion query radii; spatial-index
                                                  // rebuilds are skipped while accumulated node movement fits in
                                                  // it. Negative = auto (3 / embeddingDimension, benchmarked),
                                                  // 0 = rebuild every iteration (old behavior)
-    double centreScale = 0.0;                    // pull toward the origin, nonzero enables it. Keeps the components of an
+    flt_t centreScale = 0.0;                    // pull toward the origin, nonzero enables it. Keeps the components of an
                                                  // unconnected graph together; sensible range 1e-4 to 1e-3 (1e-4 for large
                                                  // graphs in low dimensions). Below that components drift apart, from 1e-2
                                                  // on it compresses the embedding and costs quality
-    double expansionStretch = 1.0;               // stretch applied during layer expansion
+    flt_t expansionStretch = 1.0;               // stretch applied during layer expansion
 
     // Gradient descent parameters
     OptimizerType optimizerType = OptimizerAdam;
     int32_t maxIterations = 10000;
-    double simpleOptMaxDisplacement = 1.0;       // per-step cap (only used when optimizerType == OptimizerSimple)
+    flt_t simpleOptMaxDisplacement = 1.0;       // per-step cap (only used when optimizerType == OptimizerSimple)
 
     // Learning rate schedule (lr* prefix). Every parameter states which schedules read it.
     LRSchedule lrSchedule = LRExponentialCooling;
-    double learningRate = 10.0;                  // initial learning rate (both schedules)
+    flt_t learningRate = 10.0;                  // initial learning rate (both schedules)
     int32_t warmupSteps = 20;                    // linear LR ramp-up over the first steps (both schedules)
-    double lrCoolingFactor = 0.995;              // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
-    double lrDecayFactor = 0.5;                  // multiplicative drop on a decay event (LRLossAdaptive only)
-    double lrDecayThreshold = 1e-2;              // decay when the loss-decrease rate stays below this (LRLossAdaptive only)
+    flt_t lrCoolingFactor = 0.995;              // per-step multiplicative decay, lower = faster cooldown (LRExponentialCooling only)
+    flt_t lrDecayFactor = 0.5;                  // multiplicative drop on a decay event (LRLossAdaptive only)
+    flt_t lrDecayThreshold = 1e-2;              // decay when the loss-decrease rate stays below this (LRLossAdaptive only)
     int32_t lrAdaptPatience = 20;                // consecutive in-zone steps before a decay OR growth event (LRLossAdaptive only)
-    double lrGrowthFactor = 1.0;                 // multiplicative growth while the loss keeps decreasing fast
+    flt_t lrGrowthFactor = 1.0;                 // multiplicative growth while the loss keeps decreasing fast
                                                  // (LRLossAdaptive only; 1.0 disables growth -> pure plateau decay)
-    double lrGrowthThreshold = 1e-1;             // grow when the loss-decrease rate stays above this (LRLossAdaptive only)
+    flt_t lrGrowthThreshold = 1e-1;             // grow when the loss-decrease rate stays above this (LRLossAdaptive only)
 
     // Stopping criterion (maxIterations always applies as a hard cap).
     StopCriterion stopCriterion = StopLoss;  // which signal terminates the run
 
     // Displacement stopping criterion (StopDisplacement).
-    double stopDisplacementTol = 3e-4;           // relative per-step node movement (mean displacement / radius of
+    flt_t stopDisplacementTol = 3e-4;           // relative per-step node movement (mean displacement / radius of
                                                  // gyration) below which the layout counts as settled
     int32_t stopDisplacementPatience = 5;        // settled steps in a row before stopping
 
     // Loss stagnation stopping criterion (StopLoss).
-    double stopLossTol = 1e-3;                   // ftol: converged once the relative loss decrease over a 30-step window
+    flt_t stopLossTol = 1e-3;                   // ftol: converged once the relative loss decrease over a 30-step window
                                                  // stays below this (also read by LRLossAdaptive's rate signal)
     int32_t stopLossPatience = 50;               // sub-tolerance steps in a row before stopping
 };
@@ -183,16 +182,16 @@ class Embedder {
     int32_t getNumVertices() const;
     int32_t getEmbeddingDimension() const;
 
-    // flat copy of coordinates getNumVertices() * getEmbeddingDimension() doubles, row-major.
-    void copyCoordinatesTo(double* out) const;
+    // flat copy of coordinates getNumVertices() * getEmbeddingDimension() floats, row-major.
+    void copyCoordinatesTo(flt_t* out) const;
 
     Graph getCurrentGraph() const;
-    std::vector<std::vector<double>> getCoordinates() const;
-    std::vector<double> getWeights() const;
+    std::vector<std::vector<flt_t>> getCoordinates() const;
+    std::vector<flt_t> getWeights() const;
     // One row per vertex. Columns beyond the embedding dimension are ignored (e.g. the weight column
     // of a written embedding). Not supported by the layered embedder.
-    void setCoordinates(const std::vector<std::vector<double>>& coordinates);
-    void setWeights(const std::vector<double>& weights);
+    void setCoordinates(const std::vector<std::vector<flt_t>>& coordinates);
+    void setWeights(const std::vector<flt_t>& weights);
 
     // Hierarchical breakdown of time spent in each phase of the embedding.
     std::vector<TimingResult> getTimings() const;
@@ -205,15 +204,15 @@ class Embedder {
 
     // Learning rate the optimizer used in the most recent step
     // (before the first step: the initial learning rate).
-    double getCurrentLearningRate() const;
+    flt_t getCurrentLearningRate() const;
 
     // Relative node displacement of the most recent step
     // (mean per-node movement / radius of gyration); the displacement stop watches this.
-    double getLastRelDisplacement() const;
+    flt_t getLastRelDisplacement() const;
 
     // Windowed relative loss-decrease rate of the most recent step (rate(t));
     // the loss stop watches this (a step is stagnant when it stays below stopLossTol).
-    double getLastRelLossImprovement() const;
+    flt_t getLastRelLossImprovement() const;
 
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;
 
@@ -242,7 +241,7 @@ Graph graphFromEdgeListFile(const std::string& filePath,
 
 // Read a coordinate file (one row per vertex). Useful for resuming an embedding
 // via Embedder::setCoordinates.
-std::vector<std::vector<double>> readCoordinatesFromFile(
+std::vector<std::vector<flt_t>> readCoordinatesFromFile(
     const std::string& filePath,
     const std::string& comment = "%",
     const std::string& delimiter = ",");

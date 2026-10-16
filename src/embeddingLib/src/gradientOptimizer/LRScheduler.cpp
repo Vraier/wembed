@@ -4,20 +4,20 @@
 
 #include "Toolkit.hpp"
 
-double LRScheduler::learningRate(int iteration) {
-    const double lr = scheduleRate(iteration);
+flt_t LRScheduler::learningRate(int iteration) {
+    const flt_t lr = scheduleRate(iteration);
     if (iteration < warmupSteps) {
-        return lr * static_cast<double>(iteration) / static_cast<double>(warmupSteps);
+        return lr * static_cast<flt_t>(iteration) / static_cast<flt_t>(warmupSteps);
     }
     return lr;
 }
 
-double ExponentialCoolingSchedule::scheduleRate(int iteration) {
-    return initialRate * Toolkit::myPow(lrCoolingFactor, static_cast<double>(iteration));
+flt_t ExponentialCoolingSchedule::scheduleRate(int iteration) {
+    return initialRate * Toolkit::myPow(lrCoolingFactor, static_cast<flt_t>(iteration));
 }
 
-double LossAdaptiveSchedule::scheduleRate(int /*iteration*/) {
-    const double rate = monitor.relImprovement();
+flt_t LossAdaptiveSchedule::scheduleRate(int /*iteration*/) {
+    const flt_t rate = monitor.relImprovement();
 
     if (rate > lrGrowthThreshold) {
         decaySteps = 0;

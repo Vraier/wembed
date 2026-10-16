@@ -8,20 +8,20 @@
 #include "Rand.hpp"
 
 GraphCoordinatesPair GeometricGraphSampler::generateRandomGraphWithCoordinates(int n) {
-    double gridSize = std::sqrt(n);
-    double radius = std::sqrt(20.0 / M_PI);
+    flt_t gridSize = std::sqrt(static_cast<flt_t>(n));
+    flt_t radius = std::sqrt(flt_t{20.0} / std::numbers::pi_v<flt_t>);
     return generateRandomGraph(n, gridSize, radius);
 }
 
 Graph GeometricGraphSampler::generateRandomGraph(int n) { return generateRandomGraphWithCoordinates(n).first; }
 
-GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, double gridSize, double radius) {
+GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, flt_t gridSize, flt_t radius) {
     // sample random coordinates
-    std::vector<std::vector<double>> coords(n);
+    std::vector<std::vector<flt_t>> coords(n);
     for (int i = 0; i < n; i++) {
-        coords[i] = std::vector<double>(2);
-        coords[i][0] = Rand::randomDouble(0, gridSize);
-        coords[i][1] = Rand::randomDouble(0, gridSize);
+        coords[i] = std::vector<flt_t>(2);
+        coords[i][0] = Rand::randomFloat(0, gridSize);
+        coords[i][1] = Rand::randomFloat(0, gridSize);
     }
 
     // build the graph (quadratic)
@@ -32,7 +32,7 @@ GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, double gr
         }
         // check all higher nodes
         for (int u = v + 1; u < n; u++) {
-            double distance = std::sqrt((coords[u][0] - coords[v][0]) * (coords[u][0] - coords[v][0]) +
+            flt_t distance = std::sqrt((coords[u][0] - coords[v][0]) * (coords[u][0] - coords[v][0]) +
                                         (coords[u][1] - coords[v][1]) * (coords[u][1] - coords[v][1]));
             if (distance < radius) {
                 graphMap[v].insert(u);
@@ -49,7 +49,7 @@ GraphCoordinatesPair GeometricGraphSampler::generateRandomGraph(int n, double gr
 
 GraphCoordinatesPair GeometricGraphSampler::findLargesConnectedComponent(GraphCoordinatesPair& graphCoords) {
     Graph unconnected = graphCoords.first;
-    std::vector<std::vector<double>> unconnectedCoords = graphCoords.second;
+    std::vector<std::vector<flt_t>> unconnectedCoords = graphCoords.second;
     auto cc = GraphAlgo::calculateComponentId(unconnected);
 
     std::vector<int> connectedComponent = cc.first;
@@ -67,7 +67,7 @@ GraphCoordinatesPair GeometricGraphSampler::findLargesConnectedComponent(GraphCo
 
     // add nodes and edges to new graph
     std::map<int, std::set<int>> graphMap;
-    std::vector<std::vector<double>> connectedCoords(largestSize);
+    std::vector<std::vector<flt_t>> connectedCoords(largestSize);
     std::unordered_map<int, int> nodeIdMapping;
     int currIdCounter = 0;
 
@@ -88,7 +88,7 @@ GraphCoordinatesPair GeometricGraphSampler::findLargesConnectedComponent(GraphCo
             }
 
             // write the coordinate to new vector
-            std::vector<double> tmp = unconnectedCoords[v];
+            std::vector<flt_t> tmp = unconnectedCoords[v];
             connectedCoords[nodeIdMapping[v]] = tmp;
         }
     }

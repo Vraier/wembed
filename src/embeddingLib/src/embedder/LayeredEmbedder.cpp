@@ -39,17 +39,17 @@ void LayeredEmbedder::calculateEmbedding() {
     timer->stopTiming("embedding_all");
 }
 
-void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>&) {
+void LayeredEmbedder::setCoordinates(const std::vector<std::vector<flt_t>>&) {
     throw std::logic_error("setCoordinates is not supported by the layered embedder");
 }
 
-void LayeredEmbedder::setWeights(const std::vector<double>&) {
+void LayeredEmbedder::setWeights(const std::vector<flt_t>&) {
     throw std::logic_error("setWeights is not supported by the layered embedder");
 }
 
-std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
+std::vector<std::vector<flt_t>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
 
-std::vector<double> LayeredEmbedder::getWeights() { return currentEmbedder->getWeights(); }
+std::vector<flt_t> LayeredEmbedder::getWeights() { return currentEmbedder->getWeights(); }
 
 std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
 
@@ -69,15 +69,15 @@ void LayeredEmbedder::expandPositions() {
 
     int newN = hierarchy->graphs[currentLayer - 1].getNumVertices();
     int oldN = hierarchy->graphs[currentLayer].getNumVertices();
-    std::vector<std::vector<double>> oldPostions = currentEmbedder->getCoordinates();
-    std::vector<std::vector<double>> newPositions(newN, std::vector<double>(opts.embeddingDimension, 0.0));
+    std::vector<std::vector<flt_t>> oldPostions = currentEmbedder->getCoordinates();
+    std::vector<std::vector<flt_t>> newPositions(newN, std::vector<flt_t>(opts.embeddingDimension, 0.0));
     ASSERT(oldN == oldPostions.size(), "Old positions size mismatch: " << oldN << " vs " << oldPostions.size());
 
     // calculate new weights
-    std::vector<double> newWeights;
+    std::vector<flt_t> newWeights;
     if (opts.weightType == WeightType::Degree) {
         newWeights =
-            WembedEmbedder::rescaleWeights(opts.dimensionHint, opts.embeddingDimension,
+            WembedEmbedder::rescaleWeights(opts.dimensionHint, static_cast<flt_t>(opts.embeddingDimension),
                                            WembedEmbedder::constructDegreeWeights(hierarchy->graphs[currentLayer - 1]));
     } else if (opts.weightType == WeightType::Unit) {
         newWeights = WembedEmbedder::constructUnitWeights(newN);
@@ -86,24 +86,24 @@ void LayeredEmbedder::expandPositions() {
     }
 
     // calculate new positions
-    double geometricStretch = Toolkit::myPow((double)newN / (double)oldN, 1.0 / (double)opts.embeddingDimension);
+    flt_t geometricStretch = Toolkit::myPow(static_cast<flt_t>(newN) / static_cast<flt_t>(oldN), flt_t{1.0} / static_cast<flt_t>(opts.embeddingDimension));
     geometricStretch *= opts.expansionStretch;
     for (int v = 0; v < newN; v++) {
         int parent = hierarchy->nodeLayers[currentLayer - 1][v].parentNode;
         ASSERT(parent < oldN, "Parent node " << parent << " is out of bounds " << oldN);
         // direct child count, not total contained leaves: children.size()^(1/d) spheres
         // tile the stretched layout (volume ~ newN) at unit density
-        double numSiblings = hierarchy->nodeLayers[currentLayer][parent].children.size();
+        flt_t numSiblings = hierarchy->nodeLayers[currentLayer][parent].children.size();
 
         tmpVec.setToRandomUnitVector();
         // clusters pack tighter than unit density since internal edges don't repel; measured
         // converged rms spreads: ~0.2*k^(1/d) at d=2, ~0.4 at d=4, ~0.5 at d=8, but end
         // quality and iteration count are insensitive to this factor in [0.15,1] at d=2 and 8
-        constexpr double scatterPacking = 0.3;
-        double sphere_size = scatterPacking * Toolkit::myPow(numSiblings, 1.0 / (double)opts.embeddingDimension);
+        constexpr flt_t scatterPacking = 0.3;
+        flt_t sphere_size = scatterPacking * Toolkit::myPow(numSiblings, flt_t{1.0} / static_cast<flt_t>(opts.embeddingDimension));
         tmpVec *= sphere_size;
         for (int d = 0; d < opts.embeddingDimension; d++) {
-            newPositions[v][d] = geometricStretch * oldPostions[parent][d] + tmpVec[d];
+            newPositions[v][d] = geometricStretch * oldPostions[parent][d] + static_cast<flt_t>(tmpVec[d]);
         }
     }
 

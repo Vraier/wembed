@@ -3,6 +3,10 @@
 #include <limits>
 #include <vector>
 
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
+
 /**
  * Tracks the EMA-smoothed training loss and exposes the windowed relative loss
  * decrease
@@ -14,36 +18,36 @@
  */
 class ConvergenceMonitor {
    public:
-    static constexpr double STILL_IMPROVING = std::numeric_limits<double>::infinity();
+    static constexpr flt_t STILL_IMPROVING = std::numeric_limits<flt_t>::infinity();
 
     // lossFloor: lower bound of the rate's denominator. Below it the tolerance acts on the
     // absolute loss change, so a (nearly) perfectly embedded graph with loss ~ 0 still stops
-    ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow, double lossFloor = TINY);
+    ConvergenceMonitor(flt_t relTol, int patience, flt_t smoothingFactor, int rateWindow, flt_t lossFloor = TINY);
 
-    void observe(double loss);
+    void observe(flt_t loss);
 
     bool converged() const { return numStagnantSteps >= patience; }
     int stagnantSteps() const { return numStagnantSteps; }
-    double relImprovement() const { return lastRate; }  // rate(t); STILL_IMPROVING during warmup
+    flt_t relImprovement() const { return lastRate; }  // rate(t); STILL_IMPROVING during warmup
     int numObservations() const { return numObserved; }
-    double lastLoss() const { return lastObservedLoss; }
+    flt_t lastLoss() const { return lastObservedLoss; }
 
    private:
-    static constexpr double TINY = 1e-12;
+    static constexpr flt_t TINY = 1e-12;
 
-    double relTol;
-    double lossFloor;
+    flt_t relTol;
+    flt_t lossFloor;
     int patience;
-    double smoothingFactor;
+    flt_t smoothingFactor;
     int rateWindow;
 
-    std::vector<double> ring;  // last rateWindow + 1 smoothed losses
+    std::vector<flt_t> ring;  // last rateWindow + 1 smoothed losses
     int ringHead = 0;          // next write slot == oldest retained sample once full
     int ringCount = 0;
 
-    double smoothedLoss = 0.0;
+    flt_t smoothedLoss = 0.0;
     int numObserved = 0;
-    double lastObservedLoss = 0.0;
-    double lastRate = STILL_IMPROVING;
+    flt_t lastObservedLoss = 0.0;
+    flt_t lastRate = STILL_IMPROVING;
     int numStagnantSteps = 0;
 };

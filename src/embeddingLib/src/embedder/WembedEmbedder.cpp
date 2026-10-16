@@ -1,3 +1,7 @@
+#include <fstream>
+#include <thread>
+
+
 #include "WembedEmbedder.hpp"
 
 #include <algorithm>
@@ -9,7 +13,6 @@
 #include "ParallelReduce.hpp"
 #include "ProgressEstimate.hpp"
 #include "VectorOperations.hpp"
-#include "WeightedIndex.hpp"
 
 
 // ======================================================================================
@@ -48,7 +51,7 @@ void WembedEmbedder::calculateStep() {
     this->timer->stopTiming("repelling_forces");
 
     //Compute centre forces
-    if (this->opts.centreScale != 0.0) {
+    if (this->opts.centreScale != flt_t{0.0}) {
         this->timer->startTiming("centre_forces", "Computes Centre Force");
         calculateAllCentreForces();
         this->timer->stopTiming("centre_forces");
@@ -56,7 +59,7 @@ void WembedEmbedder::calculateStep() {
 
     //Update positions
     this->timer->startTiming("apply_forces", "Applying Forces");
-    const double learningRate = this->lrScheduler->learningRate(static_cast<int>(this->state.currentIteration));
+    const flt_t learningRate = this->lrScheduler->learningRate(static_cast<int>(this->state.currentIteration));
     this->state.lastLearningRate = learningRate;
     this->posOptimizer->update(this->state.currentPositions, this->state.force, learningRate);
     this->timer->stopTiming("apply_forces");
@@ -68,7 +71,7 @@ void WembedEmbedder::calculateStep() {
     observeDisplacement();
     this->convergenceMonitor->observe(this->state.lastAttractLoss + this->state.lastRepelLoss);
     this->state.lastRelLossImprovement = this->convergenceMonitor->relImprovement();
-    this->state.stepSeconds += std::chrono::duration<double>(std::chrono::steady_clock::now() - stepStart).count();
+    this->state.stepSeconds += std::chrono::duration<flt_t>(std::chrono::steady_clock::now() - stepStart).count();
 }
 
 bool WembedEmbedder::isFinished() {
@@ -105,11 +108,11 @@ Graph WembedEmbedder::getCurrentGraph() {
      return this->graph;
 }
 
-std::vector<std::vector<double> > WembedEmbedder::getCoordinates() {
+std::vector<std::vector<flt_t> > WembedEmbedder::getCoordinates() {
     return this->state.currentPositions.convertToVector();
 }
 
-std::vector<double> WembedEmbedder::getWeights() {
+std::vector<flt_t> WembedEmbedder::getWeights() {
     return this->state.currentWeights;
 }
 
@@ -117,7 +120,7 @@ std::vector<util::TimingResult> WembedEmbedder::getTimings() {
     return timer->getHierarchicalTimingResults();
 }
 
-void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coordinates) {
+void WembedEmbedder::setCoordinates(const std::vector<std::vector<flt_t> > &coordinates) {
     const int dim = this->opts.embeddingDimension;
     if (coordinates.size() != graphSize()) {
         throw std::invalid_argument("got coordinates for " + std::to_string(coordinates.size()) +
@@ -135,10 +138,10 @@ void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coo
         }
     }
     // discontinuous jump: cached repulsion candidates are stale
-    state.lastMaxDisplacement = std::numeric_limits<double>::infinity();
+    state.lastMaxDisplacement = std::numeric_limits<flt_t>::infinity();
 }
 
-void WembedEmbedder::setWeights(const std::vector<double> &weights) {
+void WembedEmbedder::setWeights(const std::vector<flt_t> &weights) {
     if (weights.size() != graphSize()) {
         throw std::invalid_argument("got weights for " + std::to_string(weights.size()) +
                                     " vertices, the graph has " + std::to_string(graphSize()));
@@ -149,9 +152,9 @@ void WembedEmbedder::setWeights(const std::vector<double> &weights) {
 
 #pragma omp parallel for default(none) shared(invExpWeights, state) schedule(static)
     for (size_t i = 0; i < graphSize(); i++) {
-        invExpWeights[i] = 1.0 / Toolkit::myPow(state.currentWeights[i], 1.0 / static_cast<double>(opts.embeddingDimension));
+        invExpWeights[i] = flt_t{1.0} / Toolkit::myPow(state.currentWeights[i], flt_t{1.0} / static_cast<flt_t>(opts.embeddingDimension));
     }
-    state.lastMaxDisplacement = std::numeric_limits<double>::infinity();
+    state.lastMaxDisplacement = std::numeric_limits<flt_t>::infinity();
 }
 
 // ======================================================================================
@@ -161,17 +164,17 @@ void WembedEmbedder::setWeights(const std::vector<double> &weights) {
 // ======================================================================================
 
 
-double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
+flt_t WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer<1>& forceBuffer) {
     if (v == u) return 0.0;
 
     const CVecRef posV = state.currentPositions[v];
     const CVecRef posU = state.currentPositions[u];
 
     TmpVec<0> result(forceBuffer, 0.0);
-    const double dist = vectorOperations::calculateLPNorm(posU, posV);
+    const flt_t dist = vectorOperations::calculateLPNorm(posU, posV);
 
-    const double weightV = state.currentWeights[v];
-    const double weightU = state.currentWeights[u];
+    const flt_t weightV = state.currentWeights[v];
+    const flt_t weightU = state.currentWeights[u];
 
     //displace in random direction if positions are identical
     if (dist <= 0) {
@@ -184,15 +187,15 @@ double WembedEmbedder::attractionForce(const NodeId v, const NodeId u, VecBuffer
     }
     vectorOperations::differentiateLPNormDifference(posU, posV, dist, result);
 
-    const double weightScaling = invExpWeights[v] * invExpWeights[u];
-    const double weightedDist = dist * weightScaling;
+    const flt_t weightScaling = invExpWeights[v] * invExpWeights[u];
+    const flt_t weightedDist = dist * weightScaling;
 
     // repulsion skips the adjacency check and pushed near neighbors apart; pull with the
     // exact opposite (same weightedDist, same functions) and let the owner remove the
     // pair from the reported loss
-    double forceFactor = lossFunction::attractionForceFactor(weightedDist) +
+    flt_t forceFactor = lossFunction::attractionForceFactor(weightedDist) +
                          lossFunction::repulsionForceFactor(weightedDist);
-    double lossContribution = lossFunction::attractionLoss(weightedDist);
+    flt_t lossContribution = lossFunction::attractionLoss(weightedDist);
     if (WeightedIndex::ownsPair(weightV, weightU, v, u)) {
         lossContribution -= lossFunction::repulsionLoss(weightedDist);
     }
@@ -211,20 +214,21 @@ void WembedEmbedder::calculateAllAttractingForces() {
     VecBuffer<1> buffer(this->opts.embeddingDimension);
 #pragma omp parallel for default(none) firstprivate(buffer) shared(state, graph, lossPerNode) schedule(runtime)
     for (const NodeId v : this->state.sortedNodeIDs) {
-        double nodeLoss = 0.0;
+        flt_t nodeLoss = 0.0;
         for (const NodeId u : graph.getNeighbors(v)) {
             nodeLoss += attractionForce(v, u, buffer);
         }
         this->lossPerNode[v] = nodeLoss;
     }
-    this->state.lastAttractLoss =
-        util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
+    const flt_t loss = util::deterministicSum(graphSize(), [this](std::size_t i) { return this->lossPerNode[i]; });
+    this->state.lastAttractLoss = loss;
+    this->state.lastRepelLoss = loss; //Counter repulsion computation for neighbours
 }
 
-double WembedEmbedder::pairRepulsion(const NodeId a, const NodeId b, TmpVec<0>& out) const {
+flt_t WembedEmbedder::pairRepulsion(const NodeId a, const NodeId b, TmpVec<0>& out) const {
     const CVecRef posA = state.currentPositions[a];
     const CVecRef posB = state.currentPositions[b];
-    const double dist = vectorOperations::calculateLPNorm(posA, posB);
+    const flt_t dist = vectorOperations::calculateLPNorm(posA, posB);
 
     // identical position get random kick
     if (dist <= 0) {
@@ -234,8 +238,8 @@ double WembedEmbedder::pairRepulsion(const NodeId a, const NodeId b, TmpVec<0>& 
     }
 
     vectorOperations::differentiateLPNormDifference(posA, posB, dist, out);
-    const double weightScaling = invExpWeights[a] * invExpWeights[b];
-    const double weightedDist = dist * weightScaling;
+    const flt_t weightScaling = invExpWeights[a] * invExpWeights[b];
+    const flt_t weightedDist = dist * weightScaling;
     out *= lossFunction::repulsionForceFactor(weightedDist) * weightScaling;
     return lossFunction::repulsionLoss(weightedDist);
 }
@@ -258,7 +262,7 @@ void WembedEmbedder::calculateAllRepellingForces() {
 #pragma omp parallel for default(none) firstprivate(buffer) shared(state, ownedPairs, lossPerNode) schedule(dynamic, 64)
     for (const NodeId v : state.sortedNodeIDs) {
         state.currentWeightedIndex.getOwnedRepellingPairs(v, ownedPairs[v]);
-        double nodeLoss = 0.0;
+        flt_t nodeLoss = 0.0;
         TmpVec<0> pairForce(buffer, 0.0);
         for (const NodeId u : ownedPairs[v]) {
             nodeLoss += pairRepulsion(v, u, pairForce);
@@ -318,17 +322,17 @@ void WembedEmbedder::calculateAllRepellingForces() {
 void WembedEmbedder::calculateAllCentreForces() {
 #pragma omp parallel for default(none) shared(state, opts) schedule(static)
     for (const NodeId v : this->state.sortedNodeIDs) {
-        this->state.force[v] += -1.0 * this->opts.centreScale * this->state.currentPositions[v];
+        this->state.force[v] += flt_t{-1.0} * this->opts.centreScale * this->state.currentPositions[v];
     }
 }
 
 void WembedEmbedder::applyGravityCentre() {
     const int dim = this->opts.embeddingDimension;
-    std::vector<double> dimGravity(dim, 0.0);
+    std::vector<flt_t> dimGravity(dim, 0.0);
     for (int d = 0; d < dim; d++) {
         dimGravity[d] = util::deterministicSum(
                             graphSize(), [this, d](std::size_t v) { return this->state.currentPositions[static_cast<int>(v)][d]; }) /
-                        static_cast<double>(graphSize());
+                        static_cast<flt_t>(graphSize());
     }
     // Wrap the centroid in a single-row VecList so we can use VecRef arithmetic below.
     // TODO: this can be a temp vec probably
@@ -353,22 +357,22 @@ void WembedEmbedder::observeDisplacement() {
         const CVecRef pos = this->state.currentPositions[v];
         const CVecRef prev = this->previousPositions[v];
         this->perNodeDisplacement[v] = vectorOperations::calculateLPNorm(pos, prev);
-        double radiusSq = 0.0;
+        flt_t radiusSq = 0.0;
         for (int d = 0; d < dim; d++) {
             radiusSq += pos[d] * pos[d];
         }
         this->perNodeRadiusSq[v] = radiusSq;
     }
 
-    const double invN = 1.0 / static_cast<double>(n);
-    const double meanDisplacement =
+    const flt_t invN = flt_t{1.0} / static_cast<flt_t>(n);
+    const flt_t meanDisplacement =
         util::deterministicSum(n, [this](std::size_t i) { return this->perNodeDisplacement[i]; }) * invN;
-    const double meanRadiusSq =
+    const flt_t meanRadiusSq =
         util::deterministicSum(n, [this](std::size_t i) { return this->perNodeRadiusSq[i]; }) * invN;
-    const double radius = std::sqrt(meanRadiusSq);
+    const flt_t radius = std::sqrt(meanRadiusSq);
 
     // guard a degenerate zero-radius layout (e.g. all nodes coincident)
-    const double relDisplacement = radius > 0.0 ? meanDisplacement / radius : 0.0;
+    const flt_t relDisplacement = radius > flt_t{0.0} ? meanDisplacement / radius : 0.0;
     this->state.lastRelDisplacement = relDisplacement;
     this->displacementMonitor->observe(relDisplacement);
 
@@ -376,41 +380,41 @@ void WembedEmbedder::observeDisplacement() {
     this->state.lastMaxDisplacement = *std::max_element(perNodeDisplacement.begin(), perNodeDisplacement.end());
 }
 
-std::vector<double> WembedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
-                                                   const std::vector<double>& weights) {
-    const int N = weights.size();
-    std::vector<double> rescaledWeights(N);
+std::vector<flt_t> WembedEmbedder::rescaleWeights(const flt_t dimensionHint, const flt_t embeddingDimension,
+                                                   const std::vector<flt_t>& weights) {
+    const auto N = static_cast<int>(weights.size());
+    std::vector<flt_t> rescaledWeights(N);
 
     for (NodeId v = 0; v < N; v++) {
         if (dimensionHint > 0) {
             rescaledWeights[v] = Toolkit::myPow(weights[v],
-                                    static_cast<double>(embeddingDimension) / static_cast<double>(dimensionHint));
+                                    static_cast<flt_t>(embeddingDimension) / dimensionHint);
         } else {
             rescaledWeights[v] = weights[v];
         }
     }
 
-    double weightSum = 0.0;
+    flt_t weightSum = 0.0;
     for (int v = 0; v < N; v++) {
         weightSum += rescaledWeights[v];
     }
     for (int v = 0; v < N; v++) {
-        rescaledWeights[v] = rescaledWeights[v] * (static_cast<double>(N) / weightSum);
+        rescaledWeights[v] = rescaledWeights[v] * (static_cast<flt_t>(N) / weightSum);
     }
     return rescaledWeights;
 }
 
-std::vector<double> WembedEmbedder::constructDegreeWeights(const Graph& g) {
-    std::vector<double> weights(g.getNumVertices());
+std::vector<flt_t> WembedEmbedder::constructDegreeWeights(const Graph& g) {
+    std::vector<flt_t> weights(g.getNumVertices());
     for (NodeId v = 0; v < g.getNumVertices(); v++) {
         const int numNeighbors = g.getNumNeighbors(v);
-        weights[v] = (numNeighbors > 0) ? numNeighbors : 1;
+        weights[v] = (numNeighbors > 0) ? static_cast<flt_t>(numNeighbors) : flt_t{1};
     }
     return weights;
 }
 
-std::vector<double> WembedEmbedder::constructUnitWeights(const int N) {
-    std::vector<double> weights(N);
+std::vector<flt_t> WembedEmbedder::constructUnitWeights(const int N) {
+    std::vector<flt_t> weights(N);
     for (NodeId v = 0; v < N; v++) {
         weights[v] = 1.0;
     }

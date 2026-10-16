@@ -14,6 +14,6 @@ class GirgGenerator {
      * Generates a girg with the given parameters. Only returns the largest connected component.
      * Also returns the coordinates for every node and the weights.
      */
-    static std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> generateRandomGraph(
+    static std::tuple<Graph, std::vector<std::vector<flt_t>>, std::vector<flt_t>> generateRandomGraph(
         Options options);
 };

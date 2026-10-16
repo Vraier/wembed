@@ -3,8 +3,7 @@
 #include <algorithm>
 #include <cmath>
 
-ConvergenceMonitor::ConvergenceMonitor(double relTol, int patience, double smoothingFactor, int rateWindow,
-                                       double lossFloor)
+ConvergenceMonitor::ConvergenceMonitor(flt_t relTol, int patience, flt_t smoothingFactor, int rateWindow, flt_t lossFloor)
     : relTol(relTol),
       lossFloor(std::max(lossFloor, TINY)),
       patience(patience),
@@ -13,11 +12,11 @@ ConvergenceMonitor::ConvergenceMonitor(double relTol, int patience, double smoot
       // rateWindow intervals span rateWindow + 1 samples (endpoints included)
       ring(static_cast<std::size_t>(this->rateWindow) + 1, 0.0) {}
 
-void ConvergenceMonitor::observe(double loss) {
+void ConvergenceMonitor::observe(flt_t loss) {
     if (numObserved == 0) {
         smoothedLoss = loss;
     } else {
-        smoothedLoss = smoothingFactor * loss + (1.0 - smoothingFactor) * smoothedLoss;
+        smoothedLoss = smoothingFactor * loss + (flt_t{1.0} - smoothingFactor) * smoothedLoss;
     }
     lastObservedLoss = smoothedLoss;
     numObserved++;
@@ -29,8 +28,8 @@ void ConvergenceMonitor::observe(double loss) {
     }
 
     if (ringCount >= static_cast<int>(ring.size())) {
-        const double windowStart = ring[ringHead];  // Lbar(t - rateWindow)
-        const double denom = std::max(std::abs(windowStart), lossFloor);
+        const flt_t windowStart = ring[ringHead];  // Lbar(t - rateWindow)
+        const flt_t denom = std::max(std::abs(windowStart), lossFloor);
         lastRate = (windowStart - smoothedLoss) / denom;
     } else {
         lastRate = STILL_IMPROVING;

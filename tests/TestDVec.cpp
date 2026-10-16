@@ -1,22 +1,26 @@
 #include <gtest/gtest.h>
 
 #include "DVec.hpp"
+#include "test_macros.hpp"
 #include "VecList.hpp"
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 // test initialization
 TEST(VecTests, Initialization) {
     VecRef::MemoryType mem1[VecRef::numEntriesForDimension(2)];
     VecRef(&mem1[0], 2).setAll(0);
     CVecRef u(&mem1[0], 2);
-    ASSERT_DOUBLE_EQ(u[0], 0);
+    ASSERT_FLT_T_EQ(u[0], flt_t{0});
 
     VecRef::MemoryType mem2[VecRef::numEntriesForDimension(2)];
     VecRef v(&mem2[0], 2);
     v[0] = 1.0;
     v[1] = 2.0;
 
-    ASSERT_DOUBLE_EQ(v[0], 1.0);
-    ASSERT_DOUBLE_EQ(v[1], 2.0);
+    ASSERT_FLT_T_EQ(v[0], flt_t{1.0});
+    ASSERT_FLT_T_EQ(v[1], flt_t{2.0});
     ASSERT_EQ(v.dimension(), 2);
 }
 
@@ -35,8 +39,8 @@ TEST(VecTests, Arithmetic) {
     v = u + v;
     auto x = 3 * (u + v);
     v = x - v;
-    ASSERT_DOUBLE_EQ(v[0], 2);
-    ASSERT_DOUBLE_EQ(v[1], 4);
+    ASSERT_FLT_T_EQ(v[0], flt_t{2.0});
+    ASSERT_FLT_T_EQ(v[1], flt_t{4.0});
     ASSERT_EQ(v.dimension(), 2);
 }
 
@@ -45,7 +49,7 @@ TEST(VecTests, MoveAndCopy) {
     VecRef::MemoryType mem1[VecRef::numEntriesForDimension(2)];
     VecRef(&mem1[0], 2).setAll(0);
     CVecRef u(&mem1[0], 2);
-    ASSERT_DOUBLE_EQ(u[0], 0);
+    ASSERT_FLT_T_EQ(u[0], flt_t{0});
 
     VecRef::MemoryType mem2[VecRef::numEntriesForDimension(2)];
     VecRef v(&mem2[0], 2);
@@ -54,10 +58,10 @@ TEST(VecTests, MoveAndCopy) {
 
     u = std::move(v);
     CVecRef u2 = u;
-    ASSERT_DOUBLE_EQ(u[0], 1.0);
-    ASSERT_DOUBLE_EQ(u2[0], 1.0);
-    ASSERT_DOUBLE_EQ(u[1], 2.0);
-    ASSERT_DOUBLE_EQ(u2[1], 2.0);
+    ASSERT_FLT_T_EQ(u[0], flt_t{1.0});
+    ASSERT_FLT_T_EQ(u2[0], flt_t{1.0});
+    ASSERT_FLT_T_EQ(u[1], flt_t{2.0});
+    ASSERT_FLT_T_EQ(u2[1], flt_t{2.0});
 }
 
 // test VecList
@@ -69,16 +73,16 @@ TEST(VecTests, VecList) {
         b[0] = -1.0;
         b[1] = 1.5;
         a += 3 * b;
-        ASSERT_DOUBLE_EQ(a[0], -2);
-        ASSERT_DOUBLE_EQ(a[1], 5.5);
+        ASSERT_FLT_T_EQ(a[0], flt_t{-2});
+        ASSERT_FLT_T_EQ(a[1], flt_t{5.5});
         TmpCVec<1> tmp1 = std::move(b);
         TmpCVec<1> tmp2 = tmp1;
     }
 
     TmpVec<1> c(buffer, 1.0);
     a -= c;
-    ASSERT_DOUBLE_EQ(a[0], -3);
-    ASSERT_DOUBLE_EQ(a[1], 4.5);
+    ASSERT_FLT_T_EQ(a[0], flt_t{-3});
+    ASSERT_FLT_T_EQ(a[1], flt_t{4.5});
 
     TmpVec<2> random(buffer);
     random.setToRandomUnitVector();
@@ -94,8 +98,8 @@ TEST(VecTests, VecList) {
     VecRef last = list[3];
     last = first;
 
-    ASSERT_DOUBLE_EQ(list[0][0], -3);
-    ASSERT_DOUBLE_EQ(list[0][1], 4.5);
-    ASSERT_DOUBLE_EQ(list[1][0], 1);
-    ASSERT_DOUBLE_EQ(list[1][1], 1);
+    ASSERT_FLT_T_EQ(list[0][0], flt_t{-3});
+    ASSERT_FLT_T_EQ(list[0][1], flt_t{4.5});
+    ASSERT_FLT_T_EQ(list[1][0], flt_t{1});
+    ASSERT_FLT_T_EQ(list[1][1], flt_t{1});
 }

@@ -46,7 +46,7 @@ SprkQueries& SprkQueries::operator=(SprkQueries&& other) noexcept {
     return *this;
 }
 
-size_t SprkQueries::query_sphere(CVecRef point, double radius, std::vector<uint64_t>& out) const {
+size_t SprkQueries::query_sphere(CVecRef point, flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
     out.clear();
 

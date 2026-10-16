@@ -6,6 +6,7 @@ project(WEmbed VERSION 0.3.0 LANGUAGES CXX)
 option(WEMBED_BUILD_TOOLS "Build the command line tools and unit tests." ${PROJECT_IS_TOP_LEVEL})
 option(WEMBED_BUILD_PYTHON "Build the python module." OFF)
 option(WEMBED_USE_SPRK "Use the sprk tree as spatial index (needs Rust). If OFF, a bundled KD-tree is used instead." ON)
+option(WEMBED_USE_DOUBLE "Uses 64bit floating point" OFF)
 option(EMBEDDING_USE_ASSERTIONS "Explicitely activates assertions (even in release mode)." OFF)
 
 # Compiler flags for our own targets.
@@ -27,6 +28,13 @@ if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+add_library(wembed_types INTERFACE)
+if(WEMBED_USE_DOUBLE)
+    target_compile_definitions(wembed_types INTERFACE WEMBED_FLT_T=double)
+else()
+    target_compile_definitions(wembed_types INTERFACE WEMBED_FLT_T=float)
 endif()
 
 add_subdirectory(src)

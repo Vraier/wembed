@@ -4,6 +4,9 @@
 
 #include "Rand.hpp"
 #include "WembedEmbedder.hpp"
+#include "wembed_types.hpp"
+
+using wembed::flt_t;
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -22,8 +25,8 @@ Graph makeRingGraph(int n) {
 }
 
 struct RunResult {
-    std::vector<std::vector<double>> coordinates;
-    double loss;
+    std::vector<std::vector<flt_t>> coordinates;
+    flt_t loss;
     int iterations;
 };
 
@@ -43,8 +46,8 @@ RunResult runEmbedding(const EmbedderOptions& opts, int numThreads, int steps, b
     WembedEmbedder embedder(g, opts);
 
     if (coincidentStart) {
-        std::vector<std::vector<double>> start(g.getNumVertices(),
-                                               std::vector<double>(opts.embeddingDimension, 0.0));
+        std::vector<std::vector<flt_t>> start(g.getNumVertices(),
+                                               std::vector<flt_t>(opts.embeddingDimension, 0.0));
         embedder.setCoordinates(start);
     }
 
@@ -63,8 +66,8 @@ RunResult runEmbedding(const EmbedderOptions& opts, int numThreads, int steps, b
     return {embedder.getCoordinates(), embedder.getLoss().total, iterations};
 }
 
-void expectExactlyEqual(const std::vector<std::vector<double>>& a,
-                        const std::vector<std::vector<double>>& b) {
+void expectExactlyEqual(const std::vector<std::vector<flt_t>>& a,
+                        const std::vector<std::vector<flt_t>>& b) {
     ASSERT_EQ(a.size(), b.size());
     for (size_t v = 0; v < a.size(); v++) {
         ASSERT_EQ(a[v].size(), b[v].size());

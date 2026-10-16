@@ -29,7 +29,7 @@ KdTreeQueries::KdTreeQueries(const std::vector<CVecRef>& points, const size_t di
     schedule(static)
     for (size_t i = 0; i < n; i++) {
         for (size_t k = 0; k < d; k++) {
-            const float value = static_cast<float>(points[i][k]);
+            const auto value = static_cast<float>(points[i][k]);
             source[i * d + k] = value;
             maxAbs = std::max(maxAbs, std::abs(value));
         }
@@ -119,9 +119,9 @@ void KdTreeQueries::writeLeaf(const uint32_t lo, const uint32_t hi, const float*
     }
 }
 
-size_t KdTreeQueries::query_sphere(CVecRef point, const double radius, std::vector<uint64_t>& out) const {
+size_t KdTreeQueries::query_sphere(CVecRef point, const flt_t radius, std::vector<uint64_t>& out) const {
     ASSERT(point.dimension() == dimension);
-    ASSERT(radius >= 0.0);
+    ASSERT(radius >= flt_t{0.0});
     out.clear();
     if (numPoints == 0) return 0;
 
@@ -132,7 +132,7 @@ size_t KdTreeQueries::query_sphere(CVecRef point, const double radius, std::vect
     float maxAbs = maxAbsCoordinate;
     for (size_t k = 0; k < dimension; k++) {
         queryPoint[k] = static_cast<float>(point[k]);
-        offsets[k] = 0.0f;  // the root cell is the whole space
+        offsets[k] = 0.0;  // the root cell is the whole space
         maxAbs = std::max(maxAbs, std::abs(queryPoint[k]));
     }
 

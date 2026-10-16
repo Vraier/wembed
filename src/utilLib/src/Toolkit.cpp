@@ -37,14 +37,14 @@ bool Toolkit::noGapsInVector(std::vector<int> numbers) {
     return true;
 }
 
-double Toolkit::averageFromVector(const std::vector<double>& values) {
-    double sum = 0;
-    for (double val : values) {
+flt_t Toolkit::averageFromVector(const std::vector<flt_t>& values) {
+    flt_t sum = 0;
+    for (flt_t val : values) {
         sum += val;
     }
     if (values.size() == 0) {
         return -1;
     } else {
-        return sum / (double)values.size();
+        return sum / static_cast<flt_t>(values.size());
     }
 }

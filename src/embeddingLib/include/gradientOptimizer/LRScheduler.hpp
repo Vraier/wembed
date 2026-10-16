@@ -12,15 +12,15 @@
  */
 class LRScheduler {
    public:
-    LRScheduler(double initialRate, int warmupSteps) : initialRate(initialRate), warmupSteps(warmupSteps) {}
+    LRScheduler(flt_t initialRate, int warmupSteps) : initialRate(initialRate), warmupSteps(warmupSteps) {}
     virtual ~LRScheduler() = default;
 
-    double learningRate(int iteration);
+    flt_t learningRate(int iteration);
 
    protected:
-    virtual double scheduleRate(int iteration) = 0;
+    virtual flt_t scheduleRate(int iteration) = 0;
 
-    double initialRate;
+    flt_t initialRate;
     int warmupSteps;
 };
 
@@ -31,14 +31,14 @@ class LRScheduler {
  */
 class ExponentialCoolingSchedule : public LRScheduler {
    public:
-    ExponentialCoolingSchedule(double initialRate, int warmupSteps, double lrCoolingFactor)
+    ExponentialCoolingSchedule(flt_t initialRate, int warmupSteps, flt_t lrCoolingFactor)
         : LRScheduler(initialRate, warmupSteps), lrCoolingFactor(lrCoolingFactor) {}
 
    protected:
-    double scheduleRate(int iteration) override;
+    flt_t scheduleRate(int iteration) override;
 
    private:
-    double lrCoolingFactor;
+    flt_t lrCoolingFactor;
 };
 
 /**
@@ -53,8 +53,8 @@ class ExponentialCoolingSchedule : public LRScheduler {
  */
 class LossAdaptiveSchedule : public LRScheduler {
    public:
-    LossAdaptiveSchedule(double initialRate, int warmupSteps, double lrGrowthFactor, double lrGrowthThreshold,
-                         double lrDecayFactor, double lrDecayThreshold, int lrAdaptPatience,
+    LossAdaptiveSchedule(flt_t initialRate, int warmupSteps, flt_t lrGrowthFactor, flt_t lrGrowthThreshold,
+                         flt_t lrDecayFactor, flt_t lrDecayThreshold, int lrAdaptPatience,
                          const ConvergenceMonitor& monitor)
         : LRScheduler(initialRate, warmupSteps),
           lrGrowthFactor(lrGrowthFactor),
@@ -66,16 +66,16 @@ class LossAdaptiveSchedule : public LRScheduler {
           currentRate(initialRate) {}
 
    protected:
-    double scheduleRate(int iteration) override;
+    flt_t scheduleRate(int iteration) override;
 
    private:
-    double lrGrowthFactor;
-    double lrGrowthThreshold;
-    double lrDecayFactor;
-    double lrDecayThreshold;
+    flt_t lrGrowthFactor;
+    flt_t lrGrowthThreshold;
+    flt_t lrDecayFactor;
+    flt_t lrDecayThreshold;
     int lrAdaptPatience;
     const ConvergenceMonitor& monitor;
-    double currentRate;
+    flt_t currentRate;
     int growthSteps = 0;
     int decaySteps = 0;
 };

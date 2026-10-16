@@ -1,10 +1,15 @@
 #pragma once
 
+#include <type_traits>
 #include <vector>
 
 #include "DVec.hpp"
 #include "Macros.hpp"
 
+template <typename T>
+concept FLT_T = std::is_same_v<T, float> || std::is_same_v<T, double>;
+
+template <FLT_T T = flt_t>
 class VecList {
     using Memory = VecRef::MemoryType;
     // TODO: support iteration
@@ -15,7 +20,7 @@ class VecList {
         setSize(num_elements, 0.0);
     }
 
-    VecList(std::vector<std::vector<double>> list) : num_elements(list.size()), dim(list[0].size()), data() {
+    VecList(std::vector<std::vector<T>> list) : num_elements(list.size()), dim(list[0].size()), data() {
         setSize(num_elements);
         for (size_t i = 0; i < list.size(); ++i) {
             ASSERT(list[i].size() == dim, "list[" << i << "].size()=" << list[i].size() << ", dim=" << dim);
@@ -30,7 +35,7 @@ class VecList {
         data.resize(num_elements * VecRef::numEntriesForDimension(dim));
     }
 
-    void setSize(size_t new_size, double default_value) {
+    void setSize(size_t new_size, T default_value) {
         // ASSERT(size() == 0);
         setSize(new_size);
         for (size_t i = 0; i < size(); ++i) {
@@ -38,7 +43,7 @@ class VecList {
         }
     }
 
-    void setAll(double default_value) {
+    void setAll(T default_value) {
         #pragma omp parallel for
         for (size_t i = 0; i < size(); ++i) {
             (*this)[i].setAll(default_value);
@@ -61,8 +66,8 @@ class VecList {
         return CVecRef(&data[index], dim);
     }
 
-    std::vector<std::vector<double>> convertToVector() const {
-        std::vector<std::vector<double>> result(size(), std::vector<double>(dimension()));
+    std::vector<std::vector<T>> convertToVector() const {
+        std::vector<std::vector<T>> result(size(), std::vector<T>(dimension()));
         for (size_t i = 0; i < size(); ++i) {
             for (unsigned int d = 0; d < dimension(); d++) {
                 result[i][d] = (*this)[i][d];
@@ -71,7 +76,7 @@ class VecList {
         return result;
     }
 
-    void copyToFlat(double* out) const {
+    void copyToFlat(T* out) const {
         for (size_t i = 0; i < size(); ++i) {
             for (unsigned int d = 0; d < dimension(); ++d) {
                 out[i * dimension() + d] = (*this)[i][d];

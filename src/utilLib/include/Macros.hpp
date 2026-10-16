@@ -53,7 +53,7 @@ void unused(T&&) {}
 #define ASSERT_(N) ASSERT_##N
 #define ASSERT_EVAL(N) ASSERT_(N)
 #define ASSERT(...) ASSERT_EVAL(NARG(__VA_ARGS__))(__VA_ARGS__)
-#define ASSERT_CLOSE(x, y) ASSERT(((x) - (y)) * ((x) - (y)) < 0.001 * 0.001)
+#define ASSERT_CLOSE(x, y) ASSERT(((x) - (y)) * ((x) - (y)) < flt_t{0.001} * flt_t{0.001})
 
 #ifdef EMBEDDING_USE_ASSERTIONS
 #define ASSERTIONS_ACTIVE true
