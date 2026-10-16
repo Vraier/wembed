@@ -23,7 +23,7 @@
 class WeightedIndex {
    public:
     WeightedIndex(IndexType type, int dimension, flt_t doublingFactor, flt_t dynamicBuffer,
-                  flt_t minExpectedReuses = 2.0)
+                  flt_t minExpectedReuses = flt_t{2.0})
         : indexType(checkedIndexType(type, dimension)),
           DIMENSION(dimension),
           doublingFactor(doublingFactor),

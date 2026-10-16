@@ -29,7 +29,8 @@ histInfo EdgeSampler::sampleHistEntries(const Graph& graph, std::shared_ptr<Embe
     int v = 0;
     int w = 0;
     // scale determines how much more non edges than edges
-    flt_t nonEdgeProb = std::min(flt_t{1.0}, sampleingScale * static_cast<flt_t>(M) / static_cast<flt_t>(noM));
+    // nonEdgeProb == 1.0 will cause an stl assertion to fail
+    flt_t nonEdgeProb = std::min(flt_t{1.0} - std::numeric_limits<flt_t>::epsilon(), sampleingScale * static_cast<flt_t>(M) / static_cast<flt_t>(noM));
     ll totalJumpSize = 0;
     while (true) {
         // calculate how many nodes should be skipped

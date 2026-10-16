@@ -33,36 +33,36 @@ class KdTreeQueries : public SpatialIndex {
 
    private:
     struct Node {
-        flt_t split;
+        float split;
         uint32_t dim;
     };
     struct BuildEntry {
-        flt_t key;
+        float key;
         uint32_t id;
     };
     struct Query {
-        const flt_t* point;
-        flt_t* offsets;  // per dimension: distance of the query to the current cell
-        flt_t sqRadius;
+        const float* point;
+        float* offsets;  // per dimension: distance of the query to the current cell
+        float sqRadius;
         std::vector<uint64_t>* out;
     };
 
-    void build(size_t node, uint32_t lo, uint32_t hi, const flt_t* source, BuildEntry* entries);
-    uint32_t widestDimension(uint32_t lo, uint32_t hi, const flt_t* source, const BuildEntry* entries) const;
-    void writeLeaf(uint32_t lo, uint32_t hi, const flt_t* source, const BuildEntry* entries);
+    void build(size_t node, uint32_t lo, uint32_t hi, const float* source, BuildEntry* entries);
+    uint32_t widestDimension(uint32_t lo, uint32_t hi, const float* source, const BuildEntry* entries) const;
+    void writeLeaf(uint32_t lo, uint32_t hi, const float* source, const BuildEntry* entries);
 
-    void search(size_t node, uint32_t lo, uint32_t hi, flt_t sqDistToCell, Query& query) const;
+    void search(size_t node, uint32_t lo, uint32_t hi, float sqDistToCell, Query& query) const;
     void scanLeaf(uint32_t lo, uint32_t hi, const Query& query) const;
 
     size_t dimension;
     uint32_t numPoints = 0;
-    flt_t maxAbsCoordinate = 0.0;  // for the rounding error bound
+    float maxAbsCoordinate = 0.0f;  // for the rounding error bound
 
     // inner nodes in heap order: children of i are 2i+1 and 2i+2. Node i covers the slot
     // range [lo, hi) and splits it at mid = lo + (hi - lo) / 2 into [lo, mid) and [mid, hi)
     std::vector<Node> nodes;
     // leaf [lo, hi) owns coordinates[lo * d, hi * d); within the block, the values of
     // dimension k are stored contiguously at offset k * (hi - lo)
-    std::vector<flt_t> coordinates;
+    std::vector<float> coordinates;
     std::vector<uint32_t> ids;  // slot -> position in the input point array
 };
