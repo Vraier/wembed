@@ -43,14 +43,14 @@ std::vector<IndexUnderTest> spatialIndices() {
     return indices;
 }
 
-std::vector<CVecRef> refs(const VecList& positions) {
+std::vector<CVecRef> refs(const VecList<>& positions) {
     std::vector<CVecRef> result;
     for (int i = 0; i < positions.size(); i++) result.push_back(positions[i]);
     return result;
 }
 
-double sqDistance(CVecRef a, CVecRef b) {
-    double sum = 0.0;
+flt_t sqDistance(CVecRef a, CVecRef b) {
+    flt_t sum = 0.0;
     for (int k = 0; k < a.dimension(); k++) sum += (a[k] - b[k]) * (a[k] - b[k]);
     return sum;
 }
@@ -59,7 +59,7 @@ double sqDistance(CVecRef a, CVecRef b) {
 // clearly inside must be reported, points that are clearly outside must not, and the ids
 // must be valid and unique. The tolerance covers the rounding of squared distances, which
 // grows with the magnitude of the coordinates.
-void expectMatchesBruteForce(const SpatialIndex& index, const VecList& positions, CVecRef query, double radius) {
+void expectMatchesBruteForce(const SpatialIndex& index, const VecList<>& positions, CVecRef query, flt_t radius) {
     std::vector<uint64_t> found = {12345};  // stale content has to be cleared by the query
     const size_t numFound = index.query_sphere(query, radius, found);
     ASSERT_EQ(numFound, found.size());
@@ -67,15 +67,15 @@ void expectMatchesBruteForce(const SpatialIndex& index, const VecList& positions
     ASSERT_TRUE(std::adjacent_find(found.begin(), found.end()) == found.end()) << "duplicate ids";
     for (const uint64_t id : found) ASSERT_LT(id, positions.size());
 
-    double maxAbs = 0.0;
+    flt_t maxAbs = 0.0;
     for (int k = 0; k < query.dimension(); k++) maxAbs = std::max(maxAbs, std::abs(query[k]));
     for (int i = 0; i < positions.size(); i++) {
         for (int k = 0; k < positions.dimension(); k++) maxAbs = std::max(maxAbs, std::abs(positions[i][k]));
     }
-    const double sqTolerance = 1e-3 + 1e-5 * positions.dimension() * maxAbs * maxAbs;
+    const flt_t sqTolerance = flt_t{1e-3} + flt_t{1e-5} * static_cast<flt_t>(positions.dimension()) * maxAbs * maxAbs;
 
     for (int i = 0; i < positions.size(); i++) {
-        const double sqDist = sqDistance(positions[i], query);
+        const flt_t sqDist = sqDistance(positions[i], query);
         const bool reported = std::binary_search(found.begin(), found.end(), static_cast<uint64_t>(i));
         if (sqDist <= radius * radius - sqTolerance) {
             EXPECT_TRUE(reported) << "missed point " << i << " at distance " << std::sqrt(sqDist);
@@ -86,12 +86,12 @@ void expectMatchesBruteForce(const SpatialIndex& index, const VecList& positions
 }
 
 // mixture of a uniform background and a few dense clusters, like an embedding
-VecList clusteredPoints(int dimension, int n, std::mt19937& gen, double offset = 0.0) {
-    std::uniform_real_distribution<double> uniform(-10.0, 10.0);
-    std::normal_distribution<double> normal(0.0, 0.3);
-    std::vector<std::vector<double>> centres(5, std::vector<double>(dimension));
+VecList<> clusteredPoints(int dimension, int n, std::mt19937& gen, flt_t offset = 0.0) {
+    std::uniform_real_distribution<flt_t> uniform(-10.0, 10.0);
+    std::normal_distribution<flt_t> normal(0.0, 0.3);
+    std::vector<std::vector<flt_t>> centres(5, std::vector<flt_t>(dimension));
     for (auto& centre : centres) {
-        for (double& c : centre) c = uniform(gen);
+        for (flt_t& c : centre) c = uniform(gen);
     }
     VecList positions(dimension, n);
     for (int i = 0; i < n; i++) {
@@ -121,7 +121,7 @@ TEST_P(TestSpatialIndex, EmptyIndex) {
 
 TEST_P(TestSpatialIndex, MatchesBruteForce) {
     std::mt19937 gen(1234);
-    std::uniform_real_distribution<double> queryDist(-12.0, 12.0);
+    std::uniform_real_distribution<flt_t> queryDist(-12.0, 12.0);
     for (const int dimension : {1, 2, 3, 4, 8, 16, 20}) {
         if (dimension < GetParam().minDimension || dimension > GetParam().maxDimension) continue;
         // tiny inputs, and sizes around the leaf sizes of the trees (32 and 500)
@@ -137,7 +137,7 @@ TEST_P(TestSpatialIndex, MatchesBruteForce) {
                     // queries usually sit on a point of some index
                     for (int k = 0; k < dimension; k++) query[0][k] = positions[repeat % n][k];
                 }
-                for (const double radius : {0.0, 0.2, 1.5, 6.0, 1000.0}) {
+                for (const flt_t radius : {0.0, 0.2, 1.5, 6.0, 1000.0}) {
                     SCOPED_TRACE("d=" + std::to_string(dimension) + " n=" + std::to_string(n) +
                                  " r=" + std::to_string(radius));
                     expectMatchesBruteForce(*index, positions, query[0], radius);
@@ -158,7 +158,7 @@ TEST_P(TestSpatialIndex, DuplicatesAndTies) {
     VecList identical(dimension, n);
     for (int i = 0; i < n; i++) {
         for (int k = 0; k < dimension; k++) {
-            onGrid[i][k] = grid(gen);
+            onGrid[i][k] = static_cast<flt_t>(grid(gen));
             identical[i][k] = 0.5;
         }
     }
@@ -167,7 +167,7 @@ TEST_P(TestSpatialIndex, DuplicatesAndTies) {
     const auto identicalIndex = GetParam().build(refs(identical), dimension);
     for (int i = 0; i < 50; i++) {
         // no distance between grid points is close to one of these radii
-        for (const double radius : {0.5, 1.2, 1.6, 2.5}) {
+        for (const flt_t radius : {0.5, 1.2, 1.6, 2.5}) {
             expectMatchesBruteForce(*gridIndex, onGrid, onGrid[i], radius);
             expectMatchesBruteForce(*identicalIndex, identical, onGrid[i], radius);
         }
@@ -209,14 +209,14 @@ TEST_P(TestSpatialIndex, ConcurrentQueriesAndDeterminism) {
 // points exactly on the boundary, also far from the origin where float32 is coarse.
 TEST(TestKdTreeQueries, BoundaryPointsAreNotMissed) {
     std::mt19937 gen(7);
-    for (const double offset : {0.0, 1e3, 1e5}) {
+    for (const flt_t offset : {0.0, 1e3, 1e5}) {
         for (const int dimension : {2, 4, 8}) {
             const int n = 500;
             const VecList positions = clusteredPoints(dimension, n, gen, offset);
             const KdTreeQueries tree(refs(positions), dimension);
             for (int i = 0; i < n; i++) {
                 const int other = (i * 7 + 1) % n;
-                const double radius = std::sqrt(sqDistance(positions[i], positions[other]));
+                const flt_t radius = std::sqrt(sqDistance(positions[i], positions[other]));
                 std::vector<uint64_t> found;
                 tree.query_sphere(positions[i], radius, found);
                 EXPECT_TRUE(std::find(found.begin(), found.end(), other) != found.end())

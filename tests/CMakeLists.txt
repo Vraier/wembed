@@ -17,9 +17,9 @@ add_executable(UnitTests
     TestLossFunction.cpp
     TestMetrics.cpp
     TestPublicInterface.cpp
-    #TestSpatialIndex.cpp
+    TestSpatialIndex.cpp
     TestTimings.cpp
-    #TestWeightedIndex.cpp
+    TestWeightedIndex.cpp
 )
 target_link_libraries(UnitTests PRIVATE GTest::gtest_main evaluationLib)
 

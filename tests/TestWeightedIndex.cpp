@@ -52,26 +52,26 @@ TEST_P(TestWeightedIndex, OwnedPairsMatchBruteForce) {
     for (const int dim : {2, 4, 8, 20}) {
         if (GetParam() == IndexType::Sprk && dim > 16) continue;  // more than the sprk tree supports
         // keeps the expected number of repelling pairs per node roughly independent of dim
-        std::uniform_real_distribution<double> posDist(0.0, std::pow(2.0 * N, 1.0 / dim) * (dim > 8 ? 0.6 : 1.0));
-        std::uniform_real_distribution<double> weightExponent(0.0, 3.0);  // weights over 3 orders of magnitude
+        std::uniform_real_distribution<flt_t> posDist(0.0, std::pow(flt_t{2.0} * N, flt_t{1.0} / static_cast<flt_t>(dim)) * (dim > 8 ? flt_t{0.6} : flt_t{1.0}));
+        std::uniform_real_distribution<flt_t> weightExponent(0.0, 3.0);  // weights over 3 orders of magnitude
 
         VecList positions(dim, N);
-        std::vector<double> weights(N);
+        std::vector<flt_t> weights(N);
         for (int v = 0; v < N; v++) {
             for (int d = 0; d < dim; d++) positions[v][d] = posDist(gen);
-            weights[v] = std::pow(10.0, weightExponent(gen));
+            weights[v] = std::pow<flt_t>(10.0, weightExponent(gen));
         }
         weights[1] = weights[0];  // tie, owned by the smaller id
 
         WeightedIndex index(GetParam(), dim, 4.0, 0.0);
-        index.update(positions, weights, std::numeric_limits<double>::infinity());
+        index.update(positions, weights, std::numeric_limits<flt_t>::infinity());
 
         size_t numPairs = 0;
         for (NodeId v = 0; v < N; v++) {
             std::vector<NodeId> expected;
             for (NodeId u = 0; u < N; u++) {
                 if (u == v || !WeightedIndex::ownsPair(weights[v], weights[u], v, u)) continue;
-                double distSq = 0.0;
+                flt_t distSq = 0.0;
                 for (int d = 0; d < dim; d++) {
                     distSq += (positions[v][d] - positions[u][d]) * (positions[v][d] - positions[u][d]);
                 }
@@ -89,12 +89,12 @@ TEST_P(TestWeightedIndex, OwnedPairsMatchBruteForce) {
 // walk is sized so the run passes through fill, several reuse steps and forced rebuilds.
 TEST_P(TestWeightedIndex, DynamicReuseMatchesFreshRebuild) {
     std::mt19937 gen(42);
-    std::uniform_real_distribution<double> posDist(0.0, 15.0);
-    std::uniform_real_distribution<double> weightDist(1.0, 10.0);
-    std::uniform_real_distribution<double> moveDist(-0.05, 0.05);
+    std::uniform_real_distribution<flt_t> posDist(0.0, 15.0);
+    std::uniform_real_distribution<flt_t> weightDist(1.0, 10.0);
+    std::uniform_real_distribution<flt_t> moveDist(-0.05, 0.05);
 
     VecList positions(DIM, N);
-    std::vector<double> weights(N);
+    std::vector<flt_t> weights(N);
     for (int v = 0; v < N; v++) {
         for (int d = 0; d < DIM; d++) positions[v][d] = posDist(gen);
         weights[v] = weightDist(gen);
@@ -103,8 +103,8 @@ TEST_P(TestWeightedIndex, DynamicReuseMatchesFreshRebuild) {
     WeightedIndex dynamic(GetParam(), DIM, 4.0, 0.5);
     WeightedIndex fresh(GetParam(), DIM, 4.0, 0.0);
 
-    const double inf = std::numeric_limits<double>::infinity();
-    double maxDisplacement = inf;
+    const flt_t inf = std::numeric_limits<flt_t>::infinity();
+    flt_t maxDisplacement = inf;
     for (int step = 0; step < 25; step++) {
         dynamic.update(positions, weights, maxDisplacement);
         fresh.update(positions, weights, inf);
@@ -114,13 +114,13 @@ TEST_P(TestWeightedIndex, DynamicReuseMatchesFreshRebuild) {
 
         maxDisplacement = 0.0;
         for (int v = 0; v < N; v++) {
-            double distSq = 0.0;
+            flt_t distSq = 0.0;
             for (int d = 0; d < DIM; d++) {
-                const double delta = moveDist(gen);
+                const auto delta = moveDist(gen);
                 positions[v][d] += delta;
                 distSq += delta * delta;
             }
-            maxDisplacement = std::max(maxDisplacement, std::sqrt(distSq));
+            maxDisplacement = std::max<flt_t>(maxDisplacement, std::sqrt(distSq));
         }
     }
     EXPECT_GT(dynamic.numRebuilds(), 1);

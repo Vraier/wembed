@@ -8,7 +8,7 @@ using wembed::flt_t;
 
 namespace {
 
-constexpr flt_t H = 1e-7;
+constexpr flt_t H = std::is_same_v<float, flt_t> ? 1e-3 : 1e-7;
 
 flt_t numDerivative(flt_t (*f)(flt_t), flt_t wd) { return (f(wd + H) - f(wd - H)) / (2 * H); }
 
@@ -33,12 +33,13 @@ TEST(LossFunction, IsExactHinge) {
 }
 
 TEST(LossFunction, ForceFactorIsLossDerivative) {
+    constexpr flt_t err = std::is_same_v<float, flt_t> ? 1e-3 : 1e-5;
     for (flt_t wd : gridAvoidingKink()) {
         EXPECT_NEAR(lossFunction::attractionForceFactor(wd),
-                    numDerivative(lossFunction::attractionLoss, wd), 1e-5)
+                    numDerivative(lossFunction::attractionLoss, wd), err)
             << "attraction, wd=" << wd;
         EXPECT_NEAR(lossFunction::repulsionForceFactor(wd),
-                    -numDerivative(lossFunction::repulsionLoss, wd), 1e-5)
+                    -numDerivative(lossFunction::repulsionLoss, wd), err)
             << "repulsion, wd=" << wd;
     }
 }
