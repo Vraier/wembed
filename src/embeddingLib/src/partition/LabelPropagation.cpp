@@ -1,5 +1,7 @@
 #include "LabelPropagation.hpp"
 
+#include <stdexcept>
+
 #include "GraphAlgorithms.hpp"
 #include "Macros.hpp"
 #include "Rand.hpp"
@@ -194,8 +196,7 @@ std::vector<NodeId> LabelPropagation::calculateLabelPropagationOrder(const Graph
             result = Rand::randomPermutation(currG.getNumVertices());
             break;
         default:
-            LOG_ERROR("Unknown order type for label propagation");
-            break;
+            throw std::invalid_argument("unknown order type for label propagation");
     }
     return result;
 }

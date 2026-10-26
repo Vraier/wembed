@@ -16,27 +16,27 @@ using ll = long long;
 template <typename T>
 void unused(T&&) {}
 
-// logging macro
+// debug output, compiled out in release builds
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #ifdef NDEBUG
 #define LOG_DEBUG(msg)
-#define FILE_INFO ""
 #else
-#define FILE_INFO __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): "
-#define LOG_DEBUG(msg) std::cout << "[DEBUG] " << FILE_INFO << msg << std::endl;
+#define LOG_DEBUG(msg)                                                                                          \
+    do {                                                                                                        \
+        std::cerr << "[DEBUG] " << __FILENAME__ << "(" << __LINE__ << ", " << __FUNCTION__ << "): " << msg      \
+                  << std::endl;                                                                                 \
+    } while (0)
 #endif
-#define LOG_INFO(msg) std::cout << "[INFO] " << FILE_INFO << msg << std::endl;
-#define LOG_WARNING(msg) std::cout << "[WARNING] " << FILE_INFO << msg << std::endl;
-#define LOG_ERROR(msg) std::cout << "[ERROR] " << FILE_INFO << msg << std::endl; std::abort();
 
 // assertion with variable number of arguments
 #ifdef EMBEDDING_USE_ASSERTIONS
-#define ASSERT_2(cond, msg)                                     \
-    do {                                                        \
-        if (!(cond)) {                                          \
-            LOG_ERROR("Assertion `" #cond "` failed: " << msg); \
-            std::abort();                                       \
-        }                                                       \
+#define ASSERT_2(cond, msg)                                                                                     \
+    do {                                                                                                        \
+        if (!(cond)) {                                                                                          \
+            std::cerr << __FILENAME__ << "(" << __LINE__ << "): assertion `" #cond "` failed: " << msg          \
+                      << std::endl;                                                                             \
+            std::abort();                                                                                       \
+        }                                                                                                       \
     } while (0)
 
 #define ASSERT_1(cond) ASSERT_2(cond, "")

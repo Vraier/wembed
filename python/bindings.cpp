@@ -12,6 +12,7 @@ PYBIND11_MODULE(wembed, m) {
     m.doc() = "WEmbed: weighted low-dimensional graph embeddings";
 
     py::enum_<wembed::SpatialIndex>(m, "SpatialIndex")
+        .value("IndexKdTree", wembed::IndexKdTree)
         .value("IndexSprk", wembed::IndexSprk)
         .export_values();
 
@@ -53,6 +54,22 @@ PYBIND11_MODULE(wembed, m) {
                    ", total=" + std::to_string(l.total) + ")";
         });
 
+    py::class_<wembed::Progress>(m, "Progress")
+        .def_readonly("layer", &wembed::Progress::layer)
+        .def_readonly("numLayers", &wembed::Progress::numLayers)
+        .def_readonly("numVertices", &wembed::Progress::numVertices)
+        .def_readonly("iteration", &wembed::Progress::iteration)
+        .def_readonly("expectedIterations", &wembed::Progress::expectedIterations)
+        .def_readonly("layerSeconds", &wembed::Progress::layerSeconds)
+        .def_readonly("etaSeconds", &wembed::Progress::etaSeconds)
+        .def_readonly("layerFinished", &wembed::Progress::layerFinished)
+        .def("__repr__", [](const wembed::Progress& p) {
+            return "Progress(layer=" + std::to_string(p.layer) + ", numLayers=" + std::to_string(p.numLayers) +
+                   ", iteration=" + std::to_string(p.iteration) +
+                   ", expectedIterations=" + std::to_string(p.expectedIterations) +
+                   ", etaSeconds=" + std::to_string(p.etaSeconds) + ")";
+        });
+
     py::class_<wembed::Options>(m, "Options")
         .def(py::init<>())
         .def_readwrite("embeddingDimension", &wembed::Options::embeddingDimension)
@@ -60,10 +77,8 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("dimensionHint", &wembed::Options::dimensionHint)
         .def_readwrite("layeredEmbedding", &wembed::Options::layeredEmbedding)
         .def_readwrite("indexType", &wembed::Options::indexType)
-        .def_readwrite("attractionScale", &wembed::Options::attractionScale)
-        .def_readwrite("repulsionScale", &wembed::Options::repulsionScale)
+        .def_readwrite("dynamicQueryBuffer", &wembed::Options::dynamicQueryBuffer)
         .def_readwrite("centreScale", &wembed::Options::centreScale)
-        .def_readwrite("edgeLength", &wembed::Options::edgeLength)
         .def_readwrite("expansionStretch", &wembed::Options::expansionStretch)
         .def_readwrite("optimizerType", &wembed::Options::optimizerType)
         .def_readwrite("maxIterations", &wembed::Options::maxIterations)
@@ -80,8 +95,6 @@ PYBIND11_MODULE(wembed, m) {
         .def_readwrite("stopCriterion", &wembed::Options::stopCriterion)
         .def_readwrite("stopDisplacementTol", &wembed::Options::stopDisplacementTol)
         .def_readwrite("stopDisplacementPatience", &wembed::Options::stopDisplacementPatience)
-        .def_readwrite("lossSmoothingFactor", &wembed::Options::lossSmoothingFactor)
-        .def_readwrite("lossRateWindow", &wembed::Options::lossRateWindow)
         .def_readwrite("stopLossTol", &wembed::Options::stopLossTol)
         .def_readwrite("stopLossPatience", &wembed::Options::stopLossPatience);
 
@@ -109,6 +122,7 @@ PYBIND11_MODULE(wembed, m) {
         .def("setWeights", &wembed::Embedder::setWeights)
         .def("getTimings", &wembed::Embedder::getTimings)
         .def("getLoss", &wembed::Embedder::getLoss)
+        .def("getProgress", &wembed::Embedder::getProgress)
         .def("getCurrentLearningRate", &wembed::Embedder::getCurrentLearningRate)
         .def("getLastRelDisplacement", &wembed::Embedder::getLastRelDisplacement)
         .def("getLastRelLossImprovement", &wembed::Embedder::getLastRelLossImprovement)
@@ -116,7 +130,8 @@ PYBIND11_MODULE(wembed, m) {
              py::arg("filePath"), py::arg("writeWeights") = true);
 
     m.def("createEmbedder", &wembed::createEmbedder, py::arg("graph"), py::arg("options"));
-    m.def("graphFromEdges", &wembed::graphFromEdges, py::arg("edges"));
+    m.def("graphFromEdges", &wembed::graphFromEdges, py::arg("edges"), py::arg("numVertices") = 0);
+    m.def("graphFromNeighborhoods", &wembed::graphFromNeighborhoods, py::arg("offsets"), py::arg("neighbors"));
     m.def("graphFromEdgeListFile", &wembed::graphFromEdgeListFile,
           py::arg("filePath"), py::arg("comment") = "#", py::arg("delimiter") = " ");
     m.def("readCoordinatesFromFile", &wembed::readCoordinatesFromFile,

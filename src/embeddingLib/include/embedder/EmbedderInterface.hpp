@@ -18,6 +18,20 @@ struct EmbeddingLoss {
 };
 
 /**
+ * Progress after the most recent step, mirrors wembed::Progress.
+ */
+struct EmbeddingProgress {
+    int layer = 0;
+    int numLayers = 1;
+    int numVertices = 0;
+    int iteration = 0;
+    int expectedIterations = -1;
+    double layerSeconds = 0.0;
+    double etaSeconds = -1.0;
+    bool layerFinished = false;
+};
+
+/**
  * Interface for weighted embedder classes.
  */
 class EmbedderInterface {
@@ -30,7 +44,11 @@ class EmbedderInterface {
     EmbedderInterface(const Graph& g, const EmbedderOptions& opts)
                         : graph(g),
                           opts(opts),
-                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType)
+                          // negative buffer = auto;
+                          state(g.getNumVertices(), opts.embeddingDimension, opts.indexType, opts.doublingFactor,
+                                opts.dynamicQueryBuffer < 0.0 ? 3.0 / opts.embeddingDimension
+                                                              : opts.dynamicQueryBuffer,
+                                opts.dynamicQueryMinReuses)
     {
         state.lastLearningRate = opts.learningRate;
     }
@@ -134,6 +152,8 @@ class EmbedderInterface {
      * Returns whether the embedder is finished (enough steps or insignificant change).
      */
     virtual bool isFinished() = 0;
+
+    virtual EmbeddingProgress getProgress() = 0;
 
     /**
      * Calculates the whole embedding until termination criterion is met.

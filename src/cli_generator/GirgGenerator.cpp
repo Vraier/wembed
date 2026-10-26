@@ -9,8 +9,6 @@
 
 std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> GirgGenerator::generateRandomGraph(
     Options options) {
-    LOG_INFO("Constructing GIRG...");
-
     const int N = options.numNodes;
     const double ple = options.ple;
     const double deg = options.averageDegree;
@@ -61,10 +59,8 @@ std::tuple<Graph, std::vector<std::vector<double>>, std::vector<double>> GirgGen
             weights[v] = girgWeights[connectedToUnconnected[v]];
         }
 
-        LOG_INFO("Finished construction");
         return std::make_tuple(connected, coords, weights);
     }
 
-    LOG_INFO("Finished construction");
     return std::make_tuple(unconnected, girgPositions, girgWeights);
 }

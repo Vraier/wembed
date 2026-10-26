@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cmath>
-#include <eigen3/Eigen/Dense>
 #include <type_traits>
 #include <vector>
 
@@ -711,7 +710,7 @@ struct ValueImpl {
     T data;
 };
 
-// own implementation of basic operations in case we don't want to use Eigen
+// own implementation of basic vector operations
 template <unsigned int D>
 struct ArrayBaseType {
     ArrayBaseType(const ArrayBaseType&) = default;
@@ -785,16 +784,6 @@ struct ArrayBaseType {
 
    private:
     std::array<double, D> data;
-};
-
-using Eigen::Vector;
-using Eigen::VectorXd;
-
-template <unsigned int D>
-struct ConstructVector {
-    static constexpr Vector<double, D> construct() {
-        return Vector<double, D>();
-    }
 };
 
 template <unsigned int D>
@@ -899,8 +888,6 @@ struct IndirectionImpl {
 // explicitely instantiate the different variants to trigger compiler
 // errors if one does not work
 template class VecBase<ValueImpl<ArrayBaseType<DIMENSION>, ConstructArray<DIMENSION>>>;
-template class VecBase<ValueImpl<Eigen::Vector<double, DIMENSION>, ConstructVector<DIMENSION>>>;
-template class VecBase<ValueImpl<Eigen::VectorXd, ConstructVector<DIMENSION>>>;
 template class VecBase<IndirectionImpl>;
 
 }  // end of namespace impl
@@ -908,8 +895,6 @@ template class VecBase<IndirectionImpl>;
 // change this declaration to exchange the vector type
 
 // using InnerType = impl::ValueImpl<impl::ArrayBaseType<impl::DIMENSION>, impl::ConstructArray<impl::DIMENSION>>;
-// using InnerType = impl::ValueImpl<Eigen::Vector<double, impl::DIMENSION>, impl::ConstructVector<impl::DIMENSION>>;
-// using InnerType = impl::ValueImpl<Eigen::VectorXd, impl::ConstructVector<impl::DIMENSION>>;
 using InnerType = impl::IndirectionImpl;
 
 using CVecRef = impl::CVecRefImpl<InnerType, -1>;

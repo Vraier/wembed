@@ -1,10 +1,4 @@
-set(target wembed)
-
-add_executable(${target})
-
-target_include_directories(${target} PRIVATE ".")
-
-target_sources(${target} PRIVATE
-        "main.cpp")
-
-target_link_libraries(${target} PRIVATE wembed_flags wembedLib CLI11::CLI11)
+# the target cannot be called wembed, that is the library
+add_executable(wembed_cli main.cpp)
+set_target_properties(wembed_cli PROPERTIES OUTPUT_NAME wembed)
+target_link_libraries(wembed_cli PRIVATE wembed_flags wembed CLI11::CLI11)

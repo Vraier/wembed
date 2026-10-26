@@ -11,8 +11,6 @@ std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::s
 
     std::vector<nodeEntry> result(numNodeSamples);
 
-    LOG_INFO("Sampling " << numNodeSamples << " nodes");
-
 #pragma omp parallel for firstprivate(isNeighbor), schedule(runtime)
     for (int i = 0; i < numNodeSamples; i++) {
         nodeEntry newEntry;
@@ -50,7 +48,6 @@ std::vector<nodeEntry> NodeSampler::sampleHistEntries(const Graph& graph, std::s
         result[i] = newEntry;
     }
 
-    LOG_INFO("Finished sampling");
     return result;
 }
 

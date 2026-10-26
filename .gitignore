@@ -1,5 +1,6 @@
 release/
 debug/
+profile/
 build/
 build-lib/
 profiling_build/

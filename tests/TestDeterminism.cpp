@@ -79,6 +79,9 @@ EmbedderOptions baseOptions() {
     EmbedderOptions opts;
     opts.embeddingDimension = 2;
     opts.maxIterations = 1000;  
+#ifndef WEMBED_HAS_SPRK
+    opts.indexType = IndexType::KdTree;  // the default index is not available in this build
+#endif
     return opts;
 }
 

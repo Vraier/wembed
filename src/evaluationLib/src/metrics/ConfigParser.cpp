@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <regex>
+#include <stdexcept>
 
 #include "StringManipulation.hpp"
 #include "FileOperations.hpp"
@@ -19,8 +20,7 @@ std::vector<std::string> ConfigParser::getMetricValues() {
                 tmp = util::splitIntoTokens(util::readLinesFromFile(logPath)[1]);
                 break;
             default:
-                LOG_ERROR("Unknown config type");
-                break;
+                throw std::invalid_argument("unknown log type");
         }
     }
     result.insert(result.end(), tmp.begin(), tmp.end());
@@ -40,8 +40,7 @@ std::vector<std::string> ConfigParser::getMetricNames() {
                 tmp = util::splitIntoTokens(util::readLinesFromFile(logPath)[0]);
                 break;
             default:
-                LOG_ERROR("Unknown config type");
-                break;
+                throw std::invalid_argument("unknown log type");
         }
     }
     result.insert(result.end(), tmp.begin(), tmp.end());
