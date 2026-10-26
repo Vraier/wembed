@@ -86,9 +86,11 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
                                                                                   opts.stopDisplacementPatience)),
                         lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
     {
+        /*
         if (this->opts.edgeLength != 1.0) {
             throw std::runtime_error("Dot product embeddings only work on edge lengths of 1.0");
         }
+        */
         if (!initializeState) {
             return;  // caller assigns coordinates and weights right after construction
         }
@@ -98,18 +100,19 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
         SimpleDotProductEmbedder::setWeights(constructUnitWeights(static_cast<int>(graphSize())));
     }
 
-    virtual ~SimpleDotProductEmbedder() override = default;
+    ~SimpleDotProductEmbedder() override = default;
     SimpleDotProductEmbedder(SimpleDotProductEmbedder&&) = default;
     SimpleDotProductEmbedder& operator=(SimpleDotProductEmbedder&&) = default;
-    virtual void calculateStep() override;
-    virtual bool isFinished() override;
-    virtual void calculateEmbedding() override;
-    virtual Graph getCurrentGraph() override;
-    virtual std::vector<std::vector<double>> getCoordinates() override;
-    virtual std::vector<double> getWeights() override;
-    virtual std::vector<util::TimingResult> getTimings() override;
-    virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates) override;
-    virtual void setWeights(const std::vector<double>& weights) override;
+    void calculateStep() override;
+    bool isFinished() override;
+    EmbeddingProgress getProgress() override;
+    void calculateEmbedding() override;
+    Graph getCurrentGraph() override;
+    std::vector<std::vector<double>> getCoordinates() override;
+    std::vector<double> getWeights() override;
+    std::vector<util::TimingResult> getTimings() override;
+    void setCoordinates(const std::vector<std::vector<double>> &coordinates) override;
+    void setWeights(const std::vector<double>& weights) override;
 
     [[nodiscard]] static std::vector<double> rescaleWeights(double dimensionHint, double embeddingDimension,
                                             const std::vector<double>& weights);

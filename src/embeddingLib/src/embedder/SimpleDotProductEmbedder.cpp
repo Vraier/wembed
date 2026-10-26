@@ -1,5 +1,6 @@
 #include "SimpleDotProductEmbedder.hpp"
 
+#include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
 #include "VectorOperations.hpp"
 
@@ -87,12 +88,9 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
 
     vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
 
-    const double lossContribution = dist - this->opts.edgeLength;
-    if (dist >= this->opts.edgeLength) { // if dot product distance it greater or equal to 1
-        result *= 0.0;
-    } else {
-        result *= this->opts.attractionScale;
-    }
+    const double lossContribution = lossFunction::attractionLoss(dist);
+    const double forceFactor = lossFunction::attractionForceFactor(dist);
+    result *= forceFactor,
 
     this->state.force[v] += result;
     return lossContribution;
@@ -133,18 +131,9 @@ double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1>
 
     vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
 
-    double lossContribution = 0.0;
-    if (dist < this->opts.edgeLength) {
-        result *= 0;
-    } else {
-        result *= -1.0 * this->opts.repulsionScale; // * -1 to repel
-        lossContribution = this->opts.edgeLength - dist;
-    }
-
-    // increase repulsion force when we use less negative samples
-    if (this->opts.numNegativeSamples > 0) {
-        result *= static_cast<double>(graphSize()) / static_cast<double>(this->opts.numNegativeSamples);
-    }
+    const double lossContribution = lossFunction::repulsionLoss(dist);
+    const double forceFactor = lossFunction::repulsionForceFactor(dist);
+    result *= forceFactor * -1.0;
 
     this->state.force[v] += result;
     return lossContribution;
@@ -268,15 +257,18 @@ bool SimpleDotProductEmbedder::isFinished() {
     return this->convergenceMonitor->converged();
 }
 
+EmbeddingProgress SimpleDotProductEmbedder::getProgress() {
+    //TODO: Implement
+    return {};
+}
+
 void SimpleDotProductEmbedder::calculateEmbedding() {
-    LOG_INFO("Calculating embedding...");
     timer->startTiming("embedding_all", "Embedding");
     this->state.currentIteration = 0;
     while (!isFinished()) {
         calculateStep();
     }
     timer->stopTiming("embedding_all");
-    LOG_INFO("Finished calculating embedding in iteration " << this->state.currentIteration);
 }
 
 Graph SimpleDotProductEmbedder::getCurrentGraph() {
@@ -299,9 +291,12 @@ void SimpleDotProductEmbedder::setCoordinates(const std::vector<std::vector<doub
     const int coordDim = coordinates.empty() ? 0 : static_cast<int>(coordinates[0].size());
     ASSERT(graphSize() == coordinates.size());
 
+    //TODO: Add new checks and throw exceptions
+    /*
     if (coordDim != this->opts.embeddingDimension)
         LOG_WARNING("Dimension of coordinates (" << coordDim << ") does not match embedding dimension ("
                                                  << opts.embeddingDimension << ")");
+    */
 
     for (size_t i = 0; i < graphSize(); i++) {
         ASSERT(coordinates[i].size() == coordDim,
@@ -314,7 +309,8 @@ void SimpleDotProductEmbedder::setCoordinates(const std::vector<std::vector<doub
 
 void SimpleDotProductEmbedder::setWeights(const std::vector<double> &weights) {
     ASSERT(graphSize() == weights.size());
-    LOG_WARNING("Dot product embeddings ignore weights")
+    //TODO: Throw exception?
+    //LOG_WARNING("Dot product embeddings ignore weights")
     this->state.currentWeights = weights;
     sortNodes();
 }
