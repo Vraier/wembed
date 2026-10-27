@@ -2,6 +2,7 @@
 
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
+#include "ProgressEstimate.hpp"
 #include "VectorOperations.hpp"
 
 
@@ -88,8 +89,12 @@ double SimpleDotProductEmbedder::attractionForce(NodeId v, NodeId u, VecBuffer<1
 
     vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
 
-    const double lossContribution = lossFunction::attractionLoss(dist);
-    const double forceFactor = lossFunction::attractionForceFactor(dist);
+    double lossContribution = 0.0;
+    double forceFactor = 0.0;
+    if (dist < 1.0) {
+        lossContribution = std::abs(1.0 - dist);
+        forceFactor = 1.0;
+    }
     result *= forceFactor,
 
     this->state.force[v] += result;
@@ -131,9 +136,13 @@ double SimpleDotProductEmbedder::repellingForce(NodeId v, NodeId u, VecBuffer<1>
 
     vectorOperations::differentiateDotProductNorm(posV, posU, dist, result);
 
-    const double lossContribution = lossFunction::repulsionLoss(dist);
-    const double forceFactor = lossFunction::repulsionForceFactor(dist);
-    result *= forceFactor * -1.0;
+    double lossContribution = 0.0;
+    double forceFactor = 0.0;
+    if (dist > 1.0) {
+        lossContribution = dist - 1.0;
+        forceFactor = -1.0;
+    }
+    result *= forceFactor;
 
     this->state.force[v] += result;
     return lossContribution;
@@ -148,7 +157,6 @@ void SimpleDotProductEmbedder::applyGravityCentre() {
                         static_cast<double>(graphSize());
     }
     // Wrap the centroid in a single-row VecList so we can use VecRef arithmetic below.
-    // TODO: this can be a temp vec probably
     VecList gravityCentre({dimGravity});
 
 #pragma omp parallel for default(none) shared(gravityCentre) schedule(static)
@@ -158,7 +166,6 @@ void SimpleDotProductEmbedder::applyGravityCentre() {
 }
 
 void SimpleDotProductEmbedder::observeDisplacement() {
-    //TODO: Verify this works with the distance function
     const int dim = this->opts.embeddingDimension;
     const std::size_t n = graphSize();
 
@@ -258,8 +265,15 @@ bool SimpleDotProductEmbedder::isFinished() {
 }
 
 EmbeddingProgress SimpleDotProductEmbedder::getProgress() {
-    //TODO: Implement
-    return {};
+    EmbeddingProgress progress;
+    progress.numVertices = static_cast<int>(graphSize());
+    progress.iteration = static_cast<int>(this->state.currentIteration);
+    progress.expectedIterations = progressEstimate::priorLayerIterations(this->opts);
+    progress.layerSeconds = this->state.stepSeconds;
+    progress.etaSeconds =
+        progressEstimate::remainingLayerSeconds(progress.iteration, progress.expectedIterations, progress.layerSeconds);
+    progress.layerFinished = isFinished();
+    return progress;
 }
 
 void SimpleDotProductEmbedder::calculateEmbedding() {
@@ -288,29 +302,30 @@ std::vector<util::TimingResult> SimpleDotProductEmbedder::getTimings() {
 }
 
 void SimpleDotProductEmbedder::setCoordinates(const std::vector<std::vector<double>> &coordinates) {
-    const int coordDim = coordinates.empty() ? 0 : static_cast<int>(coordinates[0].size());
-    ASSERT(graphSize() == coordinates.size());
-
-    //TODO: Add new checks and throw exceptions
-    /*
-    if (coordDim != this->opts.embeddingDimension)
-        LOG_WARNING("Dimension of coordinates (" << coordDim << ") does not match embedding dimension ("
-                                                 << opts.embeddingDimension << ")");
-    */
+    const int dim = this->opts.embeddingDimension;
+    if (coordinates.size() != graphSize()) {
+        throw std::invalid_argument("got coordinates for " + std::to_string(coordinates.size()) +
+                                    " vertices, the graph has " + std::to_string(graphSize()));
+    }
 
     for (size_t i = 0; i < graphSize(); i++) {
-        ASSERT(coordinates[i].size() == coordDim,
-               "coordinates[" << i << "].size()=" << coordinates[i].size() << ", dim=" << coordDim);
-        for (int d = 0; d < std::min(this->opts.embeddingDimension, coordDim); d++) {
+        if (coordinates[i].size() < static_cast<size_t>(dim)) {
+            throw std::invalid_argument("vertex " + std::to_string(i) + " has " +
+                                        std::to_string(coordinates[i].size()) + " coordinates, expected " +
+                                        std::to_string(dim));
+        }
+        for (int d = 0; d < dim; d++) {
             state.currentPositions[i][d] = coordinates[i][d];
         }
     }
 }
 
 void SimpleDotProductEmbedder::setWeights(const std::vector<double> &weights) {
-    ASSERT(graphSize() == weights.size());
-    //TODO: Throw exception?
-    //LOG_WARNING("Dot product embeddings ignore weights")
+    if (weights.size() != graphSize()) {
+        throw std::invalid_argument("got weights for " + std::to_string(weights.size()) +
+                                    " vertices, the graph has " + std::to_string(graphSize()));
+    }
+
     this->state.currentWeights = weights;
     sortNodes();
 }
