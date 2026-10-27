@@ -86,11 +86,6 @@ class SimpleDotProductEmbedder : public EmbedderInterface {
                                                                                   opts.stopDisplacementPatience)),
                         lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
     {
-        /*
-        if (this->opts.edgeLength != 1.0) {
-            throw std::runtime_error("Dot product embeddings only work on edge lengths of 1.0");
-        }
-        */
         if (!initializeState) {
             return;  // caller assigns coordinates and weights right after construction
         }
