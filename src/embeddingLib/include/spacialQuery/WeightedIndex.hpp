@@ -18,7 +18,7 @@
  * after a rebuild, queries run once with radii inflated by the buffer and cache each
  * node's candidate list; while the accumulated movement (2 * maxDisplacement per step)
  * stays below the buffer, iterations only re-filter the cached lists against current
- * positions. 
+ * positions.
  */
 class WeightedIndex {
    public:
