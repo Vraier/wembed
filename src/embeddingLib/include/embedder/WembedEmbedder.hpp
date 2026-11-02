@@ -9,8 +9,10 @@
 #include "DisplacementMonitor.hpp"
 #include "EmbedderInterface.hpp"
 #include "EmbedderOptions.hpp"
+#include "InitialEmbedderInterface.hpp"
 #include "LRScheduler.hpp"
 #include "Optimizer.hpp"
+#include "randomEmbedder.hpp"
 #include "SimpleOptimizer.hpp"
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
@@ -111,8 +113,10 @@ class WembedEmbedder : public EmbedderInterface {
         if (!initializeState) {
             return;  // caller assigns coordinates and weights right after construction
         }
+        //TODO: Hardcoded random embedder, change to have it determined by user input
+        const std::unique_ptr<InitialEmbedderInterface> initEmb = std::make_unique<RandomEmbedder>(graph, opts);
 
-        WembedEmbedder::setCoordinates(constructRandomCoordinates());
+        WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
 
         switch (opts.weightType) {
             case WeightType::Degree:

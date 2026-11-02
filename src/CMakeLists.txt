@@ -22,6 +22,8 @@ add_library(wembed STATIC
     embeddingLib/src/embedder/DisplacementMonitor.cpp
     embeddingLib/src/embedder/LayeredEmbedder.cpp
     embeddingLib/src/embedder/WembedEmbedder.cpp
+    embeddingLib/src/embedder/initialEmbedding/randomEmbedder.cpp
+    embeddingLib/src/embedder/initialEmbedding/uniformEmbedder.cpp
     embeddingLib/src/embeddingIO/EmbeddingIO.cpp
     embeddingLib/src/embeddingSpace/Additive.cpp
     embeddingLib/src/embeddingSpace/Cosine.cpp
@@ -51,6 +53,7 @@ target_include_directories(wembed_internal INTERFACE
     graphLib/include/graphIO
     embeddingLib/include/dVec
     embeddingLib/include/embedder
+    embeddingLib/include/embedder/initialEmbedder
     embeddingLib/include/embeddingIO
     embeddingLib/include/embeddingSpace
     embeddingLib/include/gradientOptimizer
