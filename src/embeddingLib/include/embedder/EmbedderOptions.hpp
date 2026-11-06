@@ -11,6 +11,8 @@ enum class WeightType { Unit = 0, Degree = 1 };
 // The slower KdTree always works, but has to be selected explicitly.
 enum class IndexType { KdTree = 0, Sprk = 1 };
 
+enum class InitialEmbType {RandomInitialEmbedder = 0, UniformInitialEmbedder = 1, LayeredInitialEmbedder = 2};
+
 enum class LRScheduleType { ExponentialCooling = 0, LossAdaptive = 1 };
 
 enum class StopCriterionType { Displacement = 0, Loss = 1 };
@@ -37,6 +39,7 @@ struct EmbedderOptions {
     // Force parameters
     WeightType weightType = WeightType::Degree;  // determines how the weights are initially set
     IndexType indexType = IndexType::Sprk;  // determines the type of index used for the embedding
+    InitialEmbType initEmbType = InitialEmbType::RandomInitialEmbedder;
     double doublingFactor = 4.0;  // growth of the weight-class bounds; 4 was briefly benchmarked
     double dynamicQueryBuffer = -1.0;  // rembed DynamicQuery: 3/d was briefly benchmarked
     double dynamicQueryMinReuses = 2.0;  // internal: steps a fresh buffer must be expected to survive to be worth

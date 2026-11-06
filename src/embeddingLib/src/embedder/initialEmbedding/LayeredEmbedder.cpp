@@ -13,6 +13,7 @@ LayeredEmbedder::LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, Em
       timer(std::move(timer)),
       hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
       currentLayer(hierarchy->getNumLayers() - 1) {
+    this->opts.initEmbType = InitialEmbType::RandomInitialEmbedder;
     currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
 }
 

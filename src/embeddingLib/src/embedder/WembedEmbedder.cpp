@@ -5,9 +5,11 @@
 #include <limits>
 #include <stdexcept>
 
+#include "LayeredEmbedder.hpp"
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
 #include "ProgressEstimate.hpp"
+#include "UniformEmbedder.hpp"
 #include "VectorOperations.hpp"
 #include "WeightedIndex.hpp"
 
@@ -41,8 +43,20 @@
         if (!initializeState) {
             return;  // caller assigns coordinates and weights right after construction
         }
-        //TODO: Hardcoded random embedder, change to have it determined by user input
-        const std::unique_ptr<InitialEmbedderInterface> initEmb = std::make_unique<RandomEmbedder>(graph, opts);
+
+        std::unique_ptr<InitialEmbedderInterface> initEmb;
+        switch (opts.initEmbType) {
+            case InitialEmbType::RandomInitialEmbedder:
+                initEmb = std::make_unique<RandomEmbedder>(g, opts);
+                break;
+            case InitialEmbType::UniformInitialEmbedder:
+                initEmb = std::make_unique<UniformEmbedder>(g, opts);
+                break;
+            case InitialEmbType::LayeredInitialEmbedder:
+                //TODO: Coarsener
+                LabelPropagation c({}, g, {});
+                initEmb = std::make_unique<LayeredEmbedder>(g, c, opts);
+        }
         WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
 
         switch (opts.weightType) {

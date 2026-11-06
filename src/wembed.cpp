@@ -188,6 +188,15 @@ static ::OptimizerType toInternalOptimizerType(OptimizerType opt) {
     return ::OptimizerType::Adam;
 }
 
+static InitialEmbType toInternalInitialEmbType(InitialEmbedder emb) {
+    switch(emb) {
+        case RandomInitialEmbedder: return InitialEmbType::RandomInitialEmbedder;
+        case UniformInitialEmbedder: return InitialEmbType::UniformInitialEmbedder;
+        case LayeredInitialEmbedder: return InitialEmbType::LayeredInitialEmbedder;
+    }
+    return InitialEmbType::RandomInitialEmbedder;
+}
+
 static LRScheduleType toInternalLRScheduleType(LRSchedule schedule) {
     switch (schedule) {
         case LRExponentialCooling: return LRScheduleType::ExponentialCooling;
@@ -210,6 +219,7 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.weightType = options.useUnitWeights ? WeightType::Unit : WeightType::Degree;
     opts.dimensionHint = options.dimensionHint;
     opts.indexType = toInternalIndexType(options.indexType);
+    opts.initEmbType = toInternalInitialEmbType(options.initEmb);
     opts.dynamicQueryBuffer = options.dynamicQueryBuffer;
     opts.centreScale = options.centreScale;
     opts.expansionStretch = options.expansionStretch;
@@ -232,13 +242,8 @@ Embedder createEmbedder(const Graph& g, const Options& options) {
     opts.stopLossPatience = options.stopLossPatience;
 
     const auto& graph = *g._graph;
-    if (options.layeredEmbedding) {
-        std::vector<double> edgeWeights(g.getNumEdges() * 2, 1.0);
-        auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, edgeWeights);
-        return Embedder(std::make_unique<LayeredEmbedder>(graph, *coarsener, opts));
-    } else {
-        return Embedder(std::make_unique<WembedEmbedder>(graph, opts));
-    }
+
+    return Embedder(std::make_unique<WembedEmbedder>(graph, opts));
 }
 
 Graph graphFromEdges(const std::vector<Edge>& edges, NodeId numVertices) {

@@ -23,6 +23,12 @@ using EdgeId = int32_t;
 // forward declaration
 class Embedder;
 
+enum InitialEmbedder : int32_t {
+    RandomInitialEmbedder = 0, //random positions (default)
+    UniformInitialEmbedder = 1,
+    LayeredInitialEmbedder = 2
+};
+
 enum SpatialIndex : int32_t {
     IndexKdTree = 0,  // bundled KD-tree: slower, but always available
     IndexSprk = 1,    // sprk tree (default): needs wembed to be built with Rust, supports 2 to 16 dimensions.
@@ -84,7 +90,9 @@ struct Options {
     int32_t embeddingDimension = 4;
     bool useUnitWeights = false;                      // true: degree-based weights; false: unit weights
     double dimensionHint = -1.0;                 // hint for the dimension of the input graph (-1 = auto)
-    bool layeredEmbedding = false;               // multilevel embedding via graph coarsening
+    //bool layeredEmbedding = false;               // multilevel embedding via graph coarsening
+
+    InitialEmbedder initEmb = RandomInitialEmbedder;
 
     // Force parameters
     SpatialIndex indexType = IndexSprk;

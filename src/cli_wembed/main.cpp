@@ -169,8 +169,8 @@ void addOptions(CLI::App& app, Options& opts) {
     const std::string embedding = "Embedding";
     app.add_option("--seed", opts.seed, "Seed used during embedding. '-1' uses time as seed")
         ->capture_default_str()->group(embedding);
-    app.add_flag("--layered", eo.layeredEmbedding, "Use layered embedding")
-        ->group(embedding);
+    app.add_option("initial-embedder", eo.initEmb, "Type of Initial Embedder used to get starting positions (0=Random; 1=Uniform; 2=Layered)")
+        ->capture_default_str()->group(embedding);
     app.add_option("--dim", eo.embeddingDimension, "Embedding dimension")
         ->capture_default_str()->group(embedding);
     app.add_option("--dim-hint", eo.dimensionHint, "Dimension hint. Negative values use dim as dimension hint.")
