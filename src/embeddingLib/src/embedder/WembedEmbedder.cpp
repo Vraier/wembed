@@ -17,6 +17,47 @@
 //                       PUBLIC FUNCTIONS WembedEmbedder
 //
 // ======================================================================================
+
+    WembedEmbedder::WembedEmbedder(const Graph& g,
+                      const EmbedderOptions &opts,
+                      const std::shared_ptr<util::Timer> &timer_ptr,
+                      bool initializeState)
+                      : EmbedderInterface(g, opts),
+                        timer(timer_ptr),
+                        invExpWeights(g.getNumVertices()),
+                        lossPerNode(g.getNumVertices()),
+                        previousPositions(opts.embeddingDimension, g.getNumVertices()),
+                        perNodeDisplacement(g.getNumVertices()),
+                        perNodeRadiusSq(g.getNumVertices()),
+                        posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
+                        convergenceMonitor(std::make_unique<ConvergenceMonitor>(opts.stopLossTol, opts.stopLossPatience,
+                                                                                opts.lossSmoothingFactor,
+                                                                                opts.lossRateWindow,
+                                                                                opts.lossFloor * g.getNumVertices())),
+                        displacementMonitor(std::make_unique<DisplacementMonitor>(opts.stopDisplacementTol,
+                                                                                  opts.stopDisplacementPatience)),
+                        lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
+    {
+        if (!initializeState) {
+            return;  // caller assigns coordinates and weights right after construction
+        }
+        //TODO: Hardcoded random embedder, change to have it determined by user input
+        const std::unique_ptr<InitialEmbedderInterface> initEmb = std::make_unique<RandomEmbedder>(graph, opts);
+        WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
+
+        switch (opts.weightType) {
+            case WeightType::Degree:
+                WembedEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
+                                                             opts.embeddingDimension,
+                                                             constructDegreeWeights(g)));
+                break;
+            case WeightType::Unit:
+                WembedEmbedder::setWeights(constructUnitWeights(graphSize()));
+                break;
+        }
+    }
+
+
 void WembedEmbedder::calculateStep() {
     const auto stepStart = std::chrono::steady_clock::now();
 

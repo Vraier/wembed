@@ -1,4 +1,4 @@
-#include "initialEmbedder/uniformEmbedder.hpp"
+#include "initialEmbedder/UniformEmbedder.hpp"
 
 #include "Toolkit.hpp"
 

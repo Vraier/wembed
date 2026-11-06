@@ -1,10 +1,25 @@
-#include "LayeredEmbedder.hpp"
+#include "initialEmbedder/LayeredEmbedder.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 #include "Macros.hpp"
 #include "ProgressEstimate.hpp"
+
+LayeredEmbedder::LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts,
+                                 std::shared_ptr<Timer> timer)
+    : InitialEmbedderInterface(g, opts),
+      timer(std::move(timer)),
+      hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
+      currentLayer(hierarchy->getNumLayers() - 1) {
+    currentEmbedder = std::make_unique<WembedEmbedder>(hierarchy->graphs[currentLayer], opts, timer);
+}
+
+std::vector<std::vector<double>> LayeredEmbedder::getInitialEmbedding() {
+    calculateEmbedding();
+    return currentEmbedder->getCoordinates();
+}
 
 void LayeredEmbedder::calculateStep() {
     if (currentEmbedder->isFinished()) {
@@ -39,21 +54,7 @@ void LayeredEmbedder::calculateEmbedding() {
     timer->stopTiming("embedding_all");
 }
 
-void LayeredEmbedder::setCoordinates(const std::vector<std::vector<double>>&) {
-    throw std::logic_error("setCoordinates is not supported by the layered embedder");
-}
-
-void LayeredEmbedder::setWeights(const std::vector<double>&) {
-    throw std::logic_error("setWeights is not supported by the layered embedder");
-}
-
-std::vector<std::vector<double>> LayeredEmbedder::getCoordinates() { return currentEmbedder->getCoordinates(); }
-
-std::vector<double> LayeredEmbedder::getWeights() { return currentEmbedder->getWeights(); }
-
 std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
-
-Graph LayeredEmbedder::getCurrentGraph() { return hierarchy->graphs[currentLayer]; }
 
 void LayeredEmbedder::expandPositions() {
     const EmbeddingProgress finished = currentEmbedder->getProgress();

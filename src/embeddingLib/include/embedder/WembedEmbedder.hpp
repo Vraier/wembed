@@ -12,7 +12,7 @@
 #include "InitialEmbedderInterface.hpp"
 #include "LRScheduler.hpp"
 #include "Optimizer.hpp"
-#include "randomEmbedder.hpp"
+#include "RandomEmbedder.hpp"
 #include "SimpleOptimizer.hpp"
 #include "VecList.hpp"
 #include "WeightedIndex.hpp"
@@ -90,45 +90,9 @@ class WembedEmbedder : public EmbedderInterface {
     // weights immediately afterwards (e.g. LayeredEmbedder layer expansion): skipping the
     // throwaway random init avoids generating and sorting a full layout that is discarded,
     // which is pure wasted work proportional to the layer size on every expansion.
-    WembedEmbedder(const Graph& g,
-                      const EmbedderOptions &opts,
-                      const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>(),
-                      bool initializeState = true)
-                      : EmbedderInterface(g, opts),
-                        timer(timer_ptr),
-                        invExpWeights(g.getNumVertices()),
-                        lossPerNode(g.getNumVertices()),
-                        previousPositions(opts.embeddingDimension, g.getNumVertices()),
-                        perNodeDisplacement(g.getNumVertices()),
-                        perNodeRadiusSq(g.getNumVertices()),
-                        posOptimizer(makePosOptimizer(opts, g.getNumVertices())),
-                        convergenceMonitor(std::make_unique<ConvergenceMonitor>(opts.stopLossTol, opts.stopLossPatience,
-                                                                                opts.lossSmoothingFactor,
-                                                                                opts.lossRateWindow,
-                                                                                opts.lossFloor * g.getNumVertices())),
-                        displacementMonitor(std::make_unique<DisplacementMonitor>(opts.stopDisplacementTol,
-                                                                                  opts.stopDisplacementPatience)),
-                        lrScheduler(makeLRScheduler(opts, *convergenceMonitor))
-    {
-        if (!initializeState) {
-            return;  // caller assigns coordinates and weights right after construction
-        }
-        //TODO: Hardcoded random embedder, change to have it determined by user input
-        const std::unique_ptr<InitialEmbedderInterface> initEmb = std::make_unique<RandomEmbedder>(graph, opts);
-
-        WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
-
-        switch (opts.weightType) {
-            case WeightType::Degree:
-                WembedEmbedder::setWeights(rescaleWeights(opts.dimensionHint,
-                                                             opts.embeddingDimension,
-                                                             constructDegreeWeights(g)));
-                break;
-            case WeightType::Unit:
-                WembedEmbedder::setWeights(constructUnitWeights(graphSize()));
-                break;
-        }
-    }
+    WembedEmbedder(const Graph& g, const EmbedderOptions& opts,
+                   const std::shared_ptr<util::Timer> &timer_ptr = std::make_shared<util::Timer>(),
+                   bool initializeState = true);
 
     virtual ~WembedEmbedder() override = default;
     WembedEmbedder(WembedEmbedder&&) = default;

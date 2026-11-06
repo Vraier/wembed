@@ -1,4 +1,4 @@
-#include "initialEmbedder/randomEmbedder.hpp"
+#include "initialEmbedder/RandomEmbedder.hpp"
 
 #include "Rand.hpp"
 #include "Toolkit.hpp"
