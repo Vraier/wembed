@@ -30,7 +30,7 @@
       in {
         packages.default = pkgs.stdenv.mkDerivation {
           pname = "wembed";
-          version = "0.3.0";
+          version = "0.3.1";
           src = ./.;
 
           nativeBuildInputs = with pkgs; [cmake ninja cargo rustc];

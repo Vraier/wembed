@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <map>
+#include <set>
 #include <vector>
 
 #include "Graph.hpp"
@@ -79,4 +81,32 @@ TEST(Hierarchy, ContainedStatistics) {
         EXPECT_EQ(containedTotal, N);
         EXPECT_DOUBLE_EQ(weightTotal, 2.0 * g.getNumEdges());
     }
+}
+
+TEST(Hierarchy, IsolatedVerticesTerminate) {
+    Rand::setSeed(1234);
+    std::map<int, std::set<int>> adj;
+    auto addEdge = [&](int u, int v) {
+        adj[u].insert(v);
+        adj[v].insert(u);
+    };
+    // six pairs of 6-cliques joined by a single edge
+    int n = 0;
+    for (int pair = 0; pair < 6; pair++) {
+        for (int side = 0; side < 2; side++) {
+            for (int i = 0; i < 6; i++) {
+                for (int j = i + 1; j < 6; j++) addEdge(n + 6 * side + i, n + 6 * side + j);
+            }
+        }
+        addEdge(n, n + 6);
+        n += 12;
+    }
+    for (int i = 0; i < 100; i++) adj[n++];
+    Graph g(adj);
+    ASSERT_EQ(g.getNumVertices(), n);
+
+    std::vector<double> edgeWeights(g.getNumEdges() * 2, 1.0);
+    LabelPropagation coarsener(PartitionerOptions{}, g, edgeWeights);
+    ParentPointerTree parents = coarsener.coarsenAllLayers();
+    EXPECT_EQ(parents.back().size(), 1u);
 }

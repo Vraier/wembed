@@ -159,7 +159,8 @@ SingleLayerNodePointer LabelPropagation::aggressivePropagation(const Graph& curr
             }
 
             // update cluster arrays
-            clusterId[v] = largestCluster;
+            // if the target is also unmerged and already chose v, join v instead of swapping ids with it
+            clusterId[v] = (clusterId[largestCluster] == v) ? v : largestCluster;
         } else {
             // Node has no edges and can't be handled by regular clustering. Instead, we cluster
             // the degree zero nodes with each other
