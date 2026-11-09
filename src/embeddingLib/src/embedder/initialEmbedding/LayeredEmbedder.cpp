@@ -7,10 +7,8 @@
 #include "Macros.hpp"
 #include "ProgressEstimate.hpp"
 
-LayeredEmbedder::LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts,
-                                 std::shared_ptr<Timer> timer)
+LayeredEmbedder::LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts)
     : InitialEmbedderInterface(g, opts),
-      timer(std::move(timer)),
       hierarchy(std::make_shared<GraphHierarchy>(g, coarsener)),
       currentLayer(hierarchy->getNumLayers() - 1) {
     this->opts.initEmbType = InitialEmbType::RandomInitialEmbedder;
@@ -55,7 +53,7 @@ void LayeredEmbedder::calculateEmbedding() {
     timer->stopTiming("embedding_all");
 }
 
-std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
+//std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
 
 void LayeredEmbedder::expandPositions() {
     const EmbeddingProgress finished = currentEmbedder->getProgress();

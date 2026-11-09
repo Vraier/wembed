@@ -28,6 +28,8 @@ class WembedEmbedder : public EmbedderInterface {
     std::vector<NodeId> inOwner;                        // flat array indicating who w is owned by
                                                         // owned by subarrays are sorted to enforce determinism
 
+    std::unique_ptr<InitialEmbedderInterface> initEmb;
+
     std::vector<double> invExpWeights;
     // per-node loss contribution of the last force computation; each node is
     // written by exactly one thread, then reduced deterministically (so the

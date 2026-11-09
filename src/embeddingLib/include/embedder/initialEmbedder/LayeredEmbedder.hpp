@@ -13,21 +13,18 @@ class LayeredEmbedder : public InitialEmbedderInterface {
     using Timer = util::Timer;
 
    public:
-    LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts,
-                    std::shared_ptr<Timer> timer = std::make_shared<Timer>());
+    LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts);
     ~LayeredEmbedder() override = default;
 
     std::vector<std::vector<double>> getInitialEmbedding() override;
+    //std::vector<util::TimingResult> getTimings() override;
 
     EmbeddingProgress getProgress();
-    std::vector<util::TimingResult> getTimings();
 
    private:
     void calculateStep();
     bool isFinished();
     void calculateEmbedding();
-
-    std::shared_ptr<Timer> timer;
 
     // decreases the layer and initializes a new embedder
     void expandPositions();

@@ -44,7 +44,6 @@
             return;  // caller assigns coordinates and weights right after construction
         }
 
-        std::unique_ptr<InitialEmbedderInterface> initEmb;
         switch (opts.initEmbType) {
             case InitialEmbType::RandomInitialEmbedder:
                 initEmb = std::make_unique<RandomEmbedder>(g, opts);
@@ -53,9 +52,8 @@
                 initEmb = std::make_unique<UniformEmbedder>(g, opts);
                 break;
             case InitialEmbType::LayeredInitialEmbedder:
-                //TODO: Coarsener
-                LabelPropagation c({}, g, {});
-                initEmb = std::make_unique<LayeredEmbedder>(g, c, opts);
+                const auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, std::vector(g.getNumEdges() * 2, 1.0));
+                initEmb = std::make_unique<LayeredEmbedder>(g, *coarsener, opts);
         }
         WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
 
@@ -169,7 +167,10 @@ std::vector<double> WembedEmbedder::getWeights() {
 }
 
 std::vector<util::TimingResult> WembedEmbedder::getTimings() {
-    return timer->getHierarchicalTimingResults();
+    std::vector<util::TimingResult> timings = timer->getHierarchicalTimingResults();
+    std::vector<util::TimingResult> initialTimings = initEmb->getTimings();
+    timings.insert(timings.end(), initialTimings.begin(), initialTimings.end());
+    return timings;
 }
 
 void WembedEmbedder::setCoordinates(const std::vector<std::vector<double> > &coordinates) {
