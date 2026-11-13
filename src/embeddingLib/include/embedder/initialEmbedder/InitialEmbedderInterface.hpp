@@ -31,7 +31,11 @@ class InitialEmbedderInterface {
 
     virtual std::vector<std::vector<double>> getInitialEmbedding() = 0;
 
-    std::vector<util::TimingResult> getTimings() {
-        return timer->getHierarchicalTimingResults();
+    [[nodiscard]] std::vector<util::TimingResult> getTimings() const {
+        std::vector<util::TimingResult> timings = timer->getHierarchicalTimingResults();
+        for (auto& result : timings) {
+            ++result.depth;
+        }
+        return timings;
     }
 };

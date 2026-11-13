@@ -20,6 +20,12 @@ enum class StopCriterionType { Displacement = 0, Loss = 1 };
 inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::Simple, "Simple"},
                                                                 {OptimizerType::Adam, "Adam"}};
 
+inline std::map<InitialEmbType, std::string> initialEmbTypeName = {
+    {InitialEmbType::RandomInitialEmbedder, "Random Embedder"},
+    {InitialEmbType::UniformInitialEmbedder, "Uniform Embedder"},
+    {InitialEmbType::LayeredInitialEmbedder, "Layered Embedder"}
+};
+
 inline std::map<LRScheduleType, std::string> lrScheduleTypeMap = {
     {LRScheduleType::ExponentialCooling, "ExponentialCooling"}, {LRScheduleType::LossAdaptive, "LossAdaptive"}};
 

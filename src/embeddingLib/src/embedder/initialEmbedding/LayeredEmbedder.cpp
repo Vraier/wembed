@@ -46,11 +46,9 @@ EmbeddingProgress LayeredEmbedder::getProgress() {
 }
 
 void LayeredEmbedder::calculateEmbedding() {
-    timer->startTiming("embedding_all", "Embedding");
     while (!isFinished()) {
         calculateStep();
     }
-    timer->stopTiming("embedding_all");
 }
 
 //std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }

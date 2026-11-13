@@ -55,7 +55,9 @@
                 const auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, std::vector(g.getNumEdges() * 2, 1.0));
                 initEmb = std::make_unique<LayeredEmbedder>(g, *coarsener, opts);
         }
+        timer->startTiming("init_embed", "Initial " + initialEmbTypeName[opts.initEmbType]);
         WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());
+        timer->stopTiming("init_embed");
 
         switch (opts.weightType) {
             case WeightType::Degree:
@@ -169,7 +171,12 @@ std::vector<double> WembedEmbedder::getWeights() {
 std::vector<util::TimingResult> WembedEmbedder::getTimings() {
     std::vector<util::TimingResult> timings = timer->getHierarchicalTimingResults();
     std::vector<util::TimingResult> initialTimings = initEmb->getTimings();
-    timings.insert(timings.end(), initialTimings.begin(), initialTimings.end());
+
+    auto it = timings.begin();
+    while (!it->display_name.starts_with("Initial ") && !it->display_name.ends_with(" Embedder")) {
+        ++it;
+    }
+    timings.insert(++it, initialTimings.begin(), initialTimings.end());
     return timings;
 }
 

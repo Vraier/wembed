@@ -17,7 +17,6 @@ class LayeredEmbedder : public InitialEmbedderInterface {
     ~LayeredEmbedder() override = default;
 
     std::vector<std::vector<double>> getInitialEmbedding() override;
-    //std::vector<util::TimingResult> getTimings() override;
 
     EmbeddingProgress getProgress();
 
