@@ -24,6 +24,7 @@ add_library(wembed STATIC
     embeddingLib/src/embedder/initialEmbedding/LayeredEmbedder.cpp
     embeddingLib/src/embedder/initialEmbedding/RandomEmbedder.cpp
     embeddingLib/src/embedder/initialEmbedding/UniformEmbedder.cpp
+    embeddingLib/src/embedder/initialEmbedding/BarycentricEmbedder.cpp
     embeddingLib/src/embeddingIO/EmbeddingIO.cpp
     embeddingLib/src/embeddingSpace/Additive.cpp
     embeddingLib/src/embeddingSpace/Cosine.cpp

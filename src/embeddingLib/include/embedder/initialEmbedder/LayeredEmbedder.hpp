@@ -10,7 +10,6 @@
 #include "WembedEmbedder.hpp"
 
 class LayeredEmbedder : public InitialEmbedderInterface {
-    using Timer = util::Timer;
 
    public:
     LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, EmbedderOptions opts);

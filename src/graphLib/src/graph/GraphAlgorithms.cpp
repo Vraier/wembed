@@ -142,7 +142,8 @@ std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(const Graph &g, co
     return std::make_pair(result, resultEdgeMap);
 }
 
-std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin) {
+std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin, const std::function<double(NodeId, NodeId)>& weight) {
+    //TODO: Use Dijkstra and an edge weight function
     const int N = g.getNumVertices();
 
     std::vector<int> distance(N, -1);

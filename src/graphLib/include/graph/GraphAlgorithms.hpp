@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "Graph.hpp"
 
 class GraphAlgo {
@@ -36,7 +38,10 @@ class GraphAlgo {
     /**
      * Calculates the length of a shortest path from origin to all other nodes
      */
-    static std::vector<int> calculateShortestPaths(const Graph &g, NodeId origin);
+    static std::vector<int> calculateShortestPaths(const Graph &g, NodeId origin,
+                                                   const std::function<double(NodeId, NodeId)>& weight
+                                                    = []([[maybe_unused]]NodeId a, [[maybe_unused]]NodeId b)
+                                                        -> double {return 1.0;});
 
     /**
      * Calculates the distance of the shortest path between all pairs of nodes

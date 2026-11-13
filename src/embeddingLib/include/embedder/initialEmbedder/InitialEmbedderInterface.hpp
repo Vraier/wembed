@@ -17,12 +17,10 @@ class InitialEmbedderInterface {
     InitialEmbedderInterface(InitialEmbedderInterface& initEmb) = default;
     InitialEmbedderInterface(InitialEmbedderInterface&&) = default;
 
-    explicit InitialEmbedderInterface(const Graph& graph,
-                                      const EmbedderOptions& opts,
-                                      const std::shared_ptr<util::Timer>& timer = std::make_shared<util::Timer>())
+    explicit InitialEmbedderInterface(const Graph& graph, const EmbedderOptions& opts)
                                       : graph(graph),
                                         opts(opts),
-                                        timer(timer) {}
+                                        timer(std::make_shared<util::Timer>()) {}
 
     InitialEmbedderInterface& operator=(const InitialEmbedderInterface& initEmbed) = default;
     InitialEmbedderInterface& operator=(InitialEmbedderInterface&&) = default;

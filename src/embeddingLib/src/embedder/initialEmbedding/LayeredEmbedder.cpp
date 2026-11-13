@@ -51,8 +51,6 @@ void LayeredEmbedder::calculateEmbedding() {
     }
 }
 
-//std::vector<util::TimingResult> LayeredEmbedder::getTimings() { return timer->getHierarchicalTimingResults(); }
-
 void LayeredEmbedder::expandPositions() {
     const EmbeddingProgress finished = currentEmbedder->getProgress();
     if (finished.numVertices > 1) {
