@@ -27,7 +27,7 @@ void LayeredEmbedder::calculateStep() {
     currentEmbedder->calculateStep();
 }
 
-bool LayeredEmbedder::isFinished() { return (currentLayer == 0) && currentEmbedder->isFinished(); }
+bool LayeredEmbedder::isFinished() const { return (currentLayer == 0);}
 
 EmbeddingProgress LayeredEmbedder::getProgress() {
     EmbeddingProgress progress = currentEmbedder->getProgress();

@@ -23,7 +23,7 @@ class LayeredEmbedder : public InitialEmbedderInterface {
 
    private:
     void calculateStep();
-    bool isFinished();
+    bool isFinished() const;
     void calculateEmbedding();
 
     // decreases the layer and initializes a new embedder
