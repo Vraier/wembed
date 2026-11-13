@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "Graph.hpp"
+#include "Toolkit.hpp"
 
 class GraphAlgo {
    public:
@@ -34,14 +35,26 @@ class GraphAlgo {
      */
     static std::pair<Graph, std::vector<EdgeId>> coarsenGraph(const Graph &g, const std::vector<NodeId> &clusterId);
 
+    static std::function<double(NodeId, NodeId)> uniformEdgeWeightFunc() {
+        return []([[maybe_unused]]NodeId a, [[maybe_unused]]NodeId b) -> double {
+            return 1.0;
+        };
+    }
+
+    static std::function<double(NodeId, NodeId)> vertexWeightFunc(Graph& g, double embDim) {
+        return [&g, embDim](NodeId a, NodeId b) -> double {
+            const double wa = g.getNumNeighbors(a);
+            const double wb = g.getNumNeighbors(b);
+            return Toolkit::myPow(wa * wb, 1.0 / embDim);
+        };
+    }
 
     /**
      * Calculates the length of a shortest path from origin to all other nodes
      */
     static std::vector<int> calculateShortestPaths(const Graph &g, NodeId origin,
-                                                   const std::function<double(NodeId, NodeId)>& weight
-                                                    = []([[maybe_unused]]NodeId a, [[maybe_unused]]NodeId b)
-                                                        -> double {return 1.0;});
+                                                   const std::function<double(NodeId, NodeId)>& weightFunc
+                                                    = uniformEdgeWeightFunc());
 
     /**
      * Calculates the distance of the shortest path between all pairs of nodes

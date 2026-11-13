@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <numeric>
+#include <queue>
 #include <sstream>
 #include <unordered_map>
 
@@ -142,8 +143,29 @@ std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(const Graph &g, co
     return std::make_pair(result, resultEdgeMap);
 }
 
-std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin, const std::function<double(NodeId, NodeId)>& weight) {
+std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin,
+                                                   const std::function<double(NodeId, NodeId)>& weightFunc) {
+
+    std::vector<NodeId> queue(g.getNumVertices());
+    std::vector<NodeId> distance(g.getNumVertices(), -1);
+
+    queue.push_back(origin);
+    distance[origin] = 0;
+
+    while (!queue.empty()) {
+        //Pick vertex with the smallest distance to origin
+        NodeId smallest = queue.front();
+        for (auto v : queue) {
+            if (distance[v] < distance[smallest]) smallest = v;
+        }
+
+        //explore neighbors
+        std::vector<NodeId> neighbours = g.getNeighbors(smallest);
+    }
+
+
     //TODO: Use Dijkstra and an edge weight function
+    /*
     const int N = g.getNumVertices();
 
     std::vector<int> distance(N, -1);
@@ -171,6 +193,7 @@ std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin
         currQueue = nextQueue;
         nextQueue.clear();
     }
+    */
 
     return distance;
 }
