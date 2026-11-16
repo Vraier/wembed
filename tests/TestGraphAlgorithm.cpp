@@ -86,23 +86,51 @@ TEST(GraphAlgorithm, ShortestPaths) {
 
     Graph g(map);
 
-    std::vector<int> shortestPaths = GraphAlgo::calculateShortestPaths(g, 0);
+    std::vector<double> shortestPaths = GraphAlgo::calculateShortestPaths(g, 0, GraphAlgo::uniformEdgeWeightFunc());
 
-    EXPECT_EQ(shortestPaths[0], 0);
-    EXPECT_EQ(shortestPaths[1], 1);
-    EXPECT_EQ(shortestPaths[2], 1);
-    EXPECT_EQ(shortestPaths[3], 2);
-    EXPECT_EQ(shortestPaths[4], 2);
-    EXPECT_EQ(shortestPaths[5], 3);
-    EXPECT_EQ(shortestPaths[6], 3);
+    EXPECT_DOUBLE_EQ(shortestPaths[0], 0.);
+    EXPECT_DOUBLE_EQ(shortestPaths[1], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths[2], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths[3], 2.);
+    EXPECT_DOUBLE_EQ(shortestPaths[4], 2.);
+    EXPECT_DOUBLE_EQ(shortestPaths[5], 3.);
+    EXPECT_DOUBLE_EQ(shortestPaths[6], 3.);
 
-    std::vector<int> shortestPaths2 = GraphAlgo::calculateShortestPaths(g, 2);
+    std::vector<double> shortestPaths2 = GraphAlgo::calculateShortestPaths(g, 2, GraphAlgo::uniformEdgeWeightFunc());
 
-    EXPECT_EQ(shortestPaths2[0], 1);
-    EXPECT_EQ(shortestPaths2[1], 1);
-    EXPECT_EQ(shortestPaths2[2], 0);
-    EXPECT_EQ(shortestPaths2[3], 1);
-    EXPECT_EQ(shortestPaths2[4], 1);
-    EXPECT_EQ(shortestPaths2[5], 2);
-    EXPECT_EQ(shortestPaths2[6], 2);
+    EXPECT_DOUBLE_EQ(shortestPaths2[0], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[1], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[2], 0.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[3], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[4], 1.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[5], 2.);
+    EXPECT_DOUBLE_EQ(shortestPaths2[6], 2.);
+
+    std::vector<double> shortestPaths3 = GraphAlgo::calculateShortestPaths(g, 1, GraphAlgo::vertexWeightFunc(g, 2));
+
+    const double sqrt6 = std::sqrt(6.0);
+    const double sqrt8 = std::sqrt(8.0);
+    const double sqrt12 = std::sqrt(12.);
+
+    EXPECT_DOUBLE_EQ(shortestPaths3[0], 2.);
+    EXPECT_DOUBLE_EQ(shortestPaths3[1], 0.);
+    EXPECT_DOUBLE_EQ(shortestPaths3[2], sqrt8);
+    EXPECT_DOUBLE_EQ(shortestPaths3[3], 2. + sqrt8);
+    EXPECT_DOUBLE_EQ(shortestPaths3[4], sqrt12 + sqrt8);
+    EXPECT_DOUBLE_EQ(shortestPaths3[5], sqrt6 + sqrt12 + sqrt8);
+    EXPECT_DOUBLE_EQ(shortestPaths3[6], sqrt6 + sqrt12 + sqrt8);
+
+    std::vector<double> shortestPaths4 = GraphAlgo::calculateShortestPaths(g, 5, GraphAlgo::vertexWeightFunc(g, 3));
+
+    const double thirdro4 = Toolkit::myPow(4.0, 1.0 / 3.0);
+    const double thirdro6 = Toolkit::myPow(6.0, 1.0 / 3.0);
+    const double thirdro12 = Toolkit::myPow(12.0, 1.0 / 3.0);
+
+    EXPECT_DOUBLE_EQ(shortestPaths4[0], 2.0 + thirdro12 + thirdro6);
+    EXPECT_DOUBLE_EQ(shortestPaths4[1], 2.0 + thirdro12 + thirdro6);
+    EXPECT_DOUBLE_EQ(shortestPaths4[2], thirdro12 + thirdro6);
+    EXPECT_DOUBLE_EQ(shortestPaths4[3], thirdro4 + thirdro12 + thirdro6);
+    EXPECT_DOUBLE_EQ(shortestPaths4[4], thirdro6);
+    EXPECT_DOUBLE_EQ(shortestPaths4[5], 0.0);
+    EXPECT_DOUBLE_EQ(shortestPaths4[6], thirdro4);
 }
