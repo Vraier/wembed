@@ -42,7 +42,7 @@ class GraphAlgo {
     }
 
     static std::function<double(NodeId, NodeId)> vertexWeightFunc(Graph& g, double embDim) {
-        return [&g, embDim](NodeId a, NodeId b) -> double {
+        return [&g, embDim](const NodeId a, const NodeId b) -> double {
             const double wa = g.getNumNeighbors(a);
             const double wb = g.getNumNeighbors(b);
             return Toolkit::myPow(wa * wb, 1.0 / embDim);
@@ -52,12 +52,14 @@ class GraphAlgo {
     /**
      * Calculates the length of a shortest path from origin to all other nodes
      */
-    static std::vector<int> calculateShortestPaths(const Graph &g, NodeId origin,
+    static std::vector<double> calculateShortestPaths(const Graph &g, NodeId origin,
                                                    const std::function<double(NodeId, NodeId)>& weightFunc
                                                     = uniformEdgeWeightFunc());
 
     /**
      * Calculates the distance of the shortest path between all pairs of nodes
      */
-    static std::vector<std::vector<int>> calculateAllPairShortestPaths(const Graph &g);
+    static std::vector<std::vector<double>> calculateAllPairShortestPaths(const Graph &g,
+                                                                const std::function<double(NodeId, NodeId)>& weightFunc
+                                                                    = uniformEdgeWeightFunc());
 };

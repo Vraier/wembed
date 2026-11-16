@@ -143,24 +143,37 @@ std::pair<Graph, std::vector<EdgeId>> GraphAlgo::coarsenGraph(const Graph &g, co
     return std::make_pair(result, resultEdgeMap);
 }
 
-std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin,
+//TODO: Change signature
+std::vector<double> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin,
                                                    const std::function<double(NodeId, NodeId)>& weightFunc) {
 
-    std::vector<NodeId> queue(g.getNumVertices());
-    std::vector<NodeId> distance(g.getNumVertices(), -1);
+    std::vector<NodeId> queue;
+    std::vector<double> distance(g.getNumVertices(), std::numeric_limits<double>::infinity());
 
     queue.push_back(origin);
     distance[origin] = 0;
 
     while (!queue.empty()) {
         //Pick vertex with the smallest distance to origin
-        NodeId smallest = queue.front();
-        for (auto v : queue) {
-            if (distance[v] < distance[smallest]) smallest = v;
+        //TODO: Use a faster queue
+        size_t smallestIDX = 0;
+        for (size_t i = 1; i < queue.size(); i++) {
+            if (distance[queue[i]] < distance[queue[smallestIDX]]) {
+                smallestIDX = i;
+            }
         }
+        const NodeId smallest = queue[smallestIDX];
+        queue.erase(queue.begin() + static_cast<std::vector<NodeId>::difference_type>(smallestIDX));
 
         //explore neighbors
         std::vector<NodeId> neighbours = g.getNeighbors(smallest);
+        for (auto neighbour : neighbours ) {
+            const double dist = distance[smallest] + weightFunc(smallest, neighbour);
+            if (dist < distance[neighbour]) {
+                distance[neighbour] = dist;
+                queue.push_back(neighbour);
+            }
+        }
     }
 
 
@@ -198,12 +211,13 @@ std::vector<int> GraphAlgo::calculateShortestPaths(const Graph &g, NodeId origin
     return distance;
 }
 
-std::vector<std::vector<int>> GraphAlgo::calculateAllPairShortestPaths(const Graph &g) {
+std::vector<std::vector<double>> GraphAlgo::calculateAllPairShortestPaths(const Graph &g,
+                                                            const std::function<double(NodeId, NodeId)>& weightFunc) {
     const int N = g.getNumVertices();
-    std::vector<std::vector<int>> allDistances(N);
+    std::vector<std::vector<double>> allDistances(N);
 
     for (NodeId v = 0; v < N; v++) {
-        allDistances[v] = calculateShortestPaths(g, v);
+        allDistances[v] = calculateShortestPaths(g, v, weightFunc);
     }
     return allDistances;
 }
