@@ -378,7 +378,7 @@ void WembedEmbedder::observeDisplacement() {
 
 std::vector<double> WembedEmbedder::rescaleWeights(const double dimensionHint, const double embeddingDimension,
                                                    const std::vector<double>& weights) {
-    const int N = weights.size();
+    const auto N = static_cast<int>(weights.size());
     std::vector<double> rescaledWeights(N);
 
     for (NodeId v = 0; v < N; v++) {

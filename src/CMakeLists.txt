@@ -21,6 +21,7 @@ add_library(wembed STATIC
     embeddingLib/src/embedder/ConvergenceMonitor.cpp
     embeddingLib/src/embedder/DisplacementMonitor.cpp
     embeddingLib/src/embedder/LayeredEmbedder.cpp
+    embeddingLib/src/embedder/SimpleDotProductEmbedder.cpp
     embeddingLib/src/embedder/WembedEmbedder.cpp
     embeddingLib/src/embeddingIO/EmbeddingIO.cpp
     embeddingLib/src/embeddingSpace/Additive.cpp
