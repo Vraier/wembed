@@ -3,8 +3,13 @@
 
 class BarycentricEmbedder : public InitialEmbedderInterface {
 
+    std::vector<NodeId> computeCornerNodes(std::vector<std::vector<double>>& distanceFromCorners);
+    void computeBarycentricCoords(std::vector<std::vector<double>>& initEmb,
+                                  const std::vector<NodeId>& corners,
+                                  const std::vector<std::vector<double>>& distanceFromCorners) const;
+
     public:
-    explicit BarycentricEmbedder(Graph& graph, EmbedderOptions& opts) : InitialEmbedderInterface(graph, opts) {
+    explicit BarycentricEmbedder(const Graph& graph, const EmbedderOptions& opts) : InitialEmbedderInterface(graph, opts) {
 
     }
 

@@ -5,6 +5,7 @@
 #include <limits>
 #include <stdexcept>
 
+#include "BarycentricEmbedder.hpp"
 #include "LayeredEmbedder.hpp"
 #include "LossFunction.hpp"
 #include "ParallelReduce.hpp"
@@ -45,15 +46,23 @@
         }
 
         switch (opts.initEmbType) {
-            case InitialEmbType::RandomInitialEmbedder:
+            case InitialEmbType::RandomInitialEmbedder: {
                 initEmb = std::make_unique<RandomEmbedder>(g, opts);
                 break;
-            case InitialEmbType::UniformInitialEmbedder:
+            }
+            case InitialEmbType::UniformInitialEmbedder: {
                 initEmb = std::make_unique<UniformEmbedder>(g, opts);
                 break;
-            case InitialEmbType::LayeredInitialEmbedder:
+            }
+            case InitialEmbType::LayeredInitialEmbedder: {
                 const auto coarsener = std::make_unique<LabelPropagation>(PartitionerOptions{}, graph, std::vector(g.getNumEdges() * 2, 1.0));
                 initEmb = std::make_unique<LayeredEmbedder>(g, *coarsener, opts);
+                break;
+            }
+            case InitialEmbType::BarycentricInitialEmbedder: {
+                initEmb = std::make_unique<BarycentricEmbedder>(g, opts);
+                break;
+            }
         }
         timer->startTiming("init_embed", "Initial " + initialEmbTypeName[opts.initEmbType]);
         WembedEmbedder::setCoordinates(initEmb->getInitialEmbedding());

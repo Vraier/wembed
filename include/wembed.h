@@ -26,7 +26,8 @@ class Embedder;
 enum InitialEmbedder : int32_t {
     RandomInitialEmbedder = 0, //random positions (default)
     UniformInitialEmbedder = 1,
-    LayeredInitialEmbedder = 2
+    LayeredInitialEmbedder = 2,
+    BarycentricInitialEmbedder = 3
 };
 
 enum SpatialIndex : int32_t {

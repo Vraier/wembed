@@ -11,7 +11,7 @@ enum class WeightType { Unit = 0, Degree = 1 };
 // The slower KdTree always works, but has to be selected explicitly.
 enum class IndexType { KdTree = 0, Sprk = 1 };
 
-enum class InitialEmbType {RandomInitialEmbedder = 0, UniformInitialEmbedder = 1, LayeredInitialEmbedder = 2};
+enum class InitialEmbType {RandomInitialEmbedder = 0, UniformInitialEmbedder = 1, LayeredInitialEmbedder = 2, BarycentricInitialEmbedder = 3};
 
 enum class LRScheduleType { ExponentialCooling = 0, LossAdaptive = 1 };
 
@@ -23,7 +23,8 @@ inline std::map<OptimizerType, std::string> optimizerTypeMap = {{OptimizerType::
 inline std::map<InitialEmbType, std::string> initialEmbTypeName = {
     {InitialEmbType::RandomInitialEmbedder, "Random Embedder"},
     {InitialEmbType::UniformInitialEmbedder, "Uniform Embedder"},
-    {InitialEmbType::LayeredInitialEmbedder, "Layered Embedder"}
+    {InitialEmbType::LayeredInitialEmbedder, "Layered Embedder"},
+    {InitialEmbType::BarycentricInitialEmbedder, "Barycentric Embedder"}
 };
 
 inline std::map<LRScheduleType, std::string> lrScheduleTypeMap = {

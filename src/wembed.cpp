@@ -193,6 +193,7 @@ static InitialEmbType toInternalInitialEmbType(InitialEmbedder emb) {
         case RandomInitialEmbedder: return InitialEmbType::RandomInitialEmbedder;
         case UniformInitialEmbedder: return InitialEmbType::UniformInitialEmbedder;
         case LayeredInitialEmbedder: return InitialEmbType::LayeredInitialEmbedder;
+        case BarycentricInitialEmbedder: return InitialEmbType::BarycentricInitialEmbedder;
     }
     return InitialEmbType::RandomInitialEmbedder;
 }
