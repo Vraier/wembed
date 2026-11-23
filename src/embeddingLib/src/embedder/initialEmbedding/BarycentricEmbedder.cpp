@@ -50,9 +50,9 @@ void BarycentricEmbedder::computeBarycentricCoords(std::vector<std::vector<doubl
         if (v == corners[0] || v == corners[1] || v == corners[2]) continue;
         const double denom = distancesFromOne[v] + distancesFromTwo[v] + distancesFromThree[v];
 
-        const double weightOne = distancesFromOne[v] / denom;
-        const double weightTwo = distancesFromTwo[v] / denom;
-        const double weightThree = 1.0 - weightOne - weightTwo;
+        const double weightOne = 1.0 - distancesFromOne[v] / denom;
+        const double weightTwo = 1.0 - distancesFromTwo[v] / denom;
+        const double weightThree = 1.0 - distancesFromThree[v] / denom;
 
         initEmb[v][0] = weightOne * initEmb[corners[0]][0] + weightTwo * initEmb[corners[1]][0] + weightThree * initEmb[corners[2]][0];
         initEmb[v][1] = weightOne * initEmb[corners[0]][1] + weightTwo * initEmb[corners[1]][1] + weightThree * initEmb[corners[2]][1];
