@@ -16,8 +16,11 @@ LayeredEmbedder::LayeredEmbedder(const Graph& g, LabelPropagation& coarsener, Em
 }
 
 std::vector<std::vector<double>> LayeredEmbedder::getInitialEmbedding() {
-    calculateEmbedding();
-    return currentEmbedder->getCoordinates();
+    if (initEmb.empty()) {
+        calculateEmbedding();
+        initEmb = currentEmbedder->getCoordinates();
+    }
+    return initEmb;
 }
 
 void LayeredEmbedder::calculateStep() {

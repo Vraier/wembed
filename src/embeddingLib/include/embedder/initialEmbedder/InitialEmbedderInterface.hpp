@@ -10,6 +10,7 @@ class InitialEmbedderInterface {
     protected:
     Graph graph;
     EmbedderOptions opts;
+    std::vector<std::vector<double>> initEmb;
     std::shared_ptr<util::Timer> timer;
 
     public:
