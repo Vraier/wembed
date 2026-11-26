@@ -226,6 +226,8 @@ class Embedder {
 
     void writeCoordinates(const std::string& filePath, bool writeWeights = true) const;
 
+    void writeInitialCoordinates(const std::string& filePath, bool writeWeights = true) const;
+
    private:
     std::unique_ptr<impl::EmbedderInterface> _embedder;
 };

@@ -134,6 +134,10 @@ int run(int argc, char* argv[]) {
     if (!opts.embeddingPath.empty()) {
         embedder.writeCoordinates(opts.embeddingPath);
     }
+
+    if (!opts.initialEmbeddingPath.empty()) {
+        embedder.writeInitialCoordinates(opts.initialEmbeddingPath);
+    }
     return 0;
 }
 
@@ -159,6 +163,8 @@ void addOptions(CLI::App& app, Options& opts) {
     app.add_option("--init-coordinates", opts.inputEmbeddingPath,
                    "Path to a file containing initial coordinates. If empty, coordinates are initialized randomly.")
         ->group(io);
+    app.add_option("--initial-embedding", opts.initialEmbeddingPath,
+                    "Path to the output initial embedding file");
     app.add_flag("--timings", opts.showTimings, "Print timings after embedding")
         ->group(io);
     app.add_option("--trace", opts.tracePath,

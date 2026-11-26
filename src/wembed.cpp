@@ -12,6 +12,7 @@
 #include "Partitioner.hpp"
 #include "Rand.hpp"
 #include "Timings.hpp"
+#include "../profile/_deps/cli11-src/include/CLI/Validators.hpp"
 
 namespace impl {
     using EmbeddingGraph = ::Graph;
@@ -168,6 +169,14 @@ void Embedder::writeCoordinates(const std::string& filePath, bool writeWeights) 
         EmbeddingIO::writeCoordinates(filePath, _embedder->getCoordinates(), _embedder->getWeights());
     } else {
         EmbeddingIO::writeCoordinates(filePath, _embedder->getCoordinates());
+    }
+}
+
+void Embedder::writeInitialCoordinates(const std::string& filePath, bool writeWeights) const {
+    if (writeWeights) {
+        EmbeddingIO::writeCoordinates(filePath, _embedder->getInitialCoordinates(), _embedder->getWeights());
+    } else {
+        EmbeddingIO::writeCoordinates(filePath, _embedder->getInitialCoordinates());
     }
 }
 

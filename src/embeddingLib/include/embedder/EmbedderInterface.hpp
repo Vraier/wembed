@@ -172,6 +172,11 @@ class EmbedderInterface {
     virtual std::vector<std::vector<double>> getCoordinates() = 0;
 
     /**
+     * Returns the starting coordinates from which teh embedding was computed.
+     */
+    virtual std::vector<std::vector<double>> getInitialCoordinates() = 0;
+
+    /**
      * Returns the current weights of the nodes.
      */
     virtual std::vector<double> getWeights() = 0;

@@ -87,7 +87,7 @@ class WembedEmbedder : public EmbedderInterface {
     void updateIndex();
 
     public:
-    // initializeState controls whether the constructor sets a random starting layout and
+    // initializeState controls whether the constructor sets a starting layout and
     // the degree/unit weights. Pass false only when the caller assigns coordinates AND
     // weights immediately afterwards (e.g. LayeredEmbedder layer expansion): skipping the
     // throwaway random init avoids generating and sorting a full layout that is discarded,
@@ -105,6 +105,7 @@ class WembedEmbedder : public EmbedderInterface {
     virtual void calculateEmbedding() override;
     virtual Graph getCurrentGraph() override;
     virtual std::vector<std::vector<double>> getCoordinates() override;
+    virtual std::vector<std::vector<double>> getInitialCoordinates() override;
     virtual std::vector<double> getWeights() override;
     virtual std::vector<util::TimingResult> getTimings() override;
     virtual void setCoordinates(const std::vector<std::vector<double>> &coordinates) override;

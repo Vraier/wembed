@@ -12,6 +12,7 @@ struct Options {
     std::string embeddingPath;
 
     std::string inputEmbeddingPath;
+    std::string initialEmbeddingPath;
     std::string embeddingComment = "%";
     std::string embeddingDelimiter = ",";
 

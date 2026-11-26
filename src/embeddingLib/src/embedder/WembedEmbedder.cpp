@@ -173,6 +173,10 @@ std::vector<std::vector<double> > WembedEmbedder::getCoordinates() {
     return this->state.currentPositions.convertToVector();
 }
 
+std::vector<std::vector<double> > WembedEmbedder::getInitialCoordinates() {
+    return this->initEmb->getInitialEmbedding();
+}
+
 std::vector<double> WembedEmbedder::getWeights() {
     return this->state.currentWeights;
 }
