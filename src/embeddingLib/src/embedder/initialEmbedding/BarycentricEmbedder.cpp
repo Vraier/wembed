@@ -3,6 +3,7 @@
 #include "GraphAlgorithms.hpp"
 
 std::vector<NodeId> BarycentricEmbedder::computeCornerNodes(std::vector<std::vector<double>>& distanceFromCorners) {
+    //TODO: Make it general over amount of corners
     std::vector<double>& distancesFromOne = distanceFromCorners[0];
     std::vector<double>& distancesFromTwo = distanceFromCorners[1];
     std::vector<double>& distancesFromThree = distanceFromCorners[2];
@@ -40,25 +41,32 @@ std::vector<NodeId> BarycentricEmbedder::computeCornerNodes(std::vector<std::vec
 
 void BarycentricEmbedder::computeBarycentricCoords(const std::vector<NodeId>& corners,
                                                    const std::vector<std::vector<double>>& distanceFromCorners) {
-
-    const std::vector<double>& distancesFromOne = distanceFromCorners[0];
-    const std::vector<double>& distancesFromTwo = distanceFromCorners[1];
-    const std::vector<double>& distancesFromThree = distanceFromCorners[2];
-
     for (int v = 0; v < this->graph.getNumVertices(); v++) {
-        if (v == corners[0] || v == corners[1] || v == corners[2]) continue;
+        if (std::ranges::find(corners, v) != corners.end()) {
+            continue;
+        }
 
-        const double invOne = 1. / distancesFromOne[v];
-        const double invTwo = 1. / distancesFromTwo[v];
-        const double invThree = 1. / distancesFromThree[v];
-        const double denom = invOne + invTwo + invThree;
+        std::vector<double> invDist(corners.size());
+        double denom = 0.0;
+        for (size_t c = 0; c < corners.size(); c++) {
+            invDist[c] = 1. / distanceFromCorners[c][v];
+            denom += invDist[c];
+        }
 
-        const double weightOne = invOne / denom;
-        const double weightTwo = invTwo / denom;
-        const double weightThree = invThree / denom;
+        std::vector<double> weights(corners.size());
+        for (size_t c = 0; c < corners.size(); c++) {
+            weights[c] = invDist[c] / denom;
+        }
 
-        initEmb[v][0] = weightOne * initEmb[corners[0]][0] + weightTwo * initEmb[corners[1]][0] + weightThree * initEmb[corners[2]][0];
-        initEmb[v][1] = weightOne * initEmb[corners[0]][1] + weightTwo * initEmb[corners[1]][1] + weightThree * initEmb[corners[2]][1];
+        double xCoord = 0.0;
+        double yCoord = 0.0;
+        for (size_t w = 0; w < weights.size(); w++) {
+            xCoord += weights[w] * initEmb[corners[w]][0];
+            yCoord += weights[w] * initEmb[corners[w]][1];
+        }
+
+        initEmb[v][0] = xCoord;
+        initEmb[v][1] = yCoord;
     }
 }
 
@@ -67,20 +75,20 @@ std::vector<std::vector<double> > BarycentricEmbedder::getInitialEmbedding() {
     if (initEmb.empty()) {
         initEmb = std::vector(this->graph.getNumVertices(), std::vector<double>(this->opts.embeddingDimension, 0.0));
 
-        std::vector<std::vector<double>> distanceFromCorners(3);
+        std::vector<std::vector<double>> distanceFromCorners(numberAnchors);
 
         timer->startTiming("computeCorners", "Compute corner vertices");
         const std::vector<NodeId> corners = computeCornerNodes(distanceFromCorners);
         timer->stopTiming("computeCorners");
 
-        // Embed three cornerpoints
-        initEmb[corners[0]][0] = 1.0; // first corner at (1,0,...)
-
-        initEmb[corners[1]][0] = std::cos(2./3. * std::numbers::pi_v<double>); // second corner 120° (2/3 pi)
-        initEmb[corners[1]][1] = std::sin(2./3. * std::numbers::pi_v<double>); // rotated from first corner
-
-        initEmb[corners[2]][0] = std::cos(4./3. * std::numbers::pi_v<double>); // second corner 240° (4/3 pi)
-        initEmb[corners[2]][1] = std::sin(4./3. * std::numbers::pi_v<double>); // rotated from first corner
+        timer->startTiming("EmbedAnchors", "Embed anchor points");
+        const double angleGap = 2. / static_cast<double>(numberAnchors);
+        // loop over all corner points
+        for (size_t i = 0; i < numberAnchors; i++) {
+            initEmb[corners[i]][0] = std::cos(static_cast<double>(i) * angleGap * std::numbers::pi_v<double>);
+            initEmb[corners[i]][1] = std::sin(static_cast<double>(i) * angleGap * std::numbers::pi_v<double>);
+        }
+        timer->stopTiming("EmbedAnchors");
 
         // Embed all other points
         timer->startTiming("computeBary", "Compute barycentric coords");
